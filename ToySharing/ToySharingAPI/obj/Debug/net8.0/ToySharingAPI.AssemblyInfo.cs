@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ToySharingAPI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b411f543a49bf0c606e1e26c6cb2a2a9269827ee")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+aae1b802b014e6ec259dcdee5d3c17443551ea37")]
 [assembly: System.Reflection.AssemblyProductAttribute("ToySharingAPI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ToySharingAPI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

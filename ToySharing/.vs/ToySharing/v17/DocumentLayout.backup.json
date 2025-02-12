@@ -50,8 +50,12 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 2,
           "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
             {
               "$type": "Document",
               "DocumentIndex": 4,
@@ -62,8 +66,7 @@
               "RelativeToolTip": "ToySharingAPI\\DTO\\UserDTO.cs",
               "ViewState": "AgIAAAIAAAAAAAAAAAAAwAwAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-11T16:25:21.611Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-11T16:25:21.611Z"
             },
             {
               "$type": "Document",
@@ -73,7 +76,7 @@
               "RelativeDocumentMoniker": "ToySharingAPI\\Controllers\\UserController.cs",
               "ToolTip": "C:\\Users\\PC\\Desktop\\k\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Controllers\\UserController.cs",
               "RelativeToolTip": "ToySharingAPI\\Controllers\\UserController.cs",
-              "ViewState": "AgIAACUAAAAAAAAAAADwvykAAAAWAAAAAAAAAA==",
+              "ViewState": "AgIAACgAAAAAAAAAAADwvzkAAAAuAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-02-11T16:14:38.342Z",
               "EditorCaption": ""
@@ -88,8 +91,7 @@
               "RelativeToolTip": "ToySharingAPI\\DTO\\ProductDTO.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAoAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-08T11:29:33.513Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-08T11:29:33.513Z"
             },
             {
               "$type": "Document",
@@ -125,12 +127,7 @@
               "RelativeToolTip": "ToySharingAPI\\Controllers\\ProductsController.cs",
               "ViewState": "AgIAACYAAAAAAAAAAAAYwDkAAAAMAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-08T11:08:16.5Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+              "WhenOpened": "2025-02-08T11:08:16.5Z"
             },
             {
               "$type": "Document",
@@ -142,8 +139,7 @@
               "RelativeToolTip": "ToySharingAPI\\appsettings.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAABmAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-02-08T09:33:45.621Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-08T09:33:45.621Z"
             },
             {
               "$type": "Document",
