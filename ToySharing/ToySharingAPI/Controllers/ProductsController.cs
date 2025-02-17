@@ -89,5 +89,53 @@ namespace ToySharingAPI.Controllers
 
             return Ok(owner);
         }
+        [HttpPut("{id}")]
+        public async Task<ActionResult<ProductDTO>> EditProduct(int id, ProductDTO productDto)
+        {
+            var product = await _context.Products.FindAsync(id);
+            if (product == null)
+            {
+                return NotFound();
+            }
+            product.Name = productDto.Name;
+            product.Tag = productDto.Tag;
+            product.Available = productDto.Available;
+            product.Description = productDto.Description;
+            product.ProductStatus = productDto.ProductStatus;
+            product.Address = productDto.Address;
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ProductExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            var updatedProductDto = new ProductDTO
+            {
+                ProductId = product.ProductId,
+                UserId = product.UserId,
+                Name = product.Name,
+                Tag = product.Tag,
+                Available = product.Available,
+                Description = product.Description,
+                ProductStatus = product.ProductStatus,
+                Address = product.Address,
+                CreatedAt = product.CreatedAt
+            };
+
+            return Ok(updatedProductDto);
+        }
+        private bool ProductExists(int id)
+        {
+            return _context.Products.Any(e => e.ProductId == id);
+        }
     }
 }

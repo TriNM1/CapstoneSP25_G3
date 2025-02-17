@@ -4442,23 +4442,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\PC\\.nuget\\packages\\": {},
+    "C:\\Users\\Administrator\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\PC\\Desktop\\k\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\ToySharingAPI.csproj",
+      "projectUniqueName": "C:\\Users\\Administrator\\Desktop\\New folder\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\ToySharingAPI.csproj",
       "projectName": "ToySharingAPI",
-      "projectPath": "C:\\Users\\PC\\Desktop\\k\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\ToySharingAPI.csproj",
-      "packagesPath": "C:\\Users\\PC\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\PC\\Desktop\\k\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\obj\\",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\New folder\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\ToySharingAPI.csproj",
+      "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Administrator\\Desktop\\New folder\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\PC\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\Administrator\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -4485,7 +4485,7 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "9.0.100"
+      "SdkAnalysisLevel": "9.0.200"
     },
     "frameworks": {
       "net8.0": {
@@ -4531,7 +4531,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.102/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.200/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
