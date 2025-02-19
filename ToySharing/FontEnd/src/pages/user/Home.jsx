@@ -8,6 +8,7 @@ import banner2 from "../../assets/banner2.jpg";
 import banner3 from "../../assets/banner3.jpg";
 import banner4 from "../../assets/banner4.jpg";
 import toy1 from "../../assets/toy1.jpg";
+import user from "../../assets/user.png";
 
 const Home = () => {
   // State đăng nhập và active nav link
@@ -136,7 +137,7 @@ const Home = () => {
                       alt="Lender Avatar"
                       className="lender-avatar"
                     />
-                    <a className="ms-2" href="#" id="trangcanhanlink">
+                    <a className="ms-2" href="/userinfo" id="trangcanhanlink">
                       Trang cá nhân người cho mượn
                     </a>
                   </div>

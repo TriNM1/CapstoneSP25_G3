@@ -1,0 +1,48 @@
+
+
+.side-menu {
+  background:#fff; // hoặc thay bằng màu cụ thể, ví dụ: #fff
+  padding: 1rem;
+  border-right: 1px solid #ddd;
+  height: 100vh;
+  margin-top: 1rem;
+
+  ul {
+    list-style: none;
+    padding: 0;
+    li {
+      margin-bottom: 1rem;
+      a {
+        text-decoration: none;
+        color: #333;
+        font-size: 1.1rem;
+        transition: color 0.3s;
+        &:hover {
+          color: #ff6f61; // hoặc màu cụ thể: #ff6f61
+        }
+      }
+      &.active a {
+        color: #ff6f61;
+        font-weight: bold;
+      }
+    }
+  }
+
+  .menu-icon {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    width: 50px;
+    padding: 0.5rem;
+    ul {
+      display: none;
+    }
+    .menu-icon {
+      display: block;
+      font-size: 1.8rem;
+      text-align: center;
+      color: #333;
+    }
+  }
+}
