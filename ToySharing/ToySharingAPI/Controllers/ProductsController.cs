@@ -30,6 +30,8 @@ namespace ToySharingAPI.Controllers
                     ProductStatus = p.ProductStatus,
                     Address = p.Address,
                     CreatedAt = p.CreatedAt
+                    //,
+                    //ImagePath = p.Images.FirstOrDefault().Path
                 })
                 .ToListAsync();
             return Ok(products);
@@ -51,6 +53,8 @@ namespace ToySharingAPI.Controllers
                     ProductStatus = p.ProductStatus,
                     Address = p.Address,
                     CreatedAt = p.CreatedAt
+                    //,
+                    //ImagePath = p.Images.FirstOrDefault().Path
                 })
                 .FirstOrDefaultAsync();
 
@@ -89,53 +93,117 @@ namespace ToySharingAPI.Controllers
 
             return Ok(owner);
         }
+        // Create a product
+        [HttpPost]
+        public async Task<ActionResult<ProductDTO>> CreateProduct(int userId, ProductDTO productDto)
+        {
+            var product = new Product
+            {
+                UserId = userId,
+                Name = productDto.Name,
+                Tag = productDto.Tag,
+                Available = 2,
+                Description = productDto.Description,
+                ProductStatus = productDto.ProductStatus,
+                Address = productDto.Address,
+                CreatedAt = DateTime.UtcNow 
+            };
+            _context.Products.Add(product);
+            await _context.SaveChangesAsync();
+            //if (!string.IsNullOrEmpty(productDto.ImagePath))
+            //{
+            //    var image = new Image
+            //    {
+            //        ProductId = product.ProductId,
+            //        Path = productDto.ImagePath,
+            //        CreateTime = DateTime.UtcNow
+            //    };
+            //_context.Images.Add(image);
+            //    await _context.SaveChangesAsync();
+            //}
+            productDto.ProductId = product.ProductId;
+            return CreatedAtAction(nameof(GetProductById), new { id = product.ProductId }, productDto);
+        }
+
+        // Update product
         [HttpPut("{id}")]
-        public async Task<ActionResult<ProductDTO>> EditProduct(int id, ProductDTO productDto)
+        public async Task<ActionResult<ProductDTO>> UpdateProduct(int id, int userId, ProductDTO productDto)
         {
             var product = await _context.Products.FindAsync(id);
-            if (product == null)
+            if (product == null || product.UserId != userId)
             {
                 return NotFound();
             }
+
             product.Name = productDto.Name;
             product.Tag = productDto.Tag;
             product.Available = productDto.Available;
             product.Description = productDto.Description;
             product.ProductStatus = productDto.ProductStatus;
             product.Address = productDto.Address;
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ProductExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            var updatedProductDto = new ProductDTO
-            {
-                ProductId = product.ProductId,
-                UserId = product.UserId,
-                Name = product.Name,
-                Tag = product.Tag,
-                Available = product.Available,
-                Description = product.Description,
-                ProductStatus = product.ProductStatus,
-                Address = product.Address,
-                CreatedAt = product.CreatedAt
-            };
 
-            return Ok(updatedProductDto);
+            await _context.SaveChangesAsync();
+            //if (!string.IsNullOrEmpty(productDto.ImagePath))
+            //{
+            //    var image = product.Images.FirstOrDefault();
+            //    if (image != null)
+            //    {
+            //        image.Path = productDto.ImagePath;
+            //    }
+            //    else
+            //    {
+            //        product.Images.Add(new Image { Path = productDto.ImagePath, CreateTime = DateTime.UtcNow });
+            //    }
+            //}
+            return Ok(productDto);
         }
-        private bool ProductExists(int id)
+
+        // My toy list
+        [HttpGet("my-toys/{userId}")]
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetMyToys(int userId)
         {
-            return _context.Products.Any(e => e.ProductId == id);
+            var products = await _context.Products
+                .Where(p => p.UserId == userId)
+                .Select(p => new ProductDTO
+                {
+                    ProductId = p.ProductId,
+                    Name = p.Name,
+                    Tag = p.Tag,
+                    Available = p.Available,
+                    Description = p.Description,
+                    ProductStatus = p.ProductStatus,
+                    Address = p.Address,
+                    CreatedAt = p.CreatedAt
+                    //,
+                    //ImagePath = p.Images.FirstOrDefault().Path
+                })
+                .ToListAsync();
+
+            return Ok(products);
+        }
+
+        // My toy list borrowing
+        [HttpGet("my-toys/borrowing/{userId}")]
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetMyBorrowingToys(int userId)
+        {
+            var products = await _context.Products
+                .Where(p => p.UserId == userId && p.Available == 1)
+                .Select(p => new ProductDTO
+                {
+                    ProductId = p.ProductId,
+                    Name = p.Name,
+                    Tag = p.Tag,
+                    Available = p.Available,
+                    Description = p.Description,
+                    ProductStatus = p.ProductStatus,
+                    Address = p.Address,
+                    CreatedAt = p.CreatedAt
+                    //,
+                    //ImagePath = p.Images.FirstOrDefault().Path
+                })
+                .ToListAsync();
+
+            return Ok(products);
         }
     }
 }
