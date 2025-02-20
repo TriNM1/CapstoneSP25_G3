@@ -1,7 +1,7 @@
-
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto&display=swap');
 
 .side-menu {
-  background:#fff; // hoặc thay bằng màu cụ thể, ví dụ: #fff
+  background: #fff; // Sử dụng biến $list-bg-color nếu có
   padding: 1rem;
   border-right: 1px solid #ddd;
   height: 100vh;
@@ -18,7 +18,7 @@
         font-size: 1.1rem;
         transition: color 0.3s;
         &:hover {
-          color: #ff6f61; // hoặc màu cụ thể: #ff6f61
+          color: #ff6f61; // Sử dụng biến $accent-color nếu có
         }
       }
       &.active a {

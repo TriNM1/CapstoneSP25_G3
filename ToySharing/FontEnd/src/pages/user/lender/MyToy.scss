@@ -1,0 +1,134 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto&display=swap');
+
+.mytoy-page {
+  background-color: #f7f9fc;
+  font-family: 'Roboto', sans-serif;
+  color: #444;
+  padding-bottom: 40px;
+
+  .main-content {
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .filter-toggle {
+    button {
+      font-size: 1rem;
+    }
+  }
+
+  .filter-panel {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+    margin-top: 15px;
+
+    label {
+      font-weight: bold;
+      font-size: 1.1rem;
+      margin-bottom: 5px;
+      display: block;
+      text-align: left;
+    }
+
+    .form-control {
+      font-size: 1rem;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+
+      &::placeholder {
+        opacity: 0.3;
+      }
+    }
+  }
+
+  .toy-items-section {
+    .toy-card {
+      background-color: #fff;
+      border: none;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s;
+      margin-bottom: 20px;
+
+      &:hover {
+        transform: translateY(-5px);
+      }
+
+      .toy-image {
+        height: 200px;
+        object-fit: cover;
+      }
+
+      .toy-name {
+        font-family: 'Fredoka One', cursive;
+        font-size: 1.5rem;
+        color: #ff6f61;
+        margin-bottom: 10px;
+      }
+
+      .posted-date,
+      .borrow-count,
+      .toy-status {
+        font-size: 1rem;
+        margin-bottom: 5px;
+      }
+
+      .toy-status {
+        strong {
+          font-weight: bold;
+        }
+        .available {
+          color: green;
+        }
+        .unavailable {
+          color: red;
+        }
+      }
+
+      .toy-actions {
+        display: flex;
+        justify-content: center;
+        button {
+          font-size: 1rem;
+          padding: 10px 20px;
+          border-radius: 8px;
+          border: none;
+          cursor: pointer;
+          transition: background-color 0.3s;
+        }
+        button:nth-child(1) {
+          background-color: #ffc107;
+          color: #fff;
+          &:hover {
+            background-color: #ffca2c;
+          }
+        }
+        button:nth-child(2) {
+          background-color: #dc3545;
+          color: #fff;
+          margin-left: 10px;
+          &:hover {
+            background-color: #e4606d;
+          }
+        }
+      }
+    }
+  }
+
+  .view-more-btn {
+    margin-top: 20px;
+    font-size: 1.1rem;
+    padding: 0.5rem 1rem;
+  }
+  .preview-image {
+    width: 100px !important;
+    height: 100px !important;
+    object-fit: cover;
+  }
+}

@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Container, Row, Col, Button, Form } from "react-bootstrap";
+import { Container, Row, Col, Button, Form, Modal } from "react-bootstrap";
 import Header from "../../../components/Header";
 import SideMenu from "../../../components/SideMenu";
 import "./AddToy.scss";
-
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 const AddToy = () => {
   // State cho header active link
   const [activeLink, setActiveLink] = useState("add-toy");
@@ -28,6 +29,9 @@ const AddToy = () => {
   const [size, setSize] = useState("");
   const [borrowNotes, setBorrowNotes] = useState("");
 
+  // State cho modal xác nhận gửi yêu cầu
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
   // Xử lý chọn ảnh và xem trước
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -37,8 +41,24 @@ const AddToy = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Ở đây bạn có thể tích hợp logic gửi yêu cầu tới admin (gọi API, vv)
+    setShowConfirmModal(true);
+  };
+
+  const confirmSubmit = () => {
+    setShowConfirmModal(false);
+    // Tích hợp logic gửi yêu cầu tới admin (API, vv) tại đây
+    // Ví dụ hiện thông báo toast thành công (ToastContainer đã được cấu hình ở phần giao diện chung)
     alert("Yêu cầu gửi tới admin thành công!");
+    // Reset form
+    setPreviewImage(null);
+    setToyName("");
+    setCategory("");
+    setCondition("");
+    setAgeGroup("");
+    setPrice("");
+    setDescription("");
+    setSize("");
+    setBorrowNotes("");
   };
 
   return (
@@ -186,6 +206,31 @@ const AddToy = () => {
           </Col>
         </Row>
       </Container>
+
+      {/* Modal xác nhận gửi yêu cầu */}
+      <Modal
+        show={showConfirmModal}
+        onHide={() => setShowConfirmModal(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Xác nhận</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>Bạn có chắc chắn muốn gửi yêu cầu này không?</Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowConfirmModal(false)}
+          >
+            Hủy
+          </Button>
+          <Button variant="primary" onClick={confirmSubmit}>
+            Xác nhận
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };

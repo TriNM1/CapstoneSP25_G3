@@ -9,6 +9,7 @@ import SearchToy from "./pages/user/borrower/SearchingToy";
 import Message from "./pages/user/generate/Message";
 import UserInfor from "./pages/user/generate/UserInfor";
 import AddToy from "./pages/user/lender/AddToy";
+import MyToy from "./pages/user/lender/MyToy";
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
@@ -37,9 +38,10 @@ function App() {
         <Route path="/message" element={<Message />} />
         <Route path="/userinfor" element={<UserInfor />} />
         <Route path="/addtoy" element={<AddToy />} />
+        <Route path="/mytoy" element={<MyToy />} />
 
         {/* Route mặc định nếu không khớp */}
-        <Route path="*" element={<UserInfor />} />
+        <Route path="*" element={<MyToy />} />
       </Routes>
     </BrowserRouter>
   );

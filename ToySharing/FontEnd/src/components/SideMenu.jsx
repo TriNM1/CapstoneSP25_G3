@@ -1,16 +1,15 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import "./SideMenu.scss";
 
-const SideMenu = ({ menuItems, activeItem, onMenuItemClick }) => {
+const SideMenu = ({ menuItems, activeItem }) => {
   return (
     <div className="side-menu">
       <div className="menu-icon">☰</div>
       <ul>
         {menuItems.map((item) => (
           <li key={item.id} className={activeItem === item.id ? "active" : ""}>
-            <a href={item.link} onClick={() => onMenuItemClick(item.id)}>
-              {item.label}
-            </a>
+            <Link to={item.link}>{item.label}</Link>
           </li>
         ))}
       </ul>

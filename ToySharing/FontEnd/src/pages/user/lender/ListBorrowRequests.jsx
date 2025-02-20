@@ -15,17 +15,17 @@ import { FaBars } from "react-icons/fa";
 import Header from "../../../components/Header";
 import toy1 from "../../../assets/toy1.jpg";
 import user from "../../../assets/user.png";
-import "./ListBorrowRequests.scss";
 import SideMenu from "../../../components/SideMenu";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import "./ListBorrowRequests.scss";
 
 const ListBorrowRequests = () => {
   const unreadMessages = 3;
   const notificationCount = 2;
   const [activeLink, setActiveLink] = useState("muon-do-choi");
 
-  // Dữ liệu yêu cầu mượn với thuộc tính "message"
+  // Dữ liệu yêu cầu mượn (bao gồm thuộc tính message)
   const initialRequests = [
     {
       id: 1,
@@ -124,7 +124,7 @@ const ListBorrowRequests = () => {
 
   const visibleRequests = filteredRequests.slice(0, visibleItems);
 
-  // Xử lý hiển thị modal lời nhắn
+  // Hiển thị modal lời nhắn
   const handleViewMessage = (message) => {
     setModalMessage(message);
     setShowMessageModal(true);
@@ -156,39 +156,32 @@ const ListBorrowRequests = () => {
 
   return (
     <div className="list-borrow-requests-page">
-      {/* Thanh menu dùng chung */}
       <Header
         activeLink={activeLink}
         setActiveLink={setActiveLink}
         isLoggedIn={true}
-        unreadMessages={unreadMessages}
+        unreadMessages={3}
         notificationCount={notificationCount}
       />
 
       <Container fluid>
         <Row>
-          {/* Side Menu */}
-          <Col xs={12} md={2} className="side-menu">
-            <div className="menu-icon">
-              <FaBars />
-            </div>
-            <ul>
-              <li>
-                <Link to="/addtoy">Thêm đồ chơi cho mượn</Link>
-              </li>
-              <li>
-                <Link to="/mytoy">Danh sách đồ chơi của tôi</Link>
-              </li>
-              <li>
-                <Link to="/lending">Đang cho mượn</Link>
-              </li>
-              <li className="active">
-                <Link to="/listborrowrequest">Danh sách muốn mượn</Link>
-              </li>
-              <li>
-                <Link to="/transferhistory">Lịch sử trao đổi</Link>
-              </li>
-            </ul>
+          {/* Side Menu dùng component chung */}
+          <Col xs={12} md={2}>
+            <SideMenu
+              menuItems={[
+                { id: 1, label: "Thêm đồ chơi cho mượn", link: "/addtoy" },
+                { id: 2, label: "Danh sách đồ chơi của tôi", link: "/mytoy" },
+                { id: 3, label: "Đang cho mượn", link: "/lending" },
+                {
+                  id: 4,
+                  label: "Danh sách muốn mượn",
+                  link: "/listborrowrequests",
+                },
+                { id: 5, label: "Lịch sử trao đổi", link: "/transferhistory" },
+              ]}
+              activeItem={4}
+            />
           </Col>
 
           {/* Main Content */}
@@ -328,7 +321,6 @@ const ListBorrowRequests = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Toast Container hiển thị thông báo thành công */}
       <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
