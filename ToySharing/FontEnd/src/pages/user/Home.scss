@@ -1,0 +1,90 @@
+.home-page {
+    font-family: 'Roboto', sans-serif; // hoặc font dễ đọc khác hỗ trợ tiếng Việt
+    color: #333;
+    
+    .main-navbar {
+        margin-bottom: 20px;
+        .navbar-brand {
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.8rem;
+          }
+         
+
+          .nav-link {
+            font-weight: 500;
+            color: #333;
+            transition: color 0.3s ease;
+        
+            &.active {
+              color: #ff6f61 !important;
+            }
+          }
+      .logo {
+        width: 150px; // hoặc giá trị phù hợp
+        height: auto;
+      }
+      .user-avatar {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+      }
+    }
+    
+    .banner-section {
+      .banner-image {
+        height: 70vh;
+        object-fit: contain;
+      }
+    }
+    
+    .section-title {
+        font-family: 'Fredoka One', cursive;
+        font-size: 2rem;
+        margin-bottom: 20px;
+        text-align: center;
+        color: #ff6f61;
+      }
+    
+    .toy-card {
+      .toy-image {
+        height: 200px;
+        object-fit: cover;
+      }
+      .toy-name {
+        font-size: 1.25rem;
+        font-weight: bold;
+      }
+      .toy-price {
+        color: #ff6f61;
+      }
+      .available {
+        color: green;
+      }
+      .unavailable {
+        color: red;
+      }
+      .lender-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+      }
+      .toy-actions {
+        Button {
+            font-size: 1.6rem;
+            padding: 0.75rem 1.5rem;
+        }
+      }
+      #trangcanhanlink{
+        color: #333;
+      }
+    }
+    
+    .view-more-btn {
+      margin-top: 20px;
+    }
+    
+    .footer {
+      font-size: 0.9rem;
+    }
+  }
+  
