@@ -2,19 +2,19 @@
 {
     public class UserDTO
     {
-        public int UserId { get; set; }
-
-        public string Name { get; set; } = null!;
-
-        public string Email { get; set; } = null!;
-
-        public string Phone { get; set; } = null!;
+        public int Id { get; set; }
+        public string? Name { get; set; }
+        public string? Email { get; set; }
+        public string? Phone { get; set; }
         public string? Address { get; set; }
-
+        public int? Role { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public decimal? Latitude { get; set; }
+        public decimal? Longitude { get; set; }
         public int? Status { get; set; }
-
         public string? Avatar { get; set; }
-
+        public bool? Gender { get; set; }
+        public int? Age { get; set; }
         public double? Rating { get; set; }
     }
 }
