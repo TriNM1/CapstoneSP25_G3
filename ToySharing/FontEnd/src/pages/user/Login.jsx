@@ -91,7 +91,7 @@ const Login = () => {
 
                 <div className="register-link">
                   <span>Bạn chưa có tài khoản?</span>
-                  <a href="/register">Đăng ký</a>
+                  <a href="/signup">Đăng ký</a>
                 </div>
               </form>
             </div>
