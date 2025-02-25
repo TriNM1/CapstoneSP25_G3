@@ -86,8 +86,7 @@
               "RelativeToolTip": "ToySharingAPI\\Models\\Category.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-25T12:13:52.994Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-25T12:13:52.994Z"
             },
             {
               "$type": "Document",
@@ -99,8 +98,7 @@
               "RelativeToolTip": "ToySharingAPI\\DTO\\RequestDTO.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAwAAAAyAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-19T11:46:08.173Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-19T11:46:08.173Z"
             },
             {
               "$type": "Document",
@@ -112,8 +110,7 @@
               "RelativeToolTip": "ToySharingAPI\\Controllers\\UserController.cs",
               "ViewState": "AQIAAE0AAAAAAAAAAAAgwGcAAAAmAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-11T16:14:38.342Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-11T16:14:38.342Z"
             },
             {
               "$type": "Document",
@@ -125,8 +122,7 @@
               "RelativeToolTip": "ToySharingAPI\\DTO\\ProductDTO.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAA8AAAAuAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-08T11:29:33.513Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-08T11:29:33.513Z"
             },
             {
               "$type": "Document",
@@ -136,7 +132,7 @@
               "RelativeDocumentMoniker": "ToySharingAPI\\Controllers\\ProductsController.cs",
               "ToolTip": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Controllers\\ProductsController.cs",
               "RelativeToolTip": "ToySharingAPI\\Controllers\\ProductsController.cs",
-              "ViewState": "AQIAAB8AAAAAAAAAAAAtwFgAAAAWAAAA",
+              "ViewState": "AQIAAAQAAAAAAAAAAAAowBIAAAAcAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-02-08T11:08:16.5Z",
               "EditorCaption": ""
@@ -151,8 +147,7 @@
               "RelativeToolTip": "ToySharingAPI\\Models\\User.cs",
               "ViewState": "AQIAABQAAAAAAAAAAAAowDEAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-11T16:17:10.05Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-11T16:17:10.05Z"
             },
             {
               "$type": "Document",
@@ -164,8 +159,7 @@
               "RelativeToolTip": "ToySharingAPI\\DTO\\UserDTO.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAA0AAAAoAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-11T16:25:21.611Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-11T16:25:21.611Z"
             },
             {
               "$type": "Document",

@@ -16,7 +16,7 @@ namespace ToySharingAPI.Controllers
         {
             _context = context;
         }
-
+        // View all products
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ProductDTO>>> GetAllProducts()
         {
@@ -38,7 +38,7 @@ namespace ToySharingAPI.Controllers
                 .ToListAsync();
             return Ok(products);
         }
-
+        // View product information
         [HttpGet("{id}")]
         public async Task<ActionResult<ProductDTO>> GetProductById(int id)
         {
@@ -68,7 +68,7 @@ namespace ToySharingAPI.Controllers
 
             return Ok(product);
         }
-
+        // View user information
         [HttpGet("{id}/owner")]
         public async Task<ActionResult<UserDTO>> GetOwnerProfileByProductId(int id)
         {
@@ -104,7 +104,7 @@ namespace ToySharingAPI.Controllers
 
             return Ok(owner);
         }
-
+        // Input product
         [HttpPost]
         public async Task<ActionResult<ProductDTO>> CreateProduct(int userId, ProductDTO productDto)
         {
@@ -131,14 +131,13 @@ namespace ToySharingAPI.Controllers
                     product.CategoryId = category.Id;
                 }
             }
-
+            // validate available 
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
-
             productDto.ProductId = product.ProductId;
             return CreatedAtAction(nameof(GetProductById), new { id = product.ProductId }, productDto);
         }
-
+        // Manage product
         [HttpPut("{id}")]
         public async Task<ActionResult<ProductDTO>> UpdateProduct(int id, int userId, ProductDTO productDto)
         {
