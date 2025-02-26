@@ -1,5 +1,5 @@
-import React from "react";
-import { Container, Navbar, Nav, Badge } from "react-bootstrap";
+import React, { useState } from "react";
+import { Container, Navbar, Nav, Badge, Dropdown } from "react-bootstrap";
 import { FaEnvelope, FaBell } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import logo from "../assets/logo.png";
@@ -13,6 +13,13 @@ const Header = ({
   unreadMessages,
   notificationCount,
 }) => {
+  // Danh sách thông báo mẫu (bạn có thể thay đổi hoặc lấy từ API)
+  const notifications = [
+    { id: 1, text: "Bạn có tin nhắn mới từ Alice" },
+    { id: 2, text: "Xe đua mini của bạn đã được mượn" },
+    { id: 3, text: "Báo cáo của bạn đã được xử lý" },
+  ];
+
   return (
     <Navbar bg="light" expand="lg" className="main-navbar">
       <Container>
@@ -48,16 +55,16 @@ const Header = ({
               Mượn đồ chơi
             </Nav.Link>
             <Nav.Link
-              href="#chinh-sach"
-              onClick={() => setActiveLink("chinh-sach")}
-              className={activeLink === "chinh-sach" ? "active" : ""}
+              href="/policy"
+              onClick={() => setActiveLink("policy")}
+              className={activeLink === "policy" ? "active" : ""}
             >
               Chính sách
             </Nav.Link>
             <Nav.Link
-              href="#huong-dan"
-              onClick={() => setActiveLink("huong-dan")}
-              className={activeLink === "huong-dan" ? "active" : ""}
+              href="/userguide"
+              onClick={() => setActiveLink("userguide")}
+              className={activeLink === "userguide" ? "active" : ""}
             >
               Hướng dẫn dùng
             </Nav.Link>
@@ -74,17 +81,32 @@ const Header = ({
                 </Badge>
               )}
             </Nav.Link>
-            <Nav.Link href="#notifications" className="position-relative">
-              <FaBell size={20} />
-              {notificationCount > 0 && (
-                <Badge
-                  bg="danger"
-                  className="position-absolute top-0 start-100 translate-middle"
-                >
-                  {notificationCount}
-                </Badge>
-              )}
-            </Nav.Link>
+            <Dropdown align="end" className="notification-dropdown">
+              <Dropdown.Toggle
+                variant="link"
+                id="dropdown-notifications"
+                className="p-0"
+              >
+                <FaBell size={20} className="notification-icon" />
+                {notificationCount > 0 && (
+                  <Badge
+                    bg="danger"
+                    className="position-absolute top-0 start-100 translate-middle"
+                  >
+                    {notificationCount}
+                  </Badge>
+                )}
+              </Dropdown.Toggle>
+              <Dropdown.Menu className="notification-menu">
+                {notifications.length > 0 ? (
+                  notifications.map((notif) => (
+                    <Dropdown.Item key={notif.id}>{notif.text}</Dropdown.Item>
+                  ))
+                ) : (
+                  <Dropdown.Item>Không có thông báo</Dropdown.Item>
+                )}
+              </Dropdown.Menu>
+            </Dropdown>
             {!isLoggedIn ? (
               <Nav.Link
                 as={Link}

@@ -10,6 +10,10 @@ import Message from "./pages/user/generate/Message";
 import UserInfor from "./pages/user/generate/UserInfor";
 import AddToy from "./pages/user/lender/AddToy";
 import MyToy from "./pages/user/lender/MyToy";
+import InLending from "./pages/user/lender/InLendeing";
+import TransferHistory from "./pages/user/lender/TransferHistory";
+import Policy from "./pages/user/generate/Policy";
+import UserGuide from "./pages/user/generate/UserGuide";
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
@@ -22,6 +26,8 @@ function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/validatemail" element={<ValidateMail />} />
         <Route path="/inforinput" element={<InforInput />} />
+        <Route path="/policy" element={<Policy />} />
+        <Route path="/userguide" element={<UserGuide />} />
 
         <Route path="/listborrowrequests" element={<ListBorrowRequests />} />
         {/* Các route liên quan đến Lending */}
@@ -30,6 +36,7 @@ function App() {
           path="/lending/listborrowrequests"
           element={<ListBorrowRequests />}
         />
+        <Route path="/lending/inlending" element={<InLending />} />
 
         <Route path="/searchtoy" element={<SearchToy />} />
         <Route path="/borrowing" element={<SearchToy />} />
@@ -39,9 +46,11 @@ function App() {
         <Route path="/userinfor" element={<UserInfor />} />
         <Route path="/addtoy" element={<AddToy />} />
         <Route path="/mytoy" element={<MyToy />} />
+        <Route path="/inlending" element={<InLending />} />
+        <Route path="/transferhistory" element={<TransferHistory />} />
 
         {/* Route mặc định nếu không khớp */}
-        <Route path="*" element={<MyToy />} />
+        <Route path="*" element={<TransferHistory />} />
       </Routes>
     </BrowserRouter>
   );

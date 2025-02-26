@@ -1,0 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+
+.user-guide-page {
+  background-color: #f7f9fc;
+  font-family: 'Roboto', sans-serif;
+  color: #333;
+  padding-bottom: 40px;
+
+  .page-title {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    color: #ff6f61;
+  }
+
+  .guide-content {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    padding: 0 20px;
+    
+    p {
+      margin-bottom: 1.5rem;
+    }
+    
+    ol {
+      margin-left: 20px;
+      li {
+        margin-bottom: 1rem;
+      }
+    }
+  }
+}

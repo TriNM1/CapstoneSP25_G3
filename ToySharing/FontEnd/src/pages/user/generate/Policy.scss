@@ -1,0 +1,71 @@
+.policy-page {
+    font-family: 'Roboto', sans-serif;
+    color: #333;
+    background: #f0f2f5;
+    min-height: 100vh;
+    padding-bottom: 2rem;
+  
+    .policy-content {
+      margin-top: 20px;
+      padding: 2rem;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  
+      h1 {
+        font-family: 'Fredoka One', cursive;
+        font-size: 2.5rem;
+        text-align: center;
+        color: #ff6f61;
+        margin-bottom: 2rem;
+      }
+  
+      .policy-section {
+        display: flex;
+        align-items: center;
+        margin-bottom: 2rem;
+        @media (max-width: 768px) {
+          flex-direction: column;
+        }
+  
+        .policy-image {
+          flex: 1;
+          text-align: center;
+          img {
+            max-width: 90%;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+          }
+        }
+  
+        .policy-text {
+          flex: 1;
+          padding: 0 1.5rem;
+  
+          h2 {
+            font-family: 'Fredoka One', cursive;
+            color: #ff6f61;
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+          }
+  
+          p {
+            font-size: 1rem;
+            line-height: 1.6;
+          }
+        }
+      }
+  
+      .view-more-section {
+        text-align: center;
+        margin-top: 2rem;
+  
+        .view-more-btn {
+          font-size: 1.2rem;
+          padding: 0.75rem 1.5rem;
+          border-radius: 25px;
+        }
+      }
+    }
+  }
+  

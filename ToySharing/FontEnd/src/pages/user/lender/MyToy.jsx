@@ -15,12 +15,12 @@ import FilterPanel from "../../../components/FilterPanel"; // Nếu dùng chung 
 import "./MyToy.scss";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import toy1 from "../../../assets/toy1.jpg";
 // Giả sử đây là dữ liệu mẫu ban đầu cho đồ chơi
 const initialToys = [
   {
     id: 1,
-    image: "https://via.placeholder.com/300x200?text=Toy+1",
+    image: toy1,
     name: "Xe đua mini",
     postedDate: "2023-07-01",
     borrowCount: 10,
@@ -36,7 +36,7 @@ const initialToys = [
   },
   {
     id: 2,
-    image: "https://via.placeholder.com/300x200?text=Toy+2",
+    image: toy1,
     name: "Robot chơi",
     postedDate: "2023-07-02",
     borrowCount: 5,
@@ -51,7 +51,7 @@ const initialToys = [
   },
   {
     id: 3,
-    image: "https://via.placeholder.com/300x200?text=Toy+3",
+    image: toy1,
     name: "Búp bê Barbie",
     postedDate: "2023-07-03",
     borrowCount: 8,
@@ -66,7 +66,7 @@ const initialToys = [
   },
   {
     id: 4,
-    image: "https://via.placeholder.com/300x200?text=Toy+4",
+    image: toy1,
     name: "Khối xếp hình",
     postedDate: "2023-07-04",
     borrowCount: 3,
@@ -81,7 +81,7 @@ const initialToys = [
   },
   {
     id: 5,
-    image: "https://via.placeholder.com/300x200?text=Toy+5",
+    image: toy1,
     name: "Xe điều khiển",
     postedDate: "2023-07-05",
     borrowCount: 12,
@@ -96,7 +96,7 @@ const initialToys = [
   },
   {
     id: 6,
-    image: "https://via.placeholder.com/300x200?text=Toy+6",
+    image: toy1,
     name: "Đồ chơi xếp hình",
     postedDate: "2023-07-06",
     borrowCount: 7,
@@ -366,7 +366,7 @@ const MyToy = () => {
               <Form.Control type="file" onChange={handleEditImageChange} />
               {editToyData.image && (
                 <img
-                  src={editToyData.image}
+                  src={toys[0].image}
                   alt="Preview"
                   className="preview-image mt-2"
                 />
