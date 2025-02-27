@@ -12,7 +12,7 @@
 
           .nav-link {
             font-weight: 500;
-            color: #333;
+            color: #2b2424;
             transition: color 0.3s ease;
         
             &.active {
@@ -85,6 +85,10 @@
     
     .footer {
       font-size: 0.9rem;
+    }
+    .toy-card .toy-actions Button {
+      font-size: 1.6rem;
+      padding: 0.2rem 1.3rem;
     }
   }
   

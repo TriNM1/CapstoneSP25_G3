@@ -232,10 +232,10 @@ const Home = () => {
                     </a>
                   </div>
                   <div className="toy-actions d-flex justify-content-between">
-                    <Button variant="primary" size="lg">
+                    <Button variant="primary" size="1g">
                       Mượn
                     </Button>
-                    <Button variant="secondary" size="lg">
+                    <Button variant="secondary" size="1g">
                       Nhắn tin
                     </Button>
                   </div>
