@@ -1,0 +1,53 @@
+.main-navbar {
+    background-color: #fff;
+    border-bottom: 1px solid #ddd;
+    padding: 0.5rem 1rem;
+    
+    .notification-icon {
+      color: #000 !important;
+    }
+  
+    .navbar-brand {
+      display: flex;
+      align-items: center;
+  
+      .logo {
+        width: 150px;
+        height: auto;
+        object-fit: contain;
+      }
+    }
+  
+    .nav-link {
+      font-size: 1rem;
+      font-weight: 500;
+      color: #333;
+      margin-right: 1rem;
+      transition: color 0.3s ease;
+  
+      &:hover,
+      &.active {
+        color: #ff6f61;
+      }
+
+     
+
+    }
+  
+    .ms-auto {
+      display: flex;
+      align-items: center;
+  
+      .user-avatar {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+  
+      .badge {
+        font-size: 0.75rem;
+      }
+    }
+  }
+  

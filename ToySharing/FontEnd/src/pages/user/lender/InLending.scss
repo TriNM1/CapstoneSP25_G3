@@ -1,0 +1,130 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto&display=swap');
+
+.inlending-page {
+  background-color: #f7f9fc;
+  font-family: 'Roboto', sans-serif;
+  color: #333;
+  padding-bottom: 40px;
+
+  .main-content {
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .date-picker-input {
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    color: #333;
+    background: #fff;
+  }
+
+  .lending-items-section {
+    .lending-card {
+      background-color: #fff;
+      border: none;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s;
+      margin-bottom: 20px;
+
+      &:hover {
+        transform: translateY(-5px);
+      }
+
+      .toy-image {
+        height: 200px;
+        object-fit: cover;
+      }
+
+      .toy-name {
+        font-family: 'Fredoka One', cursive;
+        font-size: 1.5rem;
+        color: #ff6f61;
+        margin-bottom: 10px;
+      }
+
+      .borrow-date,
+      .return-date,
+      .lending-status {
+        font-size: 1rem;
+        margin-bottom: 5px;
+      }
+
+      .lending-status {
+        strong {
+          font-weight: bold;
+        }
+        .in-progress {
+          color: #28a745;
+        }
+      }
+
+      .lending-actions {
+        margin-top: 10px;
+        button {
+          font-size: 1rem;
+          padding: 10px 20px;
+          border-radius: 8px;
+          border: none;
+          cursor: pointer;
+          transition: background-color 0.3s;
+        }
+      }
+
+      .lender-info {
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .lender-avatar {
+          width: 35px;
+          height: 35px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 1px solid #ddd;
+        }
+
+        .lender-link {
+          margin-left: 8px;
+          font-size: 1rem;
+          color: #333;
+       
+        }
+      }
+
+      .lending-buttons {
+        margin-top: 15px;
+        button {
+          font-size: 1rem;
+          padding: 10px 20px;
+          border-radius: 8px;
+          border: none;
+          cursor: pointer;
+          transition: background-color 0.3s;
+        }
+        button:nth-child(1) {
+          background-color: #28a745;
+          color: #fff;
+          &:hover {
+            background-color: #218838;
+          }
+        }
+        button:nth-child(2) {
+          background-color: #dc3545;
+          color: #fff;
+          margin-left: 10px;
+          &:hover {
+            background-color: #c82333;
+          }
+        }
+      }
+    }
+  }
+}

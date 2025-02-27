@@ -1,0 +1,137 @@
+
+
+$list-bg-color: #fff;
+$primary-color: #ff8a80;       // Màu hồng pastel
+$secondary-color: #ffd180;     // Màu vàng nhạt pastel
+$accent-color: #ff6f61;        // Màu cam nhẹ/hồng cam
+$font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+
+.list-borrow-requests-page {
+  font-family: $font-family;
+
+  padding-bottom: 2rem;
+
+  .side-menu {
+    background: $list-bg-color;
+    padding: 1rem;
+    border-right: 1px solid #ddd;
+    height: 100vh; // Chiều cao full viewport
+    margin-top: 1rem;
+    ul {
+      list-style: none;
+      padding: 0;
+      li {
+        margin-bottom: 1rem;
+        a {
+          text-decoration: none;
+          color: #333;
+          font-size: 1.1rem;
+          transition: color 0.3s;
+          &:hover {
+            color: $accent-color;
+          }
+        }
+        &.active a {
+          color: $accent-color;
+          font-weight: bold;
+        }
+      }
+    }
+    .menu-icon {
+      display: none;
+    }
+    @media (max-width: 768px) {
+      width: 50px;
+      padding: 0.5rem;
+      ul {
+        display: none;
+      }
+      .menu-icon {
+        display: block;
+        font-size: 1.8rem;
+        text-align: center;
+        color: #333;
+      }
+    }
+  }
+
+  .main-content {
+    padding: 1rem;
+  }
+
+  .date-filter {
+    margin-bottom: 1.5rem;
+    label {
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      display: block;
+      font-size: 1.1rem;
+      color: #333;
+    }
+    .date-picker-input {
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      color: #333;
+      background: $list-bg-color;
+    }
+  }
+
+  .borrow-request-card {
+    background: $list-bg-color;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    .toy-image {
+      height: 180px;
+      object-fit: cover;
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
+    }
+    .toy-name {
+      font-size: 1.3rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      color: #333;
+    }
+    .toy-price {
+      color: $accent-color;
+      margin-bottom: 0.5rem;
+      font-size: 1.1rem;
+    }
+    .request-date,
+    .borrow-date,
+    .return-date {
+      font-size: 1rem;
+      margin-bottom: 0.3rem;
+      color: #555;
+    }
+    .requester-info {
+      img.requester-avatar {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 1px solid #ddd;
+      }
+      span {
+        font-size: 1rem;
+        color: #333;
+      }
+    }
+    .request-actions {
+      button {
+        font-size: 0.9rem;
+        padding: 0.3rem 0.6rem;
+        margin: 0.2rem;
+      }
+    }
+  }
+
+  .view-more-btn {
+    margin-top: 1rem;
+    font-size: 1.1rem;
+    padding: 0.5rem 1rem;
+  }
+}

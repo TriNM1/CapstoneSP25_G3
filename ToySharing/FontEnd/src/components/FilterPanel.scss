@@ -1,0 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+
+.filter-panel-wrapper {
+  .filter-toggle {
+    button {
+      font-size: 1.2rem;
+      svg {
+        margin-right: 0.5rem;
+      }
+    }
+  }
+
+  .filter-panel {
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    margin-top: 15px;
+
+    label {
+      font-weight: bold;
+      font-size: 1.1rem;
+      margin-bottom: 5px;
+      display: block;
+      text-align: left;
+    }
+
+    .form-control {
+      font-size: 1rem;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+
+      &::placeholder {
+        opacity: 0.3;
+      }
+    }
+  }
+}
