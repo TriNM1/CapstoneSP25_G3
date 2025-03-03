@@ -1,0 +1,102 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+
+.sending-request-page {
+  background-color: #f7f9fc;
+  font-family: 'Roboto', sans-serif;
+  color: #333;
+  padding-bottom: 40px;
+
+  .main-content {
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .date-picker-input {
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    color: #333;
+    background: #fff;
+  }
+
+  .request-items-section {
+    .request-card {
+      background-color: #fff;
+      border: none;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+      margin-bottom: 20px;
+
+      &:hover {
+        transform: translateY(-5px);
+      }
+
+      .toy-image {
+        height: 200px;
+        object-fit: cover;
+      }
+
+      .toy-name {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #ff6f61;
+        margin-bottom: 10px;
+      }
+
+      .send-date,
+      .borrow-date,
+      .return-date {
+        font-size: 1rem;
+        margin-bottom: 5px;
+      }
+
+      .lender-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+
+        .lender-avatar {
+          width: 35px;
+          height: 35px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 1px solid #ddd;
+        }
+
+        .lender-link {
+          margin-left: 8px;
+          font-size: 1rem;
+          color: #333;
+          text-decoration: none;
+        }
+      }
+
+      .request-actions {
+        text-align: center;
+        button {
+          font-size: 1rem;
+          padding: 10px 20px;
+          border-radius: 8px;
+          border: none;
+          cursor: pointer;
+          transition: background-color 0.3s;
+        }
+        button:hover {
+          opacity: 0.9;
+        }
+      }
+    }
+  }
+
+  .view-more-btn {
+    margin-top: 20px;
+    font-size: 1.1rem;
+    padding: 0.5rem 1rem;
+  }
+}
