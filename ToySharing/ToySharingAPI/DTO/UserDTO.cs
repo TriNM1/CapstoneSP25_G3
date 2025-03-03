@@ -16,5 +16,21 @@
         public bool? Gender { get; set; }
         public int? Age { get; set; }
         public double? Rating { get; set; }
+
+        public UserProfileDTO? UserProfile { get; set; }
+    }
+
+    public class UserProfileDTO
+    {
+        public UserInfo UserInfo { get; set; }
+        public List<ProductDTO> ToyListOfUser { get; set; }
+    }
+
+    public class UserInfo
+    {
+        public string Name { get; set; }
+        public int Age { get; set; } 
+        public string Address { get; set; } 
+        public string Avatar { get; set; } 
     }
 }

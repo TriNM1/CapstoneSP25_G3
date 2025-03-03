@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography.Xml;
 using ToySharingAPI.DTO;
 using ToySharingAPI.Models;
 
@@ -22,7 +23,7 @@ namespace ToySharingAPI.Controllers
         public async Task<ActionResult<UserDTO>> GetUserById(int id)
         {
             var user = await _context.Users
-                .Where(u => u.Id == id)  
+                .Where(u => u.Id == id)
                 .Select(u => new UserDTO
                 {
                     Id = u.Id,
@@ -36,7 +37,7 @@ namespace ToySharingAPI.Controllers
                     Role = u.Role,
                     CreatedAt = u.CreatedAt,
                     Latitude = u.Latitude,
-                    Longitude = u.Longtitude,  
+                    Longitude = u.Longtitude,
                     Gender = u.Gender,
                     Age = u.Age
                 })
@@ -48,6 +49,75 @@ namespace ToySharingAPI.Controllers
             }
 
             return Ok(user);
+        }
+
+        // View Other User's Profile
+        [HttpGet("profile/{userId}")]
+        public async Task<ActionResult<UserDTO>> GetOtherUserProfile(int userId)
+        {
+            var userProfile = await _context.Users
+                .Where(u => u.Id == userId)
+                .Select(u => new UserProfileDTO
+                {
+                    UserInfo = new UserInfo
+                    {
+                        Name = u.Name,
+                        Age = u.Age ?? 0,
+                        Address = u.Address,
+                        Avatar = u.Avatar
+                    },
+                    ToyListOfUser = _context.Products
+                        .Where(p => p.UserId == userId)
+                        .Select(p => new ProductDTO
+                        {
+                            ProductId = p.ProductId,
+                            UserId = p.UserId,
+                            Name = p.Name,
+                            CategoryName = p.Category != null ? p.Category.CategoryName : null,
+                            Available = p.Available,
+                            Description = p.Description,
+                            ProductStatus = p.ProductStatus,
+                            Address = p.Address,
+                            CreatedAt = p.CreatedAt,
+                            Price = p.Price,
+                            SuitableAge = p.SuitableAge,
+                        }).ToList()
+                })
+                .FirstOrDefaultAsync();
+
+            if (userProfile == null)
+            {
+                return NotFound();
+            }
+
+            var currentUser = await _context.Users
+                .Where(u => u.Id == userId) 
+                .Select(u => new UserDTO
+                {
+                    Id = u.Id,
+                    Name = u.Name,
+                    Email = u.Email,
+                    Phone = u.Phone,
+                    Address = u.Address,
+                    Status = u.Status,
+                    Avatar = u.Avatar,
+                    Role = u.Role ?? 0,
+                    CreatedAt = u.CreatedAt,
+                    Latitude = u.Latitude,
+                    Longitude = u.Longtitude,
+                    Gender = u.Gender,
+                    Age = u.Age,
+                    Rating = u.Rating,
+                    UserProfile = userProfile 
+                })
+                .FirstOrDefaultAsync();
+
+            if (currentUser == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(currentUser);
         }
 
         // Edit account (Update user)
@@ -68,7 +138,7 @@ namespace ToySharingAPI.Controllers
             existingUser.Avatar = userDto.Avatar;
             existingUser.Role = userDto.Role;
             existingUser.Latitude = userDto.Latitude;
-            existingUser.Longtitude = userDto.Longitude;  
+            existingUser.Longtitude = userDto.Longitude;
             existingUser.Gender = userDto.Gender;
             existingUser.Age = userDto.Age;
             existingUser.Rating = userDto.Rating;
@@ -89,9 +159,9 @@ namespace ToySharingAPI.Controllers
                 Address = userDto.Address,
                 Status = userDto.Status,
                 Avatar = userDto.Avatar,
-                Rating = userDto.Rating ?? 0, 
+                Rating = userDto.Rating ?? 0,
                 Role = userDto.Role,
-                CreatedAt = DateTime.UtcNow,  
+                CreatedAt = DateTime.UtcNow,
                 Latitude = userDto.Latitude,
                 Longtitude = userDto.Longitude,
                 Gender = userDto.Gender,
@@ -101,7 +171,7 @@ namespace ToySharingAPI.Controllers
             _context.Users.Add(newUser);
             await _context.SaveChangesAsync();
 
-            userDto.Id = newUser.Id;  
+            userDto.Id = newUser.Id;
             return CreatedAtAction(nameof(GetUserById), new { id = newUser.Id }, userDto);
         }
     }
