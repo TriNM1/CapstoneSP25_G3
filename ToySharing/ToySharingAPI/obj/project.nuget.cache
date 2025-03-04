@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "LzTNAXhAb1c=",
+  "dgSpecHash": "d5UicfkhPgw=",
   "success": true,
   "projectFilePath": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\ToySharingAPI.csproj",
   "expectedPackageFiles": [
@@ -43,12 +43,12 @@
     "C:\\Users\\trung\\.nuget\\packages\\microsoft.extensions.primitives\\8.0.0\\microsoft.extensions.primitives.8.0.0.nupkg.sha512",
     "C:\\Users\\trung\\.nuget\\packages\\microsoft.identity.client\\4.61.3\\microsoft.identity.client.4.61.3.nupkg.sha512",
     "C:\\Users\\trung\\.nuget\\packages\\microsoft.identity.client.extensions.msal\\4.61.3\\microsoft.identity.client.extensions.msal.4.61.3.nupkg.sha512",
-    "C:\\Users\\trung\\.nuget\\packages\\microsoft.identitymodel.abstractions\\8.4.0\\microsoft.identitymodel.abstractions.8.4.0.nupkg.sha512",
+    "C:\\Users\\trung\\.nuget\\packages\\microsoft.identitymodel.abstractions\\8.6.0\\microsoft.identitymodel.abstractions.8.6.0.nupkg.sha512",
     "C:\\Users\\trung\\.nuget\\packages\\microsoft.identitymodel.jsonwebtokens\\8.4.0\\microsoft.identitymodel.jsonwebtokens.8.4.0.nupkg.sha512",
-    "C:\\Users\\trung\\.nuget\\packages\\microsoft.identitymodel.logging\\8.4.0\\microsoft.identitymodel.logging.8.4.0.nupkg.sha512",
+    "C:\\Users\\trung\\.nuget\\packages\\microsoft.identitymodel.logging\\8.6.0\\microsoft.identitymodel.logging.8.6.0.nupkg.sha512",
     "C:\\Users\\trung\\.nuget\\packages\\microsoft.identitymodel.protocols\\7.1.2\\microsoft.identitymodel.protocols.7.1.2.nupkg.sha512",
     "C:\\Users\\trung\\.nuget\\packages\\microsoft.identitymodel.protocols.openidconnect\\7.1.2\\microsoft.identitymodel.protocols.openidconnect.7.1.2.nupkg.sha512",
-    "C:\\Users\\trung\\.nuget\\packages\\microsoft.identitymodel.tokens\\8.4.0\\microsoft.identitymodel.tokens.8.4.0.nupkg.sha512",
+    "C:\\Users\\trung\\.nuget\\packages\\microsoft.identitymodel.tokens\\8.6.0\\microsoft.identitymodel.tokens.8.6.0.nupkg.sha512",
     "C:\\Users\\trung\\.nuget\\packages\\microsoft.openapi\\1.6.14\\microsoft.openapi.1.6.14.nupkg.sha512",
     "C:\\Users\\trung\\.nuget\\packages\\microsoft.sqlserver.server\\1.0.0\\microsoft.sqlserver.server.1.0.0.nupkg.sha512",
     "C:\\Users\\trung\\.nuget\\packages\\microsoft.win32.systemevents\\6.0.0\\microsoft.win32.systemevents.6.0.0.nupkg.sha512",

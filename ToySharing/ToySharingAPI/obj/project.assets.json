@@ -855,7 +855,7 @@
           }
         }
       },
-      "Microsoft.IdentityModel.Abstractions/8.4.0": {
+      "Microsoft.IdentityModel.Abstractions/8.6.0": {
         "type": "package",
         "compile": {
           "lib/net8.0/Microsoft.IdentityModel.Abstractions.dll": {
@@ -884,10 +884,10 @@
           }
         }
       },
-      "Microsoft.IdentityModel.Logging/8.4.0": {
+      "Microsoft.IdentityModel.Logging/8.6.0": {
         "type": "package",
         "dependencies": {
-          "Microsoft.IdentityModel.Abstractions": "8.4.0"
+          "Microsoft.IdentityModel.Abstractions": "8.6.0"
         },
         "compile": {
           "lib/net8.0/Microsoft.IdentityModel.Logging.dll": {
@@ -934,12 +934,12 @@
           }
         }
       },
-      "Microsoft.IdentityModel.Tokens/8.4.0": {
+      "Microsoft.IdentityModel.Tokens/8.6.0": {
         "type": "package",
         "dependencies": {
           "Microsoft.Bcl.Memory": "9.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
-          "Microsoft.IdentityModel.Logging": "8.4.0"
+          "Microsoft.IdentityModel.Logging": "8.6.0"
         },
         "compile": {
           "lib/net8.0/Microsoft.IdentityModel.Tokens.dll": {
@@ -3164,10 +3164,10 @@
         "microsoft.identity.client.extensions.msal.nuspec"
       ]
     },
-    "Microsoft.IdentityModel.Abstractions/8.4.0": {
-      "sha512": "4dDpw7DJ2yx2vFM/w0sceXoByUhrU68eMdlXyzsPTWPtAfgCbkuMl7jfLBLegmgerbOzGNMm7zq5xwr4+7yTSg==",
+    "Microsoft.IdentityModel.Abstractions/8.6.0": {
+      "sha512": "ewgV0sc2B3tjes8+OCRGE08Uxsey3qFfOD8vNq2gTs9k0/zPZ0MejK7Cb/eAW2c2Oz+IQHqgZkTycrAKYBD5yw==",
       "type": "package",
-      "path": "microsoft.identitymodel.abstractions/8.4.0",
+      "path": "microsoft.identitymodel.abstractions/8.6.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -3184,7 +3184,7 @@
         "lib/net9.0/Microsoft.IdentityModel.Abstractions.xml",
         "lib/netstandard2.0/Microsoft.IdentityModel.Abstractions.dll",
         "lib/netstandard2.0/Microsoft.IdentityModel.Abstractions.xml",
-        "microsoft.identitymodel.abstractions.8.4.0.nupkg.sha512",
+        "microsoft.identitymodel.abstractions.8.6.0.nupkg.sha512",
         "microsoft.identitymodel.abstractions.nuspec"
       ]
     },
@@ -3212,10 +3212,10 @@
         "microsoft.identitymodel.jsonwebtokens.nuspec"
       ]
     },
-    "Microsoft.IdentityModel.Logging/8.4.0": {
-      "sha512": "vIKIBDMD6l2MeCwkdeh1XHSHNVz9C/qp9PaHMG6SF3OUSAh/2XMVj2zaVc2hs27QRfhh5xR3tvMSs8R96WS2IA==",
+    "Microsoft.IdentityModel.Logging/8.6.0": {
+      "sha512": "PqkPSoENwbGQenGQT270hZIt5p36Ta4YwDla4QId6LdqCeUDus63OChHBv+3AgujFVeBJlRrvmkN7H+Lug+u0g==",
       "type": "package",
-      "path": "microsoft.identitymodel.logging/8.4.0",
+      "path": "microsoft.identitymodel.logging/8.6.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -3232,7 +3232,7 @@
         "lib/net9.0/Microsoft.IdentityModel.Logging.xml",
         "lib/netstandard2.0/Microsoft.IdentityModel.Logging.dll",
         "lib/netstandard2.0/Microsoft.IdentityModel.Logging.xml",
-        "microsoft.identitymodel.logging.8.4.0.nupkg.sha512",
+        "microsoft.identitymodel.logging.8.6.0.nupkg.sha512",
         "microsoft.identitymodel.logging.nuspec"
       ]
     },
@@ -3282,10 +3282,10 @@
         "microsoft.identitymodel.protocols.openidconnect.nuspec"
       ]
     },
-    "Microsoft.IdentityModel.Tokens/8.4.0": {
-      "sha512": "n/wBvhj7oq3rZyImUhkUv6bUjwPWK+jG1R3BsCfahLtwoOzIWSPLmzMQ61HCtd1BiCU43IdkX9M+cD1xMmE3xQ==",
+    "Microsoft.IdentityModel.Tokens/8.6.0": {
+      "sha512": "ga4ASKm8EezJ+Oj4uvTNE0xjIWy27Ix5pOZz737CnLzxv7ClFnelX+YWbFuiO1Qj2zVoIpsPqKJRGHGlpFF6eQ==",
       "type": "package",
-      "path": "microsoft.identitymodel.tokens/8.4.0",
+      "path": "microsoft.identitymodel.tokens/8.6.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -3302,7 +3302,7 @@
         "lib/net9.0/Microsoft.IdentityModel.Tokens.xml",
         "lib/netstandard2.0/Microsoft.IdentityModel.Tokens.dll",
         "lib/netstandard2.0/Microsoft.IdentityModel.Tokens.xml",
-        "microsoft.identitymodel.tokens.8.4.0.nupkg.sha512",
+        "microsoft.identitymodel.tokens.8.6.0.nupkg.sha512",
         "microsoft.identitymodel.tokens.nuspec"
       ]
     },
@@ -4430,6 +4430,7 @@
       "Microsoft.EntityFrameworkCore.Design >= 8.0.12",
       "Microsoft.EntityFrameworkCore.SqlServer >= 8.0.12",
       "Microsoft.EntityFrameworkCore.Tools >= 8.0.12",
+      "Microsoft.IdentityModel.Tokens >= 8.6.0",
       "Swashbuckle.AspNetCore >= 6.6.2",
       "System.IdentityModel.Tokens.Jwt >= 8.4.0"
     ]
@@ -4511,6 +4512,10 @@
             "suppressParent": "All",
             "target": "Package",
             "version": "[8.0.12, )"
+          },
+          "Microsoft.IdentityModel.Tokens": {
+            "target": "Package",
+            "version": "[8.6.0, )"
           },
           "Swashbuckle.AspNetCore": {
             "target": "Package",
