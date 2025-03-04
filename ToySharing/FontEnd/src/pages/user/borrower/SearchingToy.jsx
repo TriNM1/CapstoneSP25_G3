@@ -41,8 +41,8 @@ const SearchingToy = () => {
 
   // Các link cho side menu
   const sideMenuItems = [
-    { id: 1, label: "Tìm kiếm đồ chơi", link: "/searchingtoy" },
-    { id: 2, label: "Danh sách mượn", link: "/listborrowrequest" },
+    { id: 1, label: "Tìm kiếm đồ chơi", link: "/searchtoy" },
+    { id: 2, label: "Danh sách mượn", link: "/sendingrequest" },
     { id: 3, label: "Lịch sử trao đổi", link: "/transferhistory" },
   ];
 
@@ -321,7 +321,7 @@ const SearchingToy = () => {
                         />
                         <a
                           className="ms-2"
-                          href="/userinfo"
+                          href="/userinfor"
                           id="trangcanhanlink"
                         >
                           Trang cá nhân người cho mượn
