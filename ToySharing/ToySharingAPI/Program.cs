@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using ToySharingAPI.Data;
 using ToySharingAPI.Models;
+using ToySharingAPI.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +22,8 @@ builder.Services.AddDbContext<ToysharingVer2Context>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("MyCnn")));
 builder.Services.AddDbContext<ToyshareAuthDbContext>(options =>
 options.UseSqlServer(builder.Configuration.GetConnectionString("ToySharingAuthConnectionString")));
+
+builder.Services.AddScoped<ITokenRepository, TokenRepository>();
 
 
 builder.Services.AddIdentityCore<IdentityUser>()
