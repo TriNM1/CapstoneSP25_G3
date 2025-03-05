@@ -14,38 +14,52 @@ namespace ToySharingAPI.Controllers
         private readonly UserManager<IdentityUser> userManager;
         private readonly ITokenRepository tokenRepository;
         private readonly IEmailService emailService;
+        private readonly IHttpContextAccessor httpContextAccessor;
 
-        public AuthController(UserManager<IdentityUser> userManager, ITokenRepository tokenRepository, IEmailService emailService)
+        public AuthController(UserManager<IdentityUser> userManager, ITokenRepository tokenRepository, IEmailService emailService,
+            IHttpContextAccessor httpContextAccessor)
         {
             this.userManager = userManager;
             this.tokenRepository = tokenRepository;
             this.emailService = emailService;
+            this.httpContextAccessor = httpContextAccessor;
         }
 
-        // POST: /api/Auth/Register
-        [HttpPost]
-        public async Task<IActionResult> Register([FromBody] RegisterRequestDTO registerRequestDTO)
+        [HttpPost("RequestOTP")]
+        public async Task<IActionResult> RequestOTP([FromBody] OTPRequestDTO request)
         {
-            var identityUser = new IdentityUser
-            {
-                UserName = registerRequestDTO.Username,
-                Email = registerRequestDTO.Username
-            };
-            var identityResult = await userManager.CreateAsync(identityUser, registerRequestDTO.Password);
+            var userExists = await userManager.FindByEmailAsync(request.Email);
+            if (userExists != null) return BadRequest("Email already registered!");
 
-            if (identityResult.Succeeded)
-            {
-                // Add roles to this User
-                if (registerRequestDTO.Roles != null && registerRequestDTO.Roles.Any())
-                {
-                    identityResult = await userManager.AddToRolesAsync(identityUser, registerRequestDTO.Roles);
-                    if (identityResult.Succeeded)
-                    {
-                        return Ok("User was registered! Please Login.");
-                    }
-                }
-            }
-            return BadRequest("Something went wroong");
+            var otp = new Random().Next(100000, 999999).ToString();
+
+            httpContextAccessor.HttpContext.Session.SetString(request.Email, otp);
+
+            await emailService.SendEmailAsync(request.Email, "OTP Code", $"Your OTP: {otp}");
+            return Ok("OTP sent to email.");
+        }
+
+        [HttpPost("ConfirmOTP")]
+        public IActionResult ConfirmOTP([FromBody] ConfirmOTPRequestDTO request)
+        {
+            var savedOTP = HttpContext.Session.GetString(request.Email);
+            if (savedOTP == null || savedOTP != request.OTP) return BadRequest("Invalid OTP!");
+
+            return Ok("OTP verified. Proceed to set password.");
+        }
+
+        [HttpPost("SetPassword")]
+        public async Task<IActionResult> SetPassword([FromBody] SetPasswordDTO request)
+        {
+            var userExists = await userManager.FindByEmailAsync(request.Email);
+            if (userExists != null) return BadRequest("Email already registered!");
+
+            var identityUser = new IdentityUser { UserName = request.Email, Email = request.Email };
+            var result = await userManager.CreateAsync(identityUser, request.Password);
+            if (!result.Succeeded) return BadRequest("Failed to create account!");
+
+            await userManager.AddToRoleAsync(identityUser, "User");
+            return Ok("Account created successfully.");
         }
 
         [HttpPost]

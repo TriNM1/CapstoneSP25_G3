@@ -1,22 +1,6 @@
 [
   {
     "ContainingType": "ToySharingAPI.Controllers.AuthController",
-    "Method": "Register",
-    "RelativePath": "api/Auth",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "registerRequestDTO",
-        "Type": "ToySharingAPI.DTO.RegisterRequestDTO",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "ToySharingAPI.Controllers.AuthController",
     "Method": "ChangePassword",
     "RelativePath": "api/Auth/ChangePassword",
     "HttpMethod": "POST",
@@ -26,6 +10,22 @@
       {
         "Name": "changePasswordDTO",
         "Type": "ToySharingAPI.DTO.ChangePasswordDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ToySharingAPI.Controllers.AuthController",
+    "Method": "ConfirmOTP",
+    "RelativePath": "api/Auth/ConfirmOTP",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "ToySharingAPI.DTO.ConfirmOTPRequestDTO",
         "IsRequired": true
       }
     ],
@@ -71,6 +71,38 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ToySharingAPI.Controllers.AuthController",
+    "Method": "RequestOTP",
+    "RelativePath": "api/Auth/RequestOTP",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "ToySharingAPI.DTO.OTPRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ToySharingAPI.Controllers.AuthController",
+    "Method": "SetPassword",
+    "RelativePath": "api/Auth/SetPassword",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "ToySharingAPI.DTO.SetPasswordDTO",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": []
   }
 ]
