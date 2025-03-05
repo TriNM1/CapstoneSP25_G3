@@ -14,6 +14,7 @@ import InLending from "./pages/user/lender/InLendeing";
 import TransferHistory from "./pages/user/lender/TransferHistory";
 import Policy from "./pages/user/generate/Policy";
 import UserGuide from "./pages/user/generate/UserGuide";
+import SendingRequest from "./pages/user/borrower/SendingRequest";
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
@@ -41,6 +42,7 @@ function App() {
         <Route path="/searchtoy" element={<SearchToy />} />
         <Route path="/borrowing" element={<SearchToy />} />
         <Route path="/borrowing/searchtoy" element={<SearchToy />} />
+        <Route path="/sendingrequest" element={<SendingRequest />} />
 
         <Route path="/message" element={<Message />} />
         <Route path="/userinfor" element={<UserInfor />} />
@@ -50,7 +52,7 @@ function App() {
         <Route path="/transferhistory" element={<TransferHistory />} />
 
         {/* Route mặc định nếu không khớp */}
-        <Route path="*" element={<TransferHistory />} />
+        <Route path="*" element={<SendingRequest />} />
       </Routes>
     </BrowserRouter>
   );
