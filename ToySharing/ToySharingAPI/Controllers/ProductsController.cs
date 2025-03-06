@@ -134,6 +134,17 @@ namespace ToySharingAPI.Controllers
                 {
                     product.CategoryId = category.Id;
                 }
+                else
+                {
+                    category = new Category
+                    {
+                        CategoryName = productDto.CategoryName
+                    };
+                    _context.Categories.Add(category);
+                    await _context.SaveChangesAsync();
+
+                    product.CategoryId = category.Id;
+                }
             }
 
             _context.Products.Add(product);
@@ -159,6 +170,17 @@ namespace ToySharingAPI.Controllers
                     .FirstOrDefaultAsync(c => c.CategoryName == productDto.CategoryName);
                 if (category != null)
                 {
+                    product.CategoryId = category.Id;
+                }
+                else
+                {
+                    category = new Category
+                    {
+                        CategoryName = productDto.CategoryName
+                    };
+                    _context.Categories.Add(category);
+                    await _context.SaveChangesAsync();
+
                     product.CategoryId = category.Id;
                 }
             }
@@ -205,7 +227,7 @@ namespace ToySharingAPI.Controllers
         {
             var products = await _context.Products
                 .Include(p => p.Category)
-                .Where(p => p.UserId == userId && p.Available == 1) // Assuming 1 means borrowed
+                .Where(p => p.UserId == userId && p.Available == 1)
                 .Select(p => new ProductDTO
                 {
                     ProductId = p.ProductId,
@@ -224,7 +246,7 @@ namespace ToySharingAPI.Controllers
             return Ok(products);
         }
 
-        // New: View all borrowed toys by other users
+        // View all borrowed toys by other users
         [HttpGet("borrowed/{userId}")]
         public async Task<ActionResult<IEnumerable<ProductDTO>>> GetBorrowedToys(int userId)
         {
