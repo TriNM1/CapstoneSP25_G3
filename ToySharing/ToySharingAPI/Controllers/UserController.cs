@@ -136,43 +136,12 @@ namespace ToySharingAPI.Controllers
             existingUser.Address = userDto.Address;
             existingUser.Status = userDto.Status;
             existingUser.Avatar = userDto.Avatar;
-            existingUser.Role = userDto.Role;
             existingUser.Latitude = userDto.Latitude;
             existingUser.Longtitude = userDto.Longitude;
             existingUser.Gender = userDto.Gender;
             existingUser.Age = userDto.Age;
-            existingUser.Rating = userDto.Rating;
-
             await _context.SaveChangesAsync();
             return Ok();
-        }
-
-        // Create new user
-        [HttpPost]
-        public async Task<ActionResult<UserDTO>> CreateUser(UserDTO userDto)
-        {
-            var newUser = new User
-            {
-                Name = userDto.Name,
-                Email = userDto.Email,
-                Phone = userDto.Phone,
-                Address = userDto.Address,
-                Status = userDto.Status,
-                Avatar = userDto.Avatar,
-                Rating = userDto.Rating ?? 0,
-                Role = userDto.Role,
-                CreatedAt = DateTime.UtcNow,
-                Latitude = userDto.Latitude,
-                Longtitude = userDto.Longitude,
-                Gender = userDto.Gender,
-                Age = userDto.Age
-            };
-
-            _context.Users.Add(newUser);
-            await _context.SaveChangesAsync();
-
-            userDto.Id = newUser.Id;
-            return CreatedAtAction(nameof(GetUserById), new { id = newUser.Id }, userDto);
         }
     }
 }

@@ -34,7 +34,7 @@ namespace ToySharingAPI.Controllers
                     Address = p.Address,
                     CreatedAt = p.CreatedAt,
                     Price = p.Price,
-                    SuitableAge = p.SuitableAge,
+                    SuitableAge = p.SuitableAge
                 })
                 .ToListAsync();
             return Ok(products);
@@ -59,13 +59,41 @@ namespace ToySharingAPI.Controllers
                     Address = p.Address,
                     CreatedAt = p.CreatedAt,
                     Price = p.Price,
-                    SuitableAge = p.SuitableAge,
+                    SuitableAge = p.SuitableAge
                 })
                 .FirstOrDefaultAsync();
 
             if (product == null)
             {
-                return NotFound();
+                return NotFound("Product not found.");
+            }
+
+            return Ok(product);
+        }
+
+        // View product detail
+        [HttpGet("detail/{productId}")]
+        public async Task<ActionResult<object>> GetProductDetail(int productId)
+        {
+            var product = await _context.Products
+                .Include(p => p.Category)
+                .Where(p => p.ProductId == productId)
+                .Select(p => new
+                {
+                    ProductId = p.ProductId,
+                    ProductName = p.Name,
+                    Cost = p.Price,
+                    Description = p.Description,
+                    RentInfo = _context.RentRequests
+                        .Where(r => r.ProductId == p.ProductId && r.Status == 1)
+                        .Select(r => new { BorrowDate = r.RentdateDate, ReturnDate = r.ReturnDate })
+                        .FirstOrDefault()
+                })
+                .FirstOrDefaultAsync();
+
+            if (product == null)
+            {
+                return NotFound("Product not found.");
             }
 
             return Ok(product);
@@ -75,18 +103,17 @@ namespace ToySharingAPI.Controllers
         [HttpGet("{id}/owner")]
         public async Task<ActionResult<UserDTO>> GetOwnerProfileByProductId(int id)
         {
-            var userId = await _context.Products
+            var product = await _context.Products
                 .Where(p => p.ProductId == id)
-                .Select(p => p.UserId)
                 .FirstOrDefaultAsync();
 
-            if (userId == null)
+            if (product == null || product.UserId == null)
             {
-                return NotFound("Product not found.");
+                return NotFound("Product or owner not found.");
             }
 
             var owner = await _context.Users
-                .Where(u => u.Id == userId)
+                .Where(u => u.Id == product.UserId)
                 .Select(u => new UserDTO
                 {
                     Id = u.Id,
@@ -96,7 +123,7 @@ namespace ToySharingAPI.Controllers
                     Address = u.Address,
                     Status = u.Status,
                     Avatar = u.Avatar,
-                    Rating = u.Rating,
+                    Rating = u.Rating
                 })
                 .FirstOrDefaultAsync();
 
@@ -112,11 +139,16 @@ namespace ToySharingAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<ProductDTO>> CreateProduct(int userId, ProductDTO productDto)
         {
+            if (string.IsNullOrEmpty(productDto.Name) || productDto.Price < 0)
+            {
+                return BadRequest("Product name is required and price cannot be negative.");
+            }
+
             var product = new Product
             {
                 UserId = userId,
                 Name = productDto.Name,
-                Available = 2,
+                Available = 2, // Sẵn sàng
                 Description = productDto.Description,
                 ProductStatus = productDto.ProductStatus,
                 Address = productDto.Address,
@@ -142,7 +174,6 @@ namespace ToySharingAPI.Controllers
                     };
                     _context.Categories.Add(category);
                     await _context.SaveChangesAsync();
-
                     product.CategoryId = category.Id;
                 }
             }
@@ -158,9 +189,29 @@ namespace ToySharingAPI.Controllers
         public async Task<ActionResult<ProductDTO>> UpdateProduct(int id, int userId, ProductDTO productDto)
         {
             var product = await _context.Products.FindAsync(id);
-            if (product == null || product.UserId != userId)
+            if (product == null)
             {
-                return NotFound();
+                return NotFound("Product not found.");
+            }
+            if (product.UserId != userId)
+            {
+                return Forbid("You are not authorized to update this product.");
+            }
+            if (string.IsNullOrEmpty(productDto.Name) || productDto.Price < 0)
+            {
+                return BadRequest("Product name is required and price cannot be negative.");
+            }
+
+            // Kiểm tra nếu thay đổi Available
+            if (productDto.Available.HasValue && productDto.Available != product.Available)
+            {
+                var activeRequest = await _context.RentRequests
+                    .FirstOrDefaultAsync(r => r.ProductId == id && r.Status == 1); // Đang mượn
+
+                if (activeRequest != null && productDto.Available != 1)
+                {
+                    return BadRequest("Cannot change availability while product is being rented.");
+                }
             }
 
             product.Name = productDto.Name;
@@ -180,11 +231,10 @@ namespace ToySharingAPI.Controllers
                     };
                     _context.Categories.Add(category);
                     await _context.SaveChangesAsync();
-
                     product.CategoryId = category.Id;
                 }
             }
-            product.Available = productDto.Available;
+            product.Available = productDto.Available ?? product.Available;
             product.Description = productDto.Description;
             product.ProductStatus = productDto.ProductStatus;
             product.Address = productDto.Address;
@@ -214,7 +264,7 @@ namespace ToySharingAPI.Controllers
                     Address = p.Address,
                     CreatedAt = p.CreatedAt,
                     Price = p.Price,
-                    SuitableAge = p.SuitableAge,
+                    SuitableAge = p.SuitableAge
                 })
                 .ToListAsync();
 
@@ -239,7 +289,7 @@ namespace ToySharingAPI.Controllers
                     Address = p.Address,
                     CreatedAt = p.CreatedAt,
                     Price = p.Price,
-                    SuitableAge = p.SuitableAge,
+                    SuitableAge = p.SuitableAge
                 })
                 .ToListAsync();
 
@@ -252,7 +302,7 @@ namespace ToySharingAPI.Controllers
         {
             var products = await _context.Products
                 .Include(p => p.Category)
-                .Where(p => p.UserId != userId && p.Available == 1) 
+                .Where(p => p.UserId != userId && p.Available == 1)
                 .Select(p => new ProductDTO
                 {
                     ProductId = p.ProductId,
@@ -264,11 +314,18 @@ namespace ToySharingAPI.Controllers
                     Address = p.Address,
                     CreatedAt = p.CreatedAt,
                     Price = p.Price,
-                    SuitableAge = p.SuitableAge,
+                    SuitableAge = p.SuitableAge
                 })
                 .ToListAsync();
 
             return Ok(products);
+        }
+
+        // Search product
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> SearchProducts()
+        {
+            return await GetAllProducts();
         }
     }
 }
