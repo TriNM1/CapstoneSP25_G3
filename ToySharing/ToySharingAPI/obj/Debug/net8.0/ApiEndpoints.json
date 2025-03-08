@@ -120,5 +120,47 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ToySharingAPI.Controllers.UserController",
+    "Method": "BanUser",
+    "RelativePath": "api/User/ban",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "ToySharingAPI.DTO.BanUnbanRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ToySharingAPI.Controllers.UserController",
+    "Method": "GetAllBanHistory",
+    "RelativePath": "api/User/ban-history",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ToySharingAPI.Controllers.UserController",
+    "Method": "UnbanUser",
+    "RelativePath": "api/User/unban",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "ToySharingAPI.DTO.BanUnbanRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
   }
 ]
