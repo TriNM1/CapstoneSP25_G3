@@ -104,5 +104,21 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ToySharingAPI.Controllers.ProductsController",
+    "Method": "ToggleProductVisibility",
+    "RelativePath": "api/Products/{id}/visibility-status",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
   }
 ]

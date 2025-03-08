@@ -3,8 +3,24 @@
   "WorkspaceRootPath": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\fpt\\capstone_project\\capstone\\capstonesp25_g3\\toysharing\\toysharingapi\\models\\toysharingver2context.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\models\\toysharingver2context.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\fpt\\capstone_project\\capstone\\capstonesp25_g3\\toysharing\\toysharingapi\\controllers\\usercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\controllers\\usercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\fpt\\capstone_project\\capstone\\capstonesp25_g3\\toysharing\\toysharingapi\\data\\toyshareauthdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\data\\toyshareauthdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\fpt\\capstone_project\\capstone\\capstonesp25_g3\\toysharing\\toysharingapi\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\fpt\\capstone_project\\capstone\\capstonesp25_g3\\toysharing\\toysharingapi\\controllers\\productscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\controllers\\productscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\fpt\\capstone_project\\capstone\\capstonesp25_g3\\toysharing\\toysharingapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -13,6 +29,42 @@
     {
       "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\fpt\\capstone_project\\capstone\\capstonesp25_g3\\toysharing\\toysharingapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
       "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\fpt\\capstone_project\\capstone\\capstonesp25_g3\\toysharing\\toysharingapi\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\fpt\\capstone_project\\capstone\\capstonesp25_g3\\toysharing\\toysharingapi\\service\\iemailservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\service\\iemailservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\fpt\\capstone_project\\capstone\\capstonesp25_g3\\toysharing\\toysharingapi\\migrations\\toyshareauthdbcontextmodelsnapshot.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\migrations\\toyshareauthdbcontextmodelsnapshot.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\fpt\\capstone_project\\capstone\\capstonesp25_g3\\toysharing\\toysharingapi\\migrations\\20250304134931_creating auth database.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\migrations\\20250304134931_creating auth database.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\fpt\\capstone_project\\capstone\\capstonesp25_g3\\toysharing\\toysharingapi\\dto\\userdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\dto\\userdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\fpt\\capstone_project\\capstone\\capstonesp25_g3\\toysharing\\toysharingapi\\models\\rentrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\models\\rentrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\fpt\\capstone_project\\capstone\\capstonesp25_g3\\toysharing\\toysharingapi\\models\\product.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\models\\product.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\fpt\\capstone_project\\capstone\\capstonesp25_g3\\toysharing\\toysharingapi\\repositories\\itokenrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\repositories\\itokenrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\fpt\\capstone_project\\capstone\\capstonesp25_g3\\toysharing\\toysharingapi\\repositories\\tokenrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\repositories\\tokenrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\fpt\\capstone_project\\capstone\\capstonesp25_g3\\toysharing\\toysharingapi\\dto\\setpassworddto .cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -34,7 +86,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 4,
+          "SelectedChildIndex": 7,
           "Children": [
             {
               "$type": "Bookmark",
@@ -42,65 +94,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "SetPasswordDTO .cs",
-              "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\SetPasswordDTO .cs",
-              "RelativeDocumentMoniker": "ToySharingAPI\\DTO\\SetPasswordDTO .cs",
-              "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\SetPasswordDTO .cs",
-              "RelativeToolTip": "ToySharingAPI\\DTO\\SetPasswordDTO .cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-03-05T14:04:18.93Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "ConfirmOTPRequestDTO.cs",
-              "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\ConfirmOTPRequestDTO.cs",
-              "RelativeDocumentMoniker": "ToySharingAPI\\DTO\\ConfirmOTPRequestDTO.cs",
-              "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\ConfirmOTPRequestDTO.cs",
-              "RelativeToolTip": "ToySharingAPI\\DTO\\ConfirmOTPRequestDTO.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAnAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-03-05T14:03:51.198Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 5,
-              "Title": "OTPRequestDTO .cs",
-              "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\OTPRequestDTO .cs",
-              "RelativeDocumentMoniker": "ToySharingAPI\\DTO\\OTPRequestDTO .cs",
-              "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\OTPRequestDTO .cs",
-              "RelativeToolTip": "ToySharingAPI\\DTO\\OTPRequestDTO .cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAApAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-03-05T14:03:23.935Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "AuthController.cs",
-              "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Controllers\\AuthController.cs",
-              "RelativeDocumentMoniker": "ToySharingAPI\\Controllers\\AuthController.cs",
-              "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Controllers\\AuthController.cs",
-              "RelativeToolTip": "ToySharingAPI\\Controllers\\AuthController.cs",
-              "ViewState": "AgIAADoAAAAAAAAAAAAkwAwAAAAFAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-03-04T13:58:48.588Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
               "Title": "Program.cs",
               "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Program.cs",
               "RelativeDocumentMoniker": "ToySharingAPI\\Program.cs",
               "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Program.cs",
               "RelativeToolTip": "ToySharingAPI\\Program.cs",
-              "ViewState": "AgIAAFgAAAAAAAAAAAAIwG4AAAARAAAAAAAAAA==",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAAB8AAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-02-08T11:19:12.417Z",
               "EditorCaption": ""
@@ -108,15 +108,224 @@
             {
               "$type": "Document",
               "DocumentIndex": 2,
+              "Title": "ToyshareAuthDbContext.cs",
+              "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Data\\ToyshareAuthDbContext.cs",
+              "RelativeDocumentMoniker": "ToySharingAPI\\Data\\ToyshareAuthDbContext.cs",
+              "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Data\\ToyshareAuthDbContext.cs",
+              "RelativeToolTip": "ToySharingAPI\\Data\\ToyshareAuthDbContext.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-06T13:22:02.592Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "ProductsController.cs",
+              "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Controllers\\ProductsController.cs",
+              "RelativeDocumentMoniker": "ToySharingAPI\\Controllers\\ProductsController.cs",
+              "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Controllers\\ProductsController.cs",
+              "RelativeToolTip": "ToySharingAPI\\Controllers\\ProductsController.cs",
+              "ViewState": "AgIAABYAAAAAAAAAAAAQwBQAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-05T14:22:55.698Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "AuthController.cs",
+              "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Controllers\\AuthController.cs",
+              "RelativeDocumentMoniker": "ToySharingAPI\\Controllers\\AuthController.cs",
+              "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Controllers\\AuthController.cs",
+              "RelativeToolTip": "ToySharingAPI\\Controllers\\AuthController.cs",
+              "ViewState": "AgIAAFEAAAAAAAAAAAAowHIAAAAgAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-04T13:58:48.588Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
               "Title": "appsettings.json",
               "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\appsettings.json",
               "RelativeDocumentMoniker": "ToySharingAPI\\appsettings.json",
               "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\appsettings.json",
               "RelativeToolTip": "ToySharingAPI\\appsettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAsAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAADAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
               "WhenOpened": "2025-02-08T09:33:45.621Z",
               "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "UserController.cs",
+              "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Controllers\\UserController.cs",
+              "RelativeDocumentMoniker": "ToySharingAPI\\Controllers\\UserController.cs",
+              "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Controllers\\UserController.cs",
+              "RelativeToolTip": "ToySharingAPI\\Controllers\\UserController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAA2AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-06T13:21:54.41Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "ToysharingVer2Context.cs",
+              "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\ToysharingVer2Context.cs",
+              "RelativeDocumentMoniker": "ToySharingAPI\\Models\\ToysharingVer2Context.cs",
+              "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\ToysharingVer2Context.cs",
+              "RelativeToolTip": "ToySharingAPI\\Models\\ToysharingVer2Context.cs",
+              "ViewState": "AgIAABIAAAAAAAAAAAAswDgAAABEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-05T14:23:47.793Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "User.cs",
+              "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\User.cs",
+              "RelativeDocumentMoniker": "ToySharingAPI\\Models\\User.cs",
+              "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\User.cs",
+              "RelativeToolTip": "ToySharingAPI\\Models\\User.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-06T13:12:02.498Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "20250304134931_Creating Auth Database.cs",
+              "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Migrations\\20250304134931_Creating Auth Database.cs",
+              "RelativeDocumentMoniker": "ToySharingAPI\\Migrations\\20250304134931_Creating Auth Database.cs",
+              "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Migrations\\20250304134931_Creating Auth Database.cs",
+              "RelativeToolTip": "ToySharingAPI\\Migrations\\20250304134931_Creating Auth Database.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-06T15:34:50.29Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "ToyshareAuthDbContextModelSnapshot.cs",
+              "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Migrations\\ToyshareAuthDbContextModelSnapshot.cs",
+              "RelativeDocumentMoniker": "ToySharingAPI\\Migrations\\ToyshareAuthDbContextModelSnapshot.cs",
+              "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Migrations\\ToyshareAuthDbContextModelSnapshot.cs",
+              "RelativeToolTip": "ToySharingAPI\\Migrations\\ToyshareAuthDbContextModelSnapshot.cs",
+              "ViewState": "AgIAAB4BAAAAAAAAAAAQwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-06T15:34:52.008Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "IEmailService.cs",
+              "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Service\\IEmailService.cs",
+              "RelativeDocumentMoniker": "ToySharingAPI\\Service\\IEmailService.cs",
+              "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Service\\IEmailService.cs",
+              "RelativeToolTip": "ToySharingAPI\\Service\\IEmailService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-07T04:04:36.003Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "UserDTO.cs",
+              "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\UserDTO.cs",
+              "RelativeDocumentMoniker": "ToySharingAPI\\DTO\\UserDTO.cs",
+              "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\UserDTO.cs",
+              "RelativeToolTip": "ToySharingAPI\\DTO\\UserDTO.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-06T15:34:49.493Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "ITokenRepository.cs",
+              "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Repositories\\ITokenRepository.cs",
+              "RelativeDocumentMoniker": "ToySharingAPI\\Repositories\\ITokenRepository.cs",
+              "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Repositories\\ITokenRepository.cs",
+              "RelativeToolTip": "ToySharingAPI\\Repositories\\ITokenRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-06T13:11:57.194Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "RentRequest.cs",
+              "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\RentRequest.cs",
+              "RelativeDocumentMoniker": "ToySharingAPI\\Models\\RentRequest.cs",
+              "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\RentRequest.cs",
+              "RelativeToolTip": "ToySharingAPI\\Models\\RentRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-06T13:11:58.426Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "Product.cs",
+              "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\Product.cs",
+              "RelativeDocumentMoniker": "ToySharingAPI\\Models\\Product.cs",
+              "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\Product.cs",
+              "RelativeToolTip": "ToySharingAPI\\Models\\Product.cs",
+              "ViewState": "AgIAACAAAAAAAAAAAAAmwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-06T13:11:58.997Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "TokenRepository.cs",
+              "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Repositories\\TokenRepository.cs",
+              "RelativeDocumentMoniker": "ToySharingAPI\\Repositories\\TokenRepository.cs",
+              "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Repositories\\TokenRepository.cs",
+              "RelativeToolTip": "ToySharingAPI\\Repositories\\TokenRepository.cs",
+              "ViewState": "AgIAAA0AAAAAAAAAAAAQwCMAAAA1AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-05T14:57:17.316Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "SetPasswordDTO .cs",
+              "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\SetPasswordDTO .cs",
+              "RelativeDocumentMoniker": "ToySharingAPI\\DTO\\SetPasswordDTO .cs",
+              "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\SetPasswordDTO .cs",
+              "RelativeToolTip": "ToySharingAPI\\DTO\\SetPasswordDTO .cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-05T14:04:18.93Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "OTPRequestDTO .cs",
+              "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\OTPRequestDTO .cs",
+              "RelativeDocumentMoniker": "ToySharingAPI\\DTO\\OTPRequestDTO .cs",
+              "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\OTPRequestDTO .cs",
+              "RelativeToolTip": "ToySharingAPI\\DTO\\OTPRequestDTO .cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-05T14:03:23.935Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "ConfirmOTPRequestDTO.cs",
+              "DocumentMoniker": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\ConfirmOTPRequestDTO.cs",
+              "RelativeDocumentMoniker": "ToySharingAPI\\DTO\\ConfirmOTPRequestDTO.cs",
+              "ToolTip": "D:\\FPT\\Capstone_Project\\Capstone\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\ConfirmOTPRequestDTO.cs",
+              "RelativeToolTip": "ToySharingAPI\\DTO\\ConfirmOTPRequestDTO.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAnAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-05T14:03:51.198Z"
             }
           ]
         }
