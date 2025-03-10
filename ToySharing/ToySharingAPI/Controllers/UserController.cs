@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using ToySharingAPI.DTO;
 using ToySharingAPI.Models;
+using ToySharingAPI.Models;
 
 namespace ToySharingAPI.Controllers
 {
@@ -13,8 +14,8 @@ namespace ToySharingAPI.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
-        private readonly ToysharingVer2Context _context;
-        public UserController(ToysharingVer2Context context)
+        private readonly ToySharingVer3Context _context;
+        public UserController(ToySharingVer3Context context)
         {
             _context = context;
         }

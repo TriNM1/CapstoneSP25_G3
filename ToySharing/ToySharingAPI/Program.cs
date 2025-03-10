@@ -48,7 +48,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 
-builder.Services.AddDbContext<ToysharingVer2Context>(options =>
+builder.Services.AddDbContext<ToySharingVer3Context>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("MyCnn")));
 builder.Services.AddDbContext<ToyshareAuthDbContext>(options =>
 options.UseSqlServer(builder.Configuration.GetConnectionString("ToySharingAuthConnectionString")));
