@@ -10,9 +10,9 @@ namespace ToySharingAPI.Controllers
     [ApiController]
     public class RequestsController : ControllerBase
     {
-        private readonly ToysharingVer2Context _context;
+        private readonly ToySharingVer3Context _context;
 
-        public RequestsController(ToysharingVer2Context context)
+        public RequestsController(ToySharingVer3Context context)
         {
             _context = context;
         }
@@ -22,7 +22,7 @@ namespace ToySharingAPI.Controllers
         public async Task<ActionResult<RequestDTO>> CreateRequest(RequestDTO requestDto)
         {
             var product = await _context.Products.FindAsync(requestDto.ProductId);
-            if (product == null || product.Available != 2) // Chỉ cho phép tạo request nếu sản phẩm sẵn sàng
+            if (product == null || product.Available != 0) 
             {
                 return BadRequest("Product is not available for rent.");
             }
@@ -31,10 +31,11 @@ namespace ToySharingAPI.Controllers
             {
                 UserId = requestDto.UserId,
                 ProductId = requestDto.ProductId,
+                Message = requestDto.Message,
                 Status = 0, // Chờ duyệt
                 RequestDate = requestDto.RequestDate ?? DateTime.UtcNow,
-                RentdateDate = requestDto.RentdateDate,
-                ReturnDate = requestDto.ReturnDate
+                RentDate = requestDto.RentDate ?? throw new ArgumentNullException(nameof(requestDto.RentDate)),
+                ReturnDate = requestDto.ReturnDate ?? throw new ArgumentNullException(nameof(requestDto.ReturnDate))
             };
 
             _context.RentRequests.Add(request);
@@ -44,7 +45,7 @@ namespace ToySharingAPI.Controllers
             return CreatedAtAction(nameof(GetRequestById), new { id = request.RequestId }, requestDto);
         }
 
-        // Update request status (duyệt hoặc hoàn thành)
+        // Update request status (chủ sở hữu duyệt/từ chối request)
         [HttpPut("{id}/status")]
         public async Task<IActionResult> UpdateRequestStatus(int id, int newStatus)
         {
@@ -63,29 +64,37 @@ namespace ToySharingAPI.Controllers
                 return NotFound("Associated product not found.");
             }
 
-            // Đồng bộ Status và Available
             switch (newStatus)
             {
-                case 1: // Đã duyệt
-                    if (request.Status != 0) // Chỉ cho phép từ "chờ duyệt" sang "đã duyệt"
+                case 1: // Accepted
+                    if (request.Status != 0)
                     {
                         return BadRequest("Request can only be approved from 'pending' status.");
                     }
                     request.Status = 1;
                     product.Available = 1; // Đang mượn
+                    var history = new History
+                    {
+                        RequestId = request.RequestId,
+                        UserId = request.UserId,
+                        ProductId = request.ProductId,
+                        Status = 0, // Chưa lấy
+                        ReturnDate = request.ReturnDate // NOT NULL
+                    };
+                    _context.Histories.Add(history);
                     break;
 
-                case 2: // Hoàn thành
-                    if (request.Status != 1) // Chỉ cho phép từ "đã duyệt" sang "hoàn thành"
+                case 2: // Rejected
+                    if (request.Status != 0)
                     {
-                        return BadRequest("Request can only be completed from 'approved' status.");
+                        return BadRequest("Request can only be rejected from 'pending' status.");
                     }
                     request.Status = 2;
-                    product.Available = 2; // Sẵn sàng
+                    product.Available = 0; // Sẵn sàng
                     break;
 
                 default:
-                    return BadRequest("Invalid status value. Use 1 for approved, 2 for completed.");
+                    return BadRequest("Invalid status value. Use 1 for accepted, 2 for rejected.");
             }
 
             await _context.SaveChangesAsync();
@@ -94,9 +103,10 @@ namespace ToySharingAPI.Controllers
                 RequestId = request.RequestId,
                 UserId = request.UserId,
                 ProductId = request.ProductId,
+                Message = request.Message,
                 Status = request.Status,
                 RequestDate = request.RequestDate,
-                RentdateDate = request.RentdateDate,
+                RentDate = request.RentDate,
                 ReturnDate = request.ReturnDate
             });
         }
@@ -107,15 +117,16 @@ namespace ToySharingAPI.Controllers
         {
             var requests = await _context.RentRequests
                 .Include(r => r.Product)
-                .Where(r => r.Product.UserId == userId) // Lấy request dựa trên chủ sở hữu sản phẩm
+                .Where(r => r.Product.UserId == userId)
                 .Select(r => new RequestDTO
                 {
                     RequestId = r.RequestId,
-                    UserId = r.UserId, // UserId của người mượn
+                    UserId = r.UserId,
                     ProductId = r.ProductId,
+                    Message = r.Message,
                     Status = r.Status,
                     RequestDate = r.RequestDate,
-                    RentdateDate = r.RentdateDate,
+                    RentDate = r.RentDate,
                     ReturnDate = r.ReturnDate
                 })
                 .ToListAsync();
@@ -123,25 +134,24 @@ namespace ToySharingAPI.Controllers
             return Ok(requests);
         }
 
-        // View history list request (status = complete)
+        // View history list request (lịch sử request của người mượn)
         [HttpGet("history/{userId}")]
-        public async Task<ActionResult<IEnumerable<RequestDTO>>> GetRequestHistory(int userId)
+        public async Task<ActionResult<IEnumerable<HistoryDTO>>> GetRequestHistory(int userId)
         {
-            var requests = await _context.RentRequests
-                .Where(r => r.UserId == userId && r.Status == 2) // 2: hoàn thành
-                .Select(r => new RequestDTO
+            var history = await _context.Histories
+                .Where(h => h.UserId == userId)
+                .Select(h => new HistoryDTO
                 {
-                    RequestId = r.RequestId,
-                    UserId = r.UserId,
-                    ProductId = r.ProductId,
-                    Status = r.Status,
-                    RequestDate = r.RequestDate,
-                    RentdateDate = r.RentdateDate,
-                    ReturnDate = r.ReturnDate
+                    RequestId = h.RequestId,
+                    UserId = h.UserId,
+                    ProductId = h.ProductId,
+                    Status = h.Status,
+                    Rating = h.Rating,
+                    ReturnDate = h.ReturnDate
                 })
                 .ToListAsync();
 
-            return Ok(requests);
+            return Ok(history);
         }
 
         // Toy Request List
@@ -155,9 +165,9 @@ namespace ToySharingAPI.Controllers
                 .Select(r => new
                 {
                     BorrowerName = r.User.Name,
-                    BorrowDate = r.RentdateDate,
+                    BorrowDate = r.RentDate,
                     Avatar = r.User.Avatar,
-                    Message = r.Product.Description
+                    Message = r.Message
                 })
                 .ToListAsync();
 
@@ -175,15 +185,16 @@ namespace ToySharingAPI.Controllers
         {
             var requests = await _context.RentRequests
                 .Include(r => r.Product)
-                .Where(r => r.Product.UserId == userId && r.Status == 0) // 0: chờ duyệt
+                .Where(r => r.Product.UserId == userId && r.Status == 0)
                 .Select(r => new RequestDTO
                 {
                     RequestId = r.RequestId,
                     UserId = r.UserId,
                     ProductId = r.ProductId,
+                    Message = r.Message,
                     Status = r.Status,
                     RequestDate = r.RequestDate,
-                    RentdateDate = r.RentdateDate,
+                    RentDate = r.RentDate,
                     ReturnDate = r.ReturnDate
                 })
                 .ToListAsync();
@@ -193,20 +204,26 @@ namespace ToySharingAPI.Controllers
 
         // Borrow history
         [HttpGet("borrow-history/{userId}")]
-        public async Task<ActionResult<IEnumerable<RequestDTO>>> GetBorrowHistory(int userId)
+        public async Task<ActionResult<IEnumerable<BorrowHistoryDTO>>> GetBorrowHistory(int userId)
         {
             var requests = await _context.RentRequests
                 .Include(r => r.Product)
+                .Include(r => r.History)
                 .Where(r => r.Product.UserId == userId)
-                .Select(r => new RequestDTO
+                .Select(r => new BorrowHistoryDTO
                 {
                     RequestId = r.RequestId,
-                    UserId = r.UserId,
+                    BorrowerId = r.UserId,
                     ProductId = r.ProductId,
-                    Status = r.Status,
+                    RequestStatus = r.Status == 0 ? "Pending" :
+                                    r.Status == 1 ? "Accepted" : "Rejected",
+                    HistoryStatus = r.History == null ? null :
+                                    r.History.Status == 0 ? "Not Picked Up" :
+                                    r.History.Status == 1 ? "Picked Up" : "Completed",
                     RequestDate = r.RequestDate,
-                    RentdateDate = r.RentdateDate,
-                    ReturnDate = r.ReturnDate
+                    RentDate = r.RentDate,
+                    ReturnDate = r.History != null ? r.History.ReturnDate : r.ReturnDate,
+                    Rating = r.History != null ? r.History.Rating : null
                 })
                 .ToListAsync();
 
@@ -224,9 +241,10 @@ namespace ToySharingAPI.Controllers
                     RequestId = r.RequestId,
                     UserId = r.UserId,
                     ProductId = r.ProductId,
+                    Message = r.Message,
                     Status = r.Status,
                     RequestDate = r.RequestDate,
-                    RentdateDate = r.RentdateDate,
+                    RentDate = r.RentDate,
                     ReturnDate = r.ReturnDate
                 })
                 .FirstOrDefaultAsync();
@@ -237,6 +255,84 @@ namespace ToySharingAPI.Controllers
             }
 
             return Ok(request);
+        }
+
+        // Người mượn xác nhận đã lấy đồ chơi
+        [HttpPut("history/{requestId}/pickup")]
+        public async Task<ActionResult<HistoryDTO>> ConfirmPickup(int requestId, int userId)
+        {
+            var history = await _context.Histories
+                .FirstOrDefaultAsync(h => h.RequestId == requestId && h.UserId == userId);
+
+            if (history == null)
+            {
+                return NotFound("History record not found.");
+            }
+
+            if (history.Status != 0)
+            {
+                return BadRequest("Can only confirm pickup from 'not picked up' status.");
+            }
+
+            history.Status = 1; // Đã lấy
+            await _context.SaveChangesAsync();
+
+            return Ok(new HistoryDTO
+            {
+                RequestId = history.RequestId,
+                UserId = history.UserId,
+                ProductId = history.ProductId,
+                Status = history.Status,
+                Rating = history.Rating,
+                ReturnDate = history.ReturnDate
+            });
+        }
+
+        // Người mượn xác nhận đã trả và đánh giá
+        [HttpPut("history/{requestId}/complete")]
+        public async Task<ActionResult<HistoryDTO>> ConfirmComplete(int requestId, int userId, int rating)
+        {
+            var history = await _context.Histories
+                .Include(h => h.ProductId)
+                .FirstOrDefaultAsync(h => h.RequestId == requestId && h.UserId == userId);
+
+            if (history == null)
+            {
+                return NotFound("History record not found.");
+            }
+
+            var product = history.ProductId;
+            if (product == null)
+            {
+                return NotFound("Associated product not found.");
+            }
+
+            if (history.Status != 1)
+            {
+                return BadRequest("Can only complete from 'picked up' status.");
+            }
+
+            if (rating < 1 || rating > 5)
+            {
+                return BadRequest("Rating must be between 1 and 5.");
+            }
+
+            history.Status = 2; // Completed
+            history.Rating = rating;
+            history.ReturnDate = DateTime.UtcNow;
+            //product.Available = 0; // Sẵn sàng
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new HistoryDTO
+            {
+                RequestId = history.RequestId,
+                UserId = history.UserId,
+                ProductId = history.ProductId,
+                Status = history.Status,
+                Rating = history.Rating,
+                ReturnDate = history.ReturnDate
+            });
         }
     }
 }

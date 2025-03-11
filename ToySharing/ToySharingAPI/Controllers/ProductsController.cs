@@ -10,9 +10,9 @@ namespace ToySharingAPI.Controllers
     [ApiController]
     public class ProductsController : ControllerBase
     {
-        private readonly ToysharingVer2Context _context;
+        private readonly ToySharingVer3Context _context;
 
-        public ProductsController(ToysharingVer2Context context)
+        public ProductsController(ToySharingVer3Context context)
         {
             _context = context;
         }
@@ -23,6 +23,7 @@ namespace ToySharingAPI.Controllers
         {
             var products = await _context.Products
                 .Include(p => p.Category)
+                .Include(p => p.Images)
                 .Select(p => new ProductDTO
                 {
                     ProductId = p.ProductId,
@@ -31,10 +32,10 @@ namespace ToySharingAPI.Controllers
                     Available = p.Available,
                     Description = p.Description,
                     ProductStatus = p.ProductStatus,
-                    Address = p.Address,
-                    CreatedAt = p.CreatedAt,
                     Price = p.Price,
-                    SuitableAge = p.SuitableAge
+                    SuitableAge = p.SuitableAge,
+                    CreatedAt = p.CreatedAt,
+                    ImagePaths = p.Images.Select(i => i.Path).ToList()
                 })
                 .ToListAsync();
             return Ok(products);
@@ -46,6 +47,7 @@ namespace ToySharingAPI.Controllers
         {
             var product = await _context.Products
                 .Include(p => p.Category)
+                .Include(p => p.Images)
                 .Where(p => p.ProductId == id)
                 .Select(p => new ProductDTO
                 {
@@ -56,10 +58,10 @@ namespace ToySharingAPI.Controllers
                     Available = p.Available,
                     Description = p.Description,
                     ProductStatus = p.ProductStatus,
-                    Address = p.Address,
-                    CreatedAt = p.CreatedAt,
                     Price = p.Price,
-                    SuitableAge = p.SuitableAge
+                    SuitableAge = p.SuitableAge,
+                    CreatedAt = p.CreatedAt,
+                    ImagePaths = p.Images.Select(i => i.Path).ToList()
                 })
                 .FirstOrDefaultAsync();
 
@@ -77,6 +79,7 @@ namespace ToySharingAPI.Controllers
         {
             var product = await _context.Products
                 .Include(p => p.Category)
+                .Include(p => p.Images)
                 .Where(p => p.ProductId == productId)
                 .Select(p => new
                 {
@@ -84,9 +87,10 @@ namespace ToySharingAPI.Controllers
                     ProductName = p.Name,
                     Cost = p.Price,
                     Description = p.Description,
+                    ImagePaths = p.Images.Select(i => i.Path).ToList(),
                     RentInfo = _context.RentRequests
                         .Where(r => r.ProductId == p.ProductId && r.Status == 1)
-                        .Select(r => new { BorrowDate = r.RentdateDate, ReturnDate = r.ReturnDate })
+                        .Select(r => new { BorrowDate = r.RentDate, ReturnDate = r.ReturnDate })
                         .FirstOrDefault()
                 })
                 .FirstOrDefaultAsync();
@@ -118,12 +122,12 @@ namespace ToySharingAPI.Controllers
                 {
                     Id = u.Id,
                     Name = u.Name,
-                    Email = u.Email,
-                    Phone = u.Phone,
                     Address = u.Address,
                     Status = u.Status,
                     Avatar = u.Avatar,
-                    Rating = u.Rating
+                    //Rating = u.Rating,
+                    Gender = u.Gender,
+                    Age = u.Age
                 })
                 .FirstOrDefaultAsync();
 
@@ -135,9 +139,9 @@ namespace ToySharingAPI.Controllers
             return Ok(owner);
         }
 
-        // Input product
+        // Input product (Thêm sản phẩm với ảnh)
         [HttpPost]
-        public async Task<ActionResult<ProductDTO>> CreateProduct(int userId, ProductDTO productDto)
+        public async Task<ActionResult<ProductDTO>> CreateProduct(int userId, [FromBody] ProductDTO productDto)
         {
             if (string.IsNullOrEmpty(productDto.Name) || productDto.Price < 0)
             {
@@ -148,13 +152,12 @@ namespace ToySharingAPI.Controllers
             {
                 UserId = userId,
                 Name = productDto.Name,
-                Available = 2, // Sẵn sàng
+                Available = 0, // Sẵn sàng (DB mới)
                 Description = productDto.Description,
-                ProductStatus = productDto.ProductStatus,
-                Address = productDto.Address,
+                ProductStatus = productDto.ProductStatus ?? 0,
+                Price = productDto.Price ?? 0,
+                SuitableAge = productDto.SuitableAge ?? 0,
                 CreatedAt = DateTime.UtcNow,
-                Price = productDto.Price,
-                SuitableAge = productDto.SuitableAge,
                 UpdatedAt = DateTime.UtcNow
             };
 
@@ -164,7 +167,7 @@ namespace ToySharingAPI.Controllers
                     .FirstOrDefaultAsync(c => c.CategoryName == productDto.CategoryName);
                 if (category != null)
                 {
-                    product.CategoryId = category.Id;
+                    product.CategoryId = category.CategoryId;
                 }
                 else
                 {
@@ -174,8 +177,18 @@ namespace ToySharingAPI.Controllers
                     };
                     _context.Categories.Add(category);
                     await _context.SaveChangesAsync();
-                    product.CategoryId = category.Id;
+                    product.CategoryId = category.CategoryId;
                 }
+            }
+
+            // Thêm ảnh nếu có
+            if (productDto.ImagePaths != null && productDto.ImagePaths.Any())
+            {
+                product.Images = productDto.ImagePaths.Select(path => new Image
+                {
+                    Path = path,
+                    CreateTime = DateTime.UtcNow
+                }).ToList();
             }
 
             _context.Products.Add(product);
@@ -188,7 +201,9 @@ namespace ToySharingAPI.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<ProductDTO>> UpdateProduct(int id, int userId, ProductDTO productDto)
         {
-            var product = await _context.Products.FindAsync(id);
+            var product = await _context.Products
+                .Include(p => p.Images)
+                .FirstOrDefaultAsync(p => p.ProductId == id);
             if (product == null)
             {
                 return NotFound("Product not found.");
@@ -202,12 +217,10 @@ namespace ToySharingAPI.Controllers
                 return BadRequest("Product name is required and price cannot be negative.");
             }
 
-            // Kiểm tra nếu thay đổi Available
             if (productDto.Available.HasValue && productDto.Available != product.Available)
             {
                 var activeRequest = await _context.RentRequests
-                    .FirstOrDefaultAsync(r => r.ProductId == id && r.Status == 1); // Đang mượn
-
+                    .FirstOrDefaultAsync(r => r.ProductId == id && r.Status == 1);
                 if (activeRequest != null && productDto.Available != 1)
                 {
                     return BadRequest("Cannot change availability while product is being rented.");
@@ -221,7 +234,7 @@ namespace ToySharingAPI.Controllers
                     .FirstOrDefaultAsync(c => c.CategoryName == productDto.CategoryName);
                 if (category != null)
                 {
-                    product.CategoryId = category.Id;
+                    product.CategoryId = category.CategoryId;
                 }
                 else
                 {
@@ -231,16 +244,26 @@ namespace ToySharingAPI.Controllers
                     };
                     _context.Categories.Add(category);
                     await _context.SaveChangesAsync();
-                    product.CategoryId = category.Id;
+                    product.CategoryId = category.CategoryId;
                 }
             }
             product.Available = productDto.Available ?? product.Available;
             product.Description = productDto.Description;
-            product.ProductStatus = productDto.ProductStatus;
-            product.Address = productDto.Address;
-            product.Price = productDto.Price;
-            product.SuitableAge = productDto.SuitableAge;
+            product.ProductStatus = productDto.ProductStatus ?? product.ProductStatus;
+            product.Price = productDto.Price ?? product.Price;
+            product.SuitableAge = productDto.SuitableAge ?? product.SuitableAge;
             product.UpdatedAt = DateTime.UtcNow;
+
+            // Cập nhật ảnh nếu có
+            if (productDto.ImagePaths != null)
+            {
+                product.Images.Clear();
+                product.Images = productDto.ImagePaths.Select(path => new Image
+                {
+                    Path = path,
+                    CreateTime = DateTime.UtcNow
+                }).ToList();
+            }
 
             await _context.SaveChangesAsync();
             return Ok(productDto);
@@ -252,6 +275,7 @@ namespace ToySharingAPI.Controllers
         {
             var products = await _context.Products
                 .Include(p => p.Category)
+                .Include(p => p.Images)
                 .Where(p => p.UserId == userId)
                 .Select(p => new ProductDTO
                 {
@@ -261,10 +285,10 @@ namespace ToySharingAPI.Controllers
                     Available = p.Available,
                     Description = p.Description,
                     ProductStatus = p.ProductStatus,
-                    Address = p.Address,
-                    CreatedAt = p.CreatedAt,
                     Price = p.Price,
-                    SuitableAge = p.SuitableAge
+                    SuitableAge = p.SuitableAge,
+                    CreatedAt = p.CreatedAt,
+                    ImagePaths = p.Images.Select(i => i.Path).ToList()
                 })
                 .ToListAsync();
 
@@ -277,6 +301,7 @@ namespace ToySharingAPI.Controllers
         {
             var products = await _context.Products
                 .Include(p => p.Category)
+                .Include(p => p.Images)
                 .Where(p => p.UserId == userId && p.Available == 1)
                 .Select(p => new ProductDTO
                 {
@@ -286,10 +311,10 @@ namespace ToySharingAPI.Controllers
                     Available = p.Available,
                     Description = p.Description,
                     ProductStatus = p.ProductStatus,
-                    Address = p.Address,
-                    CreatedAt = p.CreatedAt,
                     Price = p.Price,
-                    SuitableAge = p.SuitableAge
+                    SuitableAge = p.SuitableAge,
+                    CreatedAt = p.CreatedAt,
+                    ImagePaths = p.Images.Select(i => i.Path).ToList()
                 })
                 .ToListAsync();
 
@@ -298,10 +323,10 @@ namespace ToySharingAPI.Controllers
 
         // View all borrowed toys by other users
         [HttpGet("borrowed/{userId}")]
-        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetBorrowedToys(int userId)
-        {
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetBorrowedToys(int userId){
             var products = await _context.Products
                 .Include(p => p.Category)
+                .Include(p => p.Images)
                 .Where(p => p.UserId != userId && p.Available == 1)
                 .Select(p => new ProductDTO
                 {
@@ -311,21 +336,21 @@ namespace ToySharingAPI.Controllers
                     Available = p.Available,
                     Description = p.Description,
                     ProductStatus = p.ProductStatus,
-                    Address = p.Address,
-                    CreatedAt = p.CreatedAt,
                     Price = p.Price,
-                    SuitableAge = p.SuitableAge
+                    SuitableAge = p.SuitableAge,
+                    CreatedAt = p.CreatedAt,
+                    ImagePaths = p.Images.Select(i => i.Path).ToList()
                 })
                 .ToListAsync();
 
             return Ok(products);
-        }
-
-        // Search product
-        [HttpGet("search")]
-        public async Task<ActionResult<IEnumerable<ProductDTO>>> SearchProducts()
-        {
-            return await GetAllProducts();
-        }
     }
+
+    // Search product (giữ nguyên tạm thời)
+    [HttpGet("search")]
+    public async Task<ActionResult<IEnumerable<ProductDTO>>> SearchProducts()
+    {
+        return await GetAllProducts();
+    }
+}
 }

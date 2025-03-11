@@ -10,11 +10,21 @@ namespace ToySharingAPI.Controllers
     [ApiController]
     public class NotificationsController : ControllerBase
     {
-        private readonly ToysharingVer2Context _context;
+        private readonly ToySharingVer3Context _context; // Đổi sang context mới
 
-        public NotificationsController(ToysharingVer2Context context)
+        public NotificationsController(ToySharingVer3Context context)
         {
             _context = context;
+        }
+
+        // DTO cho Notification
+        public class NotificationDTO
+        {
+            public int NotificationId { get; set; }
+            public int? UserId { get; set; }
+            public string? Content { get; set; }
+            public DateTime? CreatedDate { get; set; }
+            public bool ReadStatus { get; set; } // BIT, không nullable
         }
 
         // 34. Send Notification
@@ -31,7 +41,7 @@ namespace ToySharingAPI.Controllers
                 UserId = userId,
                 Content = content,
                 CreatedDate = DateTime.UtcNow,
-                ReadStatus = false // Mặc định là chưa đọc
+                ReadStatus = false // Mặc định chưa đọc
             };
 
             _context.Notifications.Add(notification);
@@ -43,7 +53,7 @@ namespace ToySharingAPI.Controllers
                 UserId = notification.UserId,
                 Content = notification.Content,
                 CreatedDate = notification.CreatedDate,
-                ReadStatus = notification.ReadStatus
+                //ReadStatus = notification.ReadStatus
             };
 
             return Ok(notificationDto);
@@ -55,14 +65,14 @@ namespace ToySharingAPI.Controllers
         {
             var notifications = await _context.Notifications
                 .Where(n => n.UserId == userId)
-                .OrderByDescending(n => n.CreatedDate) 
+                .OrderByDescending(n => n.CreatedDate)
                 .Select(n => new NotificationDTO
                 {
                     NotificationId = n.NotificationId,
                     UserId = n.UserId,
                     Content = n.Content,
                     CreatedDate = n.CreatedDate,
-                    ReadStatus = n.ReadStatus
+                    //ReadStatus = n.ReadStatus
                 })
                 .ToListAsync();
 
@@ -88,7 +98,7 @@ namespace ToySharingAPI.Controllers
                 UserId = notification.UserId,
                 Content = notification.Content,
                 CreatedDate = notification.CreatedDate,
-                ReadStatus = notification.ReadStatus
+                //ReadStatus = notification.ReadStatus
             };
 
             return Ok(notificationDto);
