@@ -19,7 +19,7 @@ namespace ToySharingAPI.Controllers
             _context = context;
         }
 
-        // Manage account (Get user by ID, hiển thị thêm đồ chơi sở hữu)
+        // Get user by ID (không bao gồm danh sách đồ chơi)
         [HttpGet("{id}")]
         public async Task<ActionResult<UserDTO>> GetUserById(int id)
         {
@@ -32,30 +32,14 @@ namespace ToySharingAPI.Controllers
                     Address = u.Address,
                     Status = u.Status,
                     Avatar = u.Avatar,
-                    //Rating = u.Rating,
                     Gender = u.Gender,
                     Age = u.Age,
                     CreatedAt = u.CreatedAt,
                     Latitude = u.Latitude,
                     Longitude = u.Longtitude,
-                    OwnedProducts = _context.Products
-                        .Where(p => p.UserId == u.Id)
-                        .Include(p => p.Category)
-                        .Include(p => p.Images)
-                        .Select(p => new ProductDTO
-                        {
-                            ProductId = p.ProductId,
-                            UserId = p.UserId,
-                            Name = p.Name,
-                            CategoryName = p.Category != null ? p.Category.CategoryName : null,
-                            Available = p.Available,
-                            Description = p.Description,
-                            ProductStatus = p.ProductStatus,
-                            Price = p.Price,
-                            SuitableAge = p.SuitableAge,
-                            CreatedAt = p.CreatedAt,
-                            ImagePaths = p.Images.Select(i => i.Path).ToList()
-                        }).ToList()
+                    Rating = _context.Histories
+                        .Where(h => h.Product.UserId == u.Id && h.Status == 2)
+                        .Average(h => (float?)h.Rating) ?? 0 // Tính trung bình Rating
                 })
                 .FirstOrDefaultAsync();
 
@@ -67,9 +51,36 @@ namespace ToySharingAPI.Controllers
             return Ok(user);
         }
 
+        // API riêng để lấy danh sách đồ chơi của user
+        [HttpGet("{id}/products")]
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetUserProducts(int id)
+        {
+            var products = await _context.Products
+                .Where(p => p.UserId == id)
+                .Include(p => p.Category)
+                .Include(p => p.Images)
+                .Select(p => new ProductDTO
+                {
+                    ProductId = p.ProductId,
+                    UserId = p.UserId,
+                    Name = p.Name,
+                    CategoryName = p.Category != null ? p.Category.CategoryName : null,
+                    Available = p.Available,
+                    Description = p.Description,
+                    ProductStatus = p.ProductStatus,
+                    Price = p.Price,
+                    SuitableAge = p.SuitableAge,
+                    CreatedAt = p.CreatedAt,
+                    ImagePaths = p.Images.Select(i => i.Path).ToList()
+                })
+                .ToListAsync();
+
+            return Ok(products);
+        }
+
         // View Other User's Profile
         [HttpGet("profile/{userId}")]
-        public async Task<ActionResult<UserDTO>> GetOtherUserProfile(int userId)
+        public async Task<ActionResult<UserProfileDTO>> GetOtherUserProfile(int userId)
         {
             var userProfile = await _context.Users
                 .Where(u => u.Id == userId)
@@ -80,26 +91,11 @@ namespace ToySharingAPI.Controllers
                         Name = u.Name,
                         Age = u.Age ?? 0,
                         Address = u.Address,
-                        Avatar = u.Avatar
-                    },
-                    ToyListOfUser = _context.Products
-                        .Where(p => p.UserId == userId)
-                        .Include(p => p.Category)
-                        .Include(p => p.Images)
-                        .Select(p => new ProductDTO
-                        {
-                            ProductId = p.ProductId,
-                            UserId = p.UserId,
-                            Name = p.Name,
-                            CategoryName = p.Category != null ? p.Category.CategoryName : null,
-                            Available = p.Available,
-                            Description = p.Description,
-                            ProductStatus = p.ProductStatus,
-                            Price = p.Price,
-                            SuitableAge = p.SuitableAge,
-                            CreatedAt = p.CreatedAt,
-                            ImagePaths = p.Images.Select(i => i.Path).ToList()
-                        }).ToList()
+                        Avatar = u.Avatar,
+                        Rating = _context.Histories
+                            .Where(h => h.Product.UserId == u.Id && h.Status == 2)
+                            .Average(h => (float?)h.Rating) ?? 0
+                    }
                 })
                 .FirstOrDefaultAsync();
 
@@ -108,48 +104,7 @@ namespace ToySharingAPI.Controllers
                 return NotFound();
             }
 
-            var currentUser = await _context.Users
-                .Where(u => u.Id == userId)
-                .Select(u => new UserDTO
-                {
-                    Id = u.Id,
-                    Name = u.Name,
-                    Address = u.Address,
-                    Status = u.Status,
-                    Avatar = u.Avatar,
-                    //Rating = u.Rating,
-                    Gender = u.Gender,
-                    Age = u.Age,
-                    CreatedAt = u.CreatedAt,
-                    Latitude = u.Latitude,
-                    Longitude = u.Longtitude,
-                    OwnedProducts = _context.Products
-                        .Where(p => p.UserId == u.Id)
-                        .Include(p => p.Category)
-                        .Include(p => p.Images)
-                        .Select(p => new ProductDTO
-                        {
-                            ProductId = p.ProductId,
-                            UserId = p.UserId,
-                            Name = p.Name,
-                            CategoryName = p.Category != null ? p.Category.CategoryName : null,
-                            Available = p.Available,
-                            Description = p.Description,
-                            ProductStatus = p.ProductStatus,
-                            Price = p.Price,
-                            SuitableAge = p.SuitableAge,
-                            CreatedAt = p.CreatedAt,
-                            ImagePaths = p.Images.Select(i => i.Path).ToList()
-                        }).ToList()
-                })
-                .FirstOrDefaultAsync();
-
-            if (currentUser == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(currentUser);
+            return Ok(userProfile);
         }
 
         // Edit account (Update user)

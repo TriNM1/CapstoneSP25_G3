@@ -22,7 +22,7 @@ namespace ToySharingAPI.Controllers
         public async Task<ActionResult<RequestDTO>> CreateRequest(RequestDTO requestDto)
         {
             var product = await _context.Products.FindAsync(requestDto.ProductId);
-            if (product == null || product.Available != 0) 
+            if (product == null || product.Available != 0)
             {
                 return BadRequest("Product is not available for rent.");
             }
@@ -145,7 +145,7 @@ namespace ToySharingAPI.Controllers
                     RequestId = h.RequestId,
                     UserId = h.UserId,
                     ProductId = h.ProductId,
-                    Status = h.Status,
+                    Status = h.Status, // Đảm bảo Status là int (NOT NULL trong DB)
                     Rating = h.Rating,
                     ReturnDate = h.ReturnDate
                 })
@@ -282,7 +282,7 @@ namespace ToySharingAPI.Controllers
                 RequestId = history.RequestId,
                 UserId = history.UserId,
                 ProductId = history.ProductId,
-                Status = history.Status,
+                Status = history.Status, // Đảm bảo Status là int (NOT NULL trong DB)
                 Rating = history.Rating,
                 ReturnDate = history.ReturnDate
             });
@@ -293,7 +293,7 @@ namespace ToySharingAPI.Controllers
         public async Task<ActionResult<HistoryDTO>> ConfirmComplete(int requestId, int userId, int rating)
         {
             var history = await _context.Histories
-                .Include(h => h.ProductId)
+                .Include(h => h.Product) // Sửa từ Include(h => h.ProductId) thành Include(h => h.Product)
                 .FirstOrDefaultAsync(h => h.RequestId == requestId && h.UserId == userId);
 
             if (history == null)
@@ -301,7 +301,7 @@ namespace ToySharingAPI.Controllers
                 return NotFound("History record not found.");
             }
 
-            var product = history.ProductId;
+            var product = history.Product; // Sửa từ history.ProductId thành history.Product
             if (product == null)
             {
                 return NotFound("Associated product not found.");
@@ -320,7 +320,7 @@ namespace ToySharingAPI.Controllers
             history.Status = 2; // Completed
             history.Rating = rating;
             history.ReturnDate = DateTime.UtcNow;
-            //product.Available = 0; // Sẵn sàng
+            product.Available = 0; // Sẵn sàng
 
             await _context.SaveChangesAsync();
 
@@ -329,7 +329,7 @@ namespace ToySharingAPI.Controllers
                 RequestId = history.RequestId,
                 UserId = history.UserId,
                 ProductId = history.ProductId,
-                Status = history.Status,
+                Status = history.Status, // Đảm bảo Status là int (NOT NULL trong DB)
                 Rating = history.Rating,
                 ReturnDate = history.ReturnDate
             });

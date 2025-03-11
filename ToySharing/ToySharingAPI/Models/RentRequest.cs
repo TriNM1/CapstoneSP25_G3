@@ -13,13 +13,15 @@ public partial class RentRequest
 
     public string? Message { get; set; }
 
-    public int? Status { get; set; }
+    public int Status { get; set; }
 
     public DateTime? RequestDate { get; set; }
 
     public DateTime RentDate { get; set; }
 
     public DateTime ReturnDate { get; set; }
+
+    public virtual History? History { get; set; }
 
     public virtual Product Product { get; set; } = null!;
 

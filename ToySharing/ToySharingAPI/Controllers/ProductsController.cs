@@ -103,7 +103,7 @@ namespace ToySharingAPI.Controllers
             return Ok(product);
         }
 
-        // View user information (owner)
+        // View user information (owner) với Rating
         [HttpGet("{id}/owner")]
         public async Task<ActionResult<UserDTO>> GetOwnerProfileByProductId(int id)
         {
@@ -125,9 +125,11 @@ namespace ToySharingAPI.Controllers
                     Address = u.Address,
                     Status = u.Status,
                     Avatar = u.Avatar,
-                    //Rating = u.Rating,
                     Gender = u.Gender,
-                    Age = u.Age
+                    Age = u.Age,
+                    Rating = _context.Histories
+                        .Where(h => h.Product.UserId == u.Id && h.Status == 2)
+                        .Average(h => (float?)h.Rating) ?? 0
                 })
                 .FirstOrDefaultAsync();
 
@@ -323,7 +325,8 @@ namespace ToySharingAPI.Controllers
 
         // View all borrowed toys by other users
         [HttpGet("borrowed/{userId}")]
-        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetBorrowedToys(int userId){
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetBorrowedToys(int userId)
+        {
             var products = await _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Images)
@@ -344,13 +347,13 @@ namespace ToySharingAPI.Controllers
                 .ToListAsync();
 
             return Ok(products);
-    }
+        }
 
-    // Search product (giữ nguyên tạm thời)
-    [HttpGet("search")]
-    public async Task<ActionResult<IEnumerable<ProductDTO>>> SearchProducts()
-    {
-        return await GetAllProducts();
+        // Search product (giữ nguyên tạm thời)
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> SearchProducts()
+        {
+            return await GetAllProducts();
+        }
     }
-}
 }
