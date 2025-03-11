@@ -3,16 +3,24 @@
   "WorkspaceRootPath": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\kahanh\\cap\\capstonesp25_g3\\toysharing\\toysharingapi\\models\\category.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\models\\category.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\kahanh\\cap\\capstonesp25_g3\\toysharing\\toysharingapi\\dto\\requestdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\dto\\requestdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\kahanh\\cap\\capstonesp25_g3\\toysharing\\toysharingapi\\controllers\\requestcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\controllers\\requestcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\kahanh\\cap\\capstonesp25_g3\\toysharing\\toysharingapi\\controllers\\notificationscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\controllers\\notificationscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\kahanh\\cap\\capstonesp25_g3\\toysharing\\toysharingapi\\controllers\\usercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\controllers\\usercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\kahanh\\cap\\capstonesp25_g3\\toysharing\\toysharingapi\\controllers\\requestcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\controllers\\requestcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\kahanh\\cap\\capstonesp25_g3\\toysharing\\toysharingapi\\controllers\\productscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -31,10 +39,6 @@
       "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\dto\\notificationdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\kahanh\\cap\\capstonesp25_g3\\toysharing\\toysharingapi\\dto\\requestdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\dto\\requestdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\kahanh\\cap\\capstonesp25_g3\\toysharing\\toysharingapi\\models\\rentrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\models\\rentrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -49,10 +53,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\kahanh\\cap\\capstonesp25_g3\\toysharing\\toysharingapi\\models\\product.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\models\\product.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\kahanh\\cap\\capstonesp25_g3\\toysharing\\toysharingapi\\models\\category.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\models\\category.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\kahanh\\cap\\capstonesp25_g3\\toysharing\\toysharingapi\\models\\image.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -90,7 +90,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 6,
           "Children": [
             {
               "$type": "Bookmark",
@@ -98,20 +98,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "Notification.cs",
-              "DocumentMoniker": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\Notification.cs",
-              "RelativeDocumentMoniker": "ToySharingAPI\\Models\\Notification.cs",
-              "ToolTip": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\Notification.cs",
-              "RelativeToolTip": "ToySharingAPI\\Models\\Notification.cs",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAAA0AAAAuAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-03-08T01:55:08.481Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 3,
               "Title": "NotificationsController.cs",
               "DocumentMoniker": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Controllers\\NotificationsController.cs",
               "RelativeDocumentMoniker": "ToySharingAPI\\Controllers\\NotificationsController.cs",
@@ -130,27 +117,14 @@
               "RelativeDocumentMoniker": "ToySharingAPI\\Controllers\\RequestController.cs",
               "ToolTip": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Controllers\\RequestController.cs",
               "RelativeToolTip": "ToySharingAPI\\Controllers\\RequestController.cs",
-              "ViewState": "AQIAANEAAAAAAAAAAAAIwOoAAAAiAAAA",
+              "ViewState": "AQIAAHUAAAAAAAAAAAAowH0AAAAIAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-03-08T01:29:47.018Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "UserDTO.cs",
-              "DocumentMoniker": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\UserDTO.cs",
-              "RelativeDocumentMoniker": "ToySharingAPI\\DTO\\UserDTO.cs",
-              "ToolTip": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\UserDTO.cs",
-              "RelativeToolTip": "ToySharingAPI\\DTO\\UserDTO.cs",
-              "ViewState": "AQIAAAwAAAAAAAAAAAA0wCMAAAABAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-11T16:25:21.611Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 5,
               "Title": "ProductsController.cs",
               "DocumentMoniker": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Controllers\\ProductsController.cs",
               "RelativeDocumentMoniker": "ToySharingAPI\\Controllers\\ProductsController.cs",
@@ -158,12 +132,11 @@
               "RelativeToolTip": "ToySharingAPI\\Controllers\\ProductsController.cs",
               "ViewState": "AQIAAC0BAAAAAAAAAAAUwEoBAAABAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-08T11:08:16.5Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-08T11:08:16.5Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 4,
               "Title": "UserController.cs",
               "DocumentMoniker": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Controllers\\UserController.cs",
               "RelativeDocumentMoniker": "ToySharingAPI\\Controllers\\UserController.cs",
@@ -171,12 +144,61 @@
               "RelativeToolTip": "ToySharingAPI\\Controllers\\UserController.cs",
               "ViewState": "AQIAAHcAAAAAAAAAAADwv5IAAAABAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-11T16:14:38.342Z",
+              "WhenOpened": "2025-02-11T16:14:38.342Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "RequestDTO.cs",
+              "DocumentMoniker": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\RequestDTO.cs",
+              "RelativeDocumentMoniker": "ToySharingAPI\\DTO\\RequestDTO.cs",
+              "ToolTip": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\RequestDTO.cs",
+              "RelativeToolTip": "ToySharingAPI\\DTO\\RequestDTO.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAwAAAABAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-19T11:46:08.173Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Category.cs",
+              "DocumentMoniker": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\Category.cs",
+              "RelativeDocumentMoniker": "ToySharingAPI\\Models\\Category.cs",
+              "ToolTip": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\Category.cs",
+              "RelativeToolTip": "ToySharingAPI\\Models\\Category.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-25T12:13:52.994Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 6,
+              "Title": "UserDTO.cs",
+              "DocumentMoniker": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\UserDTO.cs",
+              "RelativeDocumentMoniker": "ToySharingAPI\\DTO\\UserDTO.cs",
+              "ToolTip": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\UserDTO.cs",
+              "RelativeToolTip": "ToySharingAPI\\DTO\\UserDTO.cs",
+              "ViewState": "AQIAAAwAAAAAAAAAAAA0wCMAAAABAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-11T16:25:21.611Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "Notification.cs",
+              "DocumentMoniker": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\Notification.cs",
+              "RelativeDocumentMoniker": "ToySharingAPI\\Models\\Notification.cs",
+              "ToolTip": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\Notification.cs",
+              "RelativeToolTip": "ToySharingAPI\\Models\\Notification.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAA0AAAAuAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-08T01:55:08.481Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
               "Title": "NotificationDTO.cs",
               "DocumentMoniker": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\NotificationDTO.cs",
               "RelativeDocumentMoniker": "ToySharingAPI\\DTO\\NotificationDTO.cs",
@@ -184,12 +206,11 @@
               "RelativeToolTip": "ToySharingAPI\\DTO\\NotificationDTO.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAgAAAAtAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-03-08T01:56:53.788Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-03-08T01:56:53.788Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 10,
               "Title": "ProductDTO.cs",
               "DocumentMoniker": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\ProductDTO.cs",
               "RelativeDocumentMoniker": "ToySharingAPI\\DTO\\ProductDTO.cs",
@@ -201,19 +222,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "RequestDTO.cs",
-              "DocumentMoniker": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\RequestDTO.cs",
-              "RelativeDocumentMoniker": "ToySharingAPI\\DTO\\RequestDTO.cs",
-              "ToolTip": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\RequestDTO.cs",
-              "RelativeToolTip": "ToySharingAPI\\DTO\\RequestDTO.cs",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAkAAAA1AAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-19T11:46:08.173Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 9,
               "Title": "RentRequest.cs",
               "DocumentMoniker": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\RentRequest.cs",
               "RelativeDocumentMoniker": "ToySharingAPI\\Models\\RentRequest.cs",
@@ -225,7 +234,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 11,
               "Title": "User.cs",
               "DocumentMoniker": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\User.cs",
               "RelativeDocumentMoniker": "ToySharingAPI\\Models\\User.cs",
@@ -237,7 +246,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 12,
               "Title": "Product.cs",
               "DocumentMoniker": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\Product.cs",
               "RelativeDocumentMoniker": "ToySharingAPI\\Models\\Product.cs",
@@ -246,18 +255,6 @@
               "ViewState": "AQIAAAgAAAAAAAAAAAAAwBwAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-02-08T11:08:46.793Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 12,
-              "Title": "Category.cs",
-              "DocumentMoniker": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\Category.cs",
-              "RelativeDocumentMoniker": "ToySharingAPI\\Models\\Category.cs",
-              "ToolTip": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\Category.cs",
-              "RelativeToolTip": "ToySharingAPI\\Models\\Category.cs",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-25T12:13:52.994Z"
             },
             {
               "$type": "Document",

@@ -101,16 +101,17 @@ namespace ToySharingAPI.Controllers
             });
         }
 
-        // View list request
+        // View list request (danh sách request cho sản phẩm của userId - chủ sở hữu)
         [HttpGet("user/{userId}")]
         public async Task<ActionResult<IEnumerable<RequestDTO>>> GetRequestsByUserId(int userId)
         {
             var requests = await _context.RentRequests
-                .Where(r => r.UserId == userId)
+                .Include(r => r.Product)
+                .Where(r => r.Product.UserId == userId) // Lấy request dựa trên chủ sở hữu sản phẩm
                 .Select(r => new RequestDTO
                 {
                     RequestId = r.RequestId,
-                    UserId = r.UserId,
+                    UserId = r.UserId, // UserId của người mượn
                     ProductId = r.ProductId,
                     Status = r.Status,
                     RequestDate = r.RequestDate,
