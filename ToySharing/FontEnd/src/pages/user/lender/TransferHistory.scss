@@ -1,0 +1,128 @@
+@import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@300;400;700&display=swap');
+
+$primary-color: #ff8a80;       // Pastel hồng
+$accent-color: #28a745;        // Màu xanh cho trạng thái hoàn thành
+$pending-color: #888;          // Màu xám cho trạng thái chưa xác định
+$background-color: #f7f9fc;
+$list-bg-color: #fff;
+$font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+
+.transfer-history-page {
+  background-color: $background-color;
+  font-family: $font-family;
+  padding: 2rem 0;
+
+  .main-content {
+    background-color: $list-bg-color;
+    padding: 1rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .date-filter {
+    margin-bottom: 1.5rem;
+    label {
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      display: block;
+      font-size: 1.1rem;
+      color: #333;
+    }
+    .date-picker-input {
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      color: #333;
+      background: $list-bg-color;
+    }
+  }
+
+  .transfer-items-section {
+    .transfer-card {
+      border: 1px solid #ddd;  // Thêm border cho mỗi item
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      transition: transform 0.2s;
+      
+      &:hover {
+        transform: translateY(-5px);
+      }
+
+      .toy-image {
+        height: 180px;
+        object-fit: cover;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+      }
+
+      .toy-name {
+        font-size: 1.4rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: #333;
+      }
+
+      .toy-price {
+        font-size: 1.2rem;
+        color: $primary-color;
+        margin-bottom: 0.5rem;
+      }
+
+      .transfer-date,
+      .transfer-status {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+        color: #333;
+      }
+
+      .transfer-status {
+        strong {
+          font-weight: bold;
+        }
+        .completed {
+          color: $accent-color;
+          font-weight: bold;
+        }
+        .pending {
+          color: $pending-color;
+          font-weight: bold;
+        }
+      }
+
+      .partner-info {
+        display: flex;
+        align-items: center;
+        margin-top: 10px;
+        
+        .partner-avatar {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 1px solid #ddd;
+        }
+
+        .partner-link {
+          margin-left: 0.5rem;
+          font-size: 1rem;
+          color: $primary-color;
+          text-decoration: underline; // Link gạch dưới
+          transition: color 0.3s;
+          
+          &:hover {
+            color: $accent-color;
+          }
+        }
+      }
+    }
+  }
+
+  .view-more-btn {
+    margin-top: 1rem;
+    font-size: 1.1rem;
+    padding: 0.5rem 1rem;
+  }
+}
