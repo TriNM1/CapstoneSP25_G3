@@ -3,12 +3,16 @@
   "WorkspaceRootPath": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\kahanh\\cap\\capstonesp25_g3\\toysharing\\toysharingapi\\models\\product.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\models\\product.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\kahanh\\cap\\capstonesp25_g3\\toysharing\\toysharingapi\\controllers\\productscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\controllers\\productscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\kahanh\\cap\\capstonesp25_g3\\toysharing\\toysharingapi\\models\\toysharingver2context.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\models\\toysharingver2context.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\kahanh\\cap\\capstonesp25_g3\\toysharing\\toysharingapi\\models\\toysharingver3context.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\models\\toysharingver3context.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\kahanh\\cap\\capstonesp25_g3\\toysharing\\toysharingapi\\models\\product.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\models\\product.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\kahanh\\cap\\capstonesp25_g3\\toysharing\\toysharingapi\\dto\\productdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -17,10 +21,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\kahanh\\cap\\capstonesp25_g3\\toysharing\\toysharingapi\\dto\\userdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\dto\\userdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\kahanh\\cap\\capstonesp25_g3\\toysharing\\toysharingapi\\controllers\\productscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\controllers\\productscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\kahanh\\cap\\capstonesp25_g3\\toysharing\\toysharingapi\\models\\rentrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -57,6 +57,10 @@
     {
       "AbsoluteMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|d:\\kahanh\\cap\\capstonesp25_g3\\toysharing\\toysharingapi\\toysharingapi.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
       "RelativeMoniker": "D:0:0:{E78C079C-762D-4D0E-B9B0-B67B88F707DE}|ToySharingAPI\\ToySharingAPI.csproj|solutionrelative:toysharingapi\\toysharingapi.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\ToysharingVer2Context.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:ToySharingAPI\\Models\\ToysharingVer2Context.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -66,11 +70,28 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 6,
           "Children": [
             {
               "$type": "Document",
               "DocumentIndex": 1,
+              "Title": "ToySharingVer3Context.cs",
+              "DocumentMoniker": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\ToySharingVer3Context.cs",
+              "RelativeDocumentMoniker": "ToySharingAPI\\Models\\ToySharingVer3Context.cs",
+              "ToolTip": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\ToySharingVer3Context.cs",
+              "RelativeToolTip": "ToySharingAPI\\Models\\ToySharingVer3Context.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-11T16:47:58.514Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:129:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
               "Title": "ToysharingVer2Context.cs",
               "DocumentMoniker": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\ToysharingVer2Context.cs",
               "RelativeDocumentMoniker": "ToySharingAPI\\Models\\ToysharingVer2Context.cs",
@@ -78,8 +99,7 @@
               "RelativeToolTip": "ToySharingAPI\\Models\\ToysharingVer2Context.cs",
               "ViewState": "AQIAAAwAAAAAAAAAAAA1wCgAAAAFAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-25T11:56:18.775Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-25T11:56:18.775Z"
             },
             {
               "$type": "Document",
@@ -91,12 +111,11 @@
               "RelativeToolTip": "ToySharingAPI\\Models\\RentRequest.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-25T11:57:20.033Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-25T11:57:20.033Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "UserDTO.cs",
               "DocumentMoniker": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\UserDTO.cs",
               "RelativeDocumentMoniker": "ToySharingAPI\\DTO\\UserDTO.cs",
@@ -104,12 +123,11 @@
               "RelativeToolTip": "ToySharingAPI\\DTO\\UserDTO.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-11T16:25:21.611Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-11T16:25:21.611Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "ProductDTO.cs",
               "DocumentMoniker": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\DTO\\ProductDTO.cs",
               "RelativeDocumentMoniker": "ToySharingAPI\\DTO\\ProductDTO.cs",
@@ -117,12 +135,11 @@
               "RelativeToolTip": "ToySharingAPI\\DTO\\ProductDTO.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-08T11:29:33.513Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-08T11:29:33.513Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 0,
               "Title": "ProductsController.cs",
               "DocumentMoniker": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Controllers\\ProductsController.cs",
               "RelativeDocumentMoniker": "ToySharingAPI\\Controllers\\ProductsController.cs",
@@ -135,13 +152,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
               "Title": "Product.cs",
               "DocumentMoniker": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\Product.cs",
               "RelativeDocumentMoniker": "ToySharingAPI\\Models\\Product.cs",
               "ToolTip": "D:\\kAHAnh\\Cap\\CapstoneSP25_G3\\ToySharing\\ToySharingAPI\\Models\\Product.cs",
               "RelativeToolTip": "ToySharingAPI\\Models\\Product.cs",
-              "ViewState": "AQIAAAwAAAAAAAAAAAAqwCkAAAAAAAAA",
+              "ViewState": "AQIAAAwAAAAAAAAAAAAqwCcAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-02-08T11:08:46.793Z",
               "EditorCaption": ""
@@ -156,8 +173,7 @@
               "RelativeToolTip": "ToySharingAPI\\Program.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAA4AAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-08T11:19:12.417Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-08T11:19:12.417Z"
             },
             {
               "$type": "Document",
@@ -169,8 +185,7 @@
               "RelativeToolTip": "ToySharingAPI\\appsettings.json",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAQAAAABAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-02-08T09:33:45.621Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-08T09:33:45.621Z"
             },
             {
               "$type": "Document",
@@ -182,8 +197,7 @@
               "RelativeToolTip": "ToySharingAPI\\Controllers\\UserController.cs",
               "ViewState": "AQIAAAMAAAAAAAAAAAAAABAAAAAJAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-11T16:14:38.342Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-11T16:14:38.342Z"
             },
             {
               "$type": "Document",
@@ -195,8 +209,7 @@
               "RelativeToolTip": "ToySharingAPI\\Models\\Category.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-25T11:59:44.363Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-25T11:59:44.363Z"
             },
             {
               "$type": "Document",
@@ -208,8 +221,7 @@
               "RelativeToolTip": "ToySharingAPI\\Models\\History.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-25T11:57:24.162Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-25T11:57:24.162Z"
             },
             {
               "$type": "Document",
@@ -221,8 +233,7 @@
               "RelativeToolTip": "ToySharingAPI\\Models\\Notification.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-25T11:57:23.378Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-25T11:57:23.378Z"
             },
             {
               "$type": "Document",

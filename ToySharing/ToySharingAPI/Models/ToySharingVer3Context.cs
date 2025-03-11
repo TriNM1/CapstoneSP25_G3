@@ -37,13 +37,13 @@ public partial class ToySharingVer3Context : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=localhost;Database=ToySharing_ver3;User Id=sa;Password=123;TrustServerCertificate=True;");
+        => optionsBuilder.UseSqlServer("server =localhost; database = ToySharing_ver3;uid=sa;pwd=sa;TrustServerCertificate=true");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<BanLog>(entity =>
         {
-            entity.HasKey(e => e.LogId).HasName("PK__Ban_Log__9E2397E0E165C46F");
+            entity.HasKey(e => e.LogId).HasName("PK__Ban_Log__9E2397E0D247E01D");
 
             entity.ToTable("Ban_Log");
 
@@ -64,9 +64,9 @@ public partial class ToySharingVer3Context : DbContext
 
         modelBuilder.Entity<Category>(entity =>
         {
-            entity.HasKey(e => e.CategoryId).HasName("PK__Categori__D54EE9B47DD1A5D8");
+            entity.HasKey(e => e.CategoryId).HasName("PK__Categori__D54EE9B4A6834D81");
 
-            entity.HasIndex(e => e.CategoryName, "UQ__Categori__5189E255D72E5EFC").IsUnique();
+            entity.HasIndex(e => e.CategoryName, "UQ__Categori__5189E2551AC481F0").IsUnique();
 
             entity.Property(e => e.CategoryId).HasColumnName("category_id");
             entity.Property(e => e.CategoryName)
@@ -76,7 +76,7 @@ public partial class ToySharingVer3Context : DbContext
 
         modelBuilder.Entity<Conversation>(entity =>
         {
-            entity.HasKey(e => e.ConversationId).HasName("PK__Conversa__311E7E9AB34EA8E5");
+            entity.HasKey(e => e.ConversationId).HasName("PK__Conversa__311E7E9A743C70F8");
 
             entity.Property(e => e.ConversationId).HasColumnName("conversation_id");
             entity.Property(e => e.CreatedAt)
@@ -102,7 +102,7 @@ public partial class ToySharingVer3Context : DbContext
 
         modelBuilder.Entity<History>(entity =>
         {
-            entity.HasKey(e => e.RequestId).HasName("PK__History__18D3B90F9D797B72");
+            entity.HasKey(e => e.RequestId).HasName("PK__History__18D3B90F3FD58FCC");
 
             entity.ToTable("History");
 
@@ -117,6 +117,11 @@ public partial class ToySharingVer3Context : DbContext
             entity.Property(e => e.Status).HasColumnName("status");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
+            entity.HasOne(d => d.Product).WithMany(p => p.Histories)
+                .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_History_Product");
+
             entity.HasOne(d => d.Request).WithOne(p => p.History)
                 .HasForeignKey<History>(d => d.RequestId)
                 .HasConstraintName("FK_History_Request");
@@ -124,7 +129,7 @@ public partial class ToySharingVer3Context : DbContext
 
         modelBuilder.Entity<Image>(entity =>
         {
-            entity.HasKey(e => e.ImageId).HasName("PK__Images__DC9AC955392CE2D4");
+            entity.HasKey(e => e.ImageId).HasName("PK__Images__DC9AC9552987FB1D");
 
             entity.Property(e => e.ImageId).HasColumnName("image_id");
             entity.Property(e => e.CreateTime)
@@ -143,7 +148,7 @@ public partial class ToySharingVer3Context : DbContext
 
         modelBuilder.Entity<Message>(entity =>
         {
-            entity.HasKey(e => e.MessageId).HasName("PK__Messages__0BBF6EE682A242C5");
+            entity.HasKey(e => e.MessageId).HasName("PK__Messages__0BBF6EE639440813");
 
             entity.Property(e => e.MessageId).HasColumnName("message_id");
             entity.Property(e => e.Content)
@@ -170,7 +175,7 @@ public partial class ToySharingVer3Context : DbContext
 
         modelBuilder.Entity<Notification>(entity =>
         {
-            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__E059842FC8A1217F");
+            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__E059842F81F6A66A");
 
             entity.Property(e => e.NotificationId).HasColumnName("notification_id");
             entity.Property(e => e.Content)
@@ -192,7 +197,7 @@ public partial class ToySharingVer3Context : DbContext
 
         modelBuilder.Entity<Product>(entity =>
         {
-            entity.HasKey(e => e.ProductId).HasName("PK__Products__47027DF52E5FA4F2");
+            entity.HasKey(e => e.ProductId).HasName("PK__Products__47027DF569EA0D5A");
 
             entity.Property(e => e.ProductId).HasColumnName("product_id");
             entity.Property(e => e.Available)
@@ -231,7 +236,7 @@ public partial class ToySharingVer3Context : DbContext
 
         modelBuilder.Entity<RentRequest>(entity =>
         {
-            entity.HasKey(e => e.RequestId).HasName("PK__Rent_req__18D3B90FA560BBE8");
+            entity.HasKey(e => e.RequestId).HasName("PK__Rent_req__18D3B90F98C64115");
 
             entity.ToTable("Rent_requests");
 
@@ -267,7 +272,7 @@ public partial class ToySharingVer3Context : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Users__3213E83F63C3E2E3");
+            entity.HasKey(e => e.Id).HasName("PK__Users__3213E83F7CEC8C61");
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Address)
