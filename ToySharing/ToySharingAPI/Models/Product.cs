@@ -29,6 +29,8 @@ public partial class Product
 
     public virtual Category Category { get; set; } = null!;
 
+    public virtual ICollection<History> Histories { get; set; } = new List<History>();
+
     public virtual ICollection<Image> Images { get; set; } = new List<Image>();
 
     public virtual ICollection<RentRequest> RentRequests { get; set; } = new List<RentRequest>();
