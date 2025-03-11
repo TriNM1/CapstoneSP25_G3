@@ -14,7 +14,7 @@ public partial class ToySharingVer3Context : DbContext
         : base(options)
     {
     }
-
+    public virtual DbSet<History> Histories { get; set; }
     public virtual DbSet<BanLog> BanLogs { get; set; }
 
     public virtual DbSet<Category> Categories { get; set; }
