@@ -13,7 +13,7 @@ public partial class RentRequest
 
     public string? Message { get; set; }
 
-    public int? Status { get; set; }
+    public int Status { get; set; }
 
     public DateTime? RequestDate { get; set; }
 
