@@ -33,29 +33,35 @@ namespace ToySharingAPI.Controllers
                 ProductId = requestDto.ProductId,
                 Message = requestDto.Message,
                 Status = 0, // Chờ duyệt
-                RequestDate = requestDto.RequestDate ?? DateTime.UtcNow,
-                RentDate = requestDto.RentDate ?? throw new ArgumentNullException(nameof(requestDto.RentDate)),
-                ReturnDate = requestDto.ReturnDate ?? throw new ArgumentNullException(nameof(requestDto.ReturnDate))
+                RequestDate = requestDto.RequestDate ?? DateTime.UtcNow, // Xử lý nullable với mặc định
+                RentDate = requestDto.RentDate,
+                ReturnDate = requestDto.ReturnDate
             };
 
             _context.RentRequests.Add(request);
             await _context.SaveChangesAsync();
 
             requestDto.RequestId = request.RequestId;
+            requestDto.RequestDate = request.RequestDate; 
             return CreatedAtAction(nameof(GetRequestById), new { id = request.RequestId }, requestDto);
         }
 
         // Update request status (chủ sở hữu duyệt/từ chối request)
-        [HttpPut("{id}/status")]
-        public async Task<IActionResult> UpdateRequestStatus(int id, int newStatus)
+        [HttpPut("{requestId}/status")]
+        public async Task<ActionResult<RequestStatusDTO>> ConfirmOrRejectBorrowingRequest(int requestId, int userId, int newStatus)
         {
             var request = await _context.RentRequests
                 .Include(r => r.Product)
-                .FirstOrDefaultAsync(r => r.RequestId == id);
+                .FirstOrDefaultAsync(r => r.RequestId == requestId);
 
             if (request == null)
             {
                 return NotFound("Request not found.");
+            }
+
+            if (request.Product.UserId != userId)
+            {
+                return Forbid("You are not authorized to manage this request.");
             }
 
             var product = request.Product;
@@ -72,14 +78,14 @@ namespace ToySharingAPI.Controllers
                         return BadRequest("Request can only be approved from 'pending' status.");
                     }
                     request.Status = 1;
-                    product.Available = 1; // Đang mượn
+                    product.Available = 1;
                     var history = new History
                     {
                         RequestId = request.RequestId,
                         UserId = request.UserId,
                         ProductId = request.ProductId,
                         Status = 0, // Chưa lấy
-                        ReturnDate = request.ReturnDate // NOT NULL
+                        ReturnDate = request.ReturnDate
                     };
                     _context.Histories.Add(history);
                     break;
@@ -90,7 +96,7 @@ namespace ToySharingAPI.Controllers
                         return BadRequest("Request can only be rejected from 'pending' status.");
                     }
                     request.Status = 2;
-                    product.Available = 0; // Sẵn sàng
+                    product.Available = 0;
                     break;
 
                 default:
@@ -98,16 +104,10 @@ namespace ToySharingAPI.Controllers
             }
 
             await _context.SaveChangesAsync();
-            return Ok(new RequestDTO
+            return Ok(new RequestStatusDTO
             {
                 RequestId = request.RequestId,
-                UserId = request.UserId,
-                ProductId = request.ProductId,
-                Message = request.Message,
-                Status = request.Status,
-                RequestDate = request.RequestDate,
-                RentDate = request.RentDate,
-                ReturnDate = request.ReturnDate
+                Status = request.Status
             });
         }
 
@@ -145,7 +145,7 @@ namespace ToySharingAPI.Controllers
                     RequestId = h.RequestId,
                     UserId = h.UserId,
                     ProductId = h.ProductId,
-                    Status = h.Status, // Đảm bảo Status là int (NOT NULL trong DB)
+                    Status = h.Status,
                     Rating = h.Rating,
                     ReturnDate = h.ReturnDate
                 })
@@ -282,7 +282,7 @@ namespace ToySharingAPI.Controllers
                 RequestId = history.RequestId,
                 UserId = history.UserId,
                 ProductId = history.ProductId,
-                Status = history.Status, // Đảm bảo Status là int (NOT NULL trong DB)
+                Status = history.Status,
                 Rating = history.Rating,
                 ReturnDate = history.ReturnDate
             });
@@ -293,7 +293,7 @@ namespace ToySharingAPI.Controllers
         public async Task<ActionResult<HistoryDTO>> ConfirmComplete(int requestId, int userId, int rating)
         {
             var history = await _context.Histories
-                .Include(h => h.Product) // Sửa từ Include(h => h.ProductId) thành Include(h => h.Product)
+                .Include(h => h.Product)
                 .FirstOrDefaultAsync(h => h.RequestId == requestId && h.UserId == userId);
 
             if (history == null)
@@ -301,7 +301,7 @@ namespace ToySharingAPI.Controllers
                 return NotFound("History record not found.");
             }
 
-            var product = history.Product; // Sửa từ history.ProductId thành history.Product
+            var product = history.Product;
             if (product == null)
             {
                 return NotFound("Associated product not found.");
@@ -320,7 +320,7 @@ namespace ToySharingAPI.Controllers
             history.Status = 2; // Completed
             history.Rating = rating;
             history.ReturnDate = DateTime.UtcNow;
-            product.Available = 0; // Sẵn sàng
+            product.Available = 0;
 
             await _context.SaveChangesAsync();
 
@@ -329,10 +329,75 @@ namespace ToySharingAPI.Controllers
                 RequestId = history.RequestId,
                 UserId = history.UserId,
                 ProductId = history.ProductId,
-                Status = history.Status, // Đảm bảo Status là int (NOT NULL trong DB)
+                Status = history.Status,
                 Rating = history.Rating,
                 ReturnDate = history.ReturnDate
             });
+        }
+
+        // Send Feedback After Done
+        [HttpPut("history/{requestId}/feedback")]
+        public async Task<ActionResult<FeedbackDTO>> SendFeedbackAfterDone(int requestId, int userId, int rating, string comment)
+        {
+            var history = await _context.Histories
+                .Include(h => h.Product)
+                .FirstOrDefaultAsync(h => h.RequestId == requestId && h.UserId == userId);
+
+            if (history == null)
+            {
+                return NotFound("History record not found.");
+            }
+
+            if (history.Status != 1 && history.Status != 2)
+            {
+                return BadRequest("Feedback can only be sent after picking up the product.");
+            }
+
+            if (rating < 1 || rating > 5)
+            {
+                return BadRequest("Rating must be between 1 and 5.");
+            }
+
+            history.Status = 2;
+            history.Rating = rating;
+            history.ReturnDate = DateTime.UtcNow;
+
+            if (history.Product != null)
+            {
+                history.Product.Available = 0;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new FeedbackDTO
+            {
+                HistoryId = history.RequestId,
+                Rating = history.Rating.Value,
+                Comment = comment
+            });
+        }
+
+        // Remove Sending Request
+        [HttpDelete("{requestId}")]
+        public async Task<IActionResult> RemoveSendingRequest(int requestId, int userId)
+        {
+            var request = await _context.RentRequests
+                .FirstOrDefaultAsync(r => r.RequestId == requestId && r.UserId == userId);
+
+            if (request == null)
+            {
+                return NotFound("Request not found.");
+            }
+
+            if (request.Status != 0)
+            {
+                return BadRequest("Only pending requests can be removed.");
+            }
+
+            _context.RentRequests.Remove(request);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Request removed successfully" });
         }
     }
 }

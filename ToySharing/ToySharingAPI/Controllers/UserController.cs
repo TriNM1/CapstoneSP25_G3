@@ -13,10 +13,12 @@ namespace ToySharingAPI.Controllers
     public class UserController : ControllerBase
     {
         private readonly ToySharingVer3Context _context;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public UserController(ToySharingVer3Context context)
+        public UserController(ToySharingVer3Context context, IHttpClientFactory httpClientFactory)
         {
             _context = context;
+            _httpClientFactory = httpClientFactory;
         }
 
         // Get user by ID (không bao gồm danh sách đồ chơi)
@@ -34,12 +36,12 @@ namespace ToySharingAPI.Controllers
                     Avatar = u.Avatar,
                     Gender = u.Gender,
                     Age = u.Age,
-                    CreatedAt = u.CreatedAt,
-                    Latitude = u.Latitude,
-                    Longitude = u.Longtitude,
                     Rating = _context.Histories
                         .Where(h => h.Product.UserId == u.Id && h.Status == 2)
-                        .Average(h => (float?)h.Rating) ?? 0 // Tính trung bình Rating
+                        .Average(h => (double?)h.Rating) ?? 0,
+                    CreatedAt = u.CreatedAt,
+                    Latitude = u.Latitude,
+                    Longitude = u.Longtitude
                 })
                 .FirstOrDefaultAsync();
 
@@ -65,12 +67,12 @@ namespace ToySharingAPI.Controllers
                     UserId = p.UserId,
                     Name = p.Name,
                     CategoryName = p.Category != null ? p.Category.CategoryName : null,
-                    Available = p.Available,
+                    Available = p.Available ?? 0,
                     Description = p.Description,
                     ProductStatus = p.ProductStatus,
                     Price = p.Price,
                     SuitableAge = p.SuitableAge,
-                    CreatedAt = p.CreatedAt,
+                    CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
                     ImagePaths = p.Images.Select(i => i.Path).ToList()
                 })
                 .ToListAsync();
@@ -94,7 +96,7 @@ namespace ToySharingAPI.Controllers
                         Avatar = u.Avatar,
                         Rating = _context.Histories
                             .Where(h => h.Product.UserId == u.Id && h.Status == 2)
-                            .Average(h => (float?)h.Rating) ?? 0
+                            .Average(h => (double?)h.Rating) ?? 0
                     }
                 })
                 .FirstOrDefaultAsync();
@@ -129,17 +131,58 @@ namespace ToySharingAPI.Controllers
             return Ok();
         }
 
-        // Get Address from Coordinates
+        // Get User Location
+        [HttpGet("{id}/location")]
+        public async Task<IActionResult> GetUserLocation(int id)
+        {
+            var user = await _context.Users
+                .Where(u => u.Id == id)
+                .Select(u => new
+                {
+                    Latitude = u.Latitude,
+                    Longitude = u.Longtitude,
+                    Address = u.Address
+                })
+                .FirstOrDefaultAsync();
+
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            return Ok(user);
+        }
+
+        // Update User Location
+        [HttpPut("{id}/location")]
+        public async Task<IActionResult> UpdateUserLocation(int id, [FromBody] LocationUpdateDTO locationDto)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            user.Latitude = locationDto.Latitude;
+            user.Longtitude = locationDto.Longitude;
+            user.Address = locationDto.Address;
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "User location updated successfully" });
+        }
+
+        // Get Address from Coordinates (dùng Nominatim)
         [HttpGet("location/address")]
         public async Task<IActionResult> GetAddressFromCoordinates(decimal latitude, decimal longitude)
         {
             try
             {
-                using var client = new HttpClient();
-                var url = $"https://maps.googleapis.com/maps/api/geocode/json?latlng={latitude},{longitude}&key=YOUR_API_KEY";
+                var client = _httpClientFactory.CreateClient();
+                var url = $"https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat={latitude}&lon={longitude}";
+                client.DefaultRequestHeaders.Add("User-Agent", "ToySharingAPI"); // Nominatim yêu cầu User-Agent
                 var response = await client.GetStringAsync(url);
-                var json = JsonSerializer.Deserialize<dynamic>(response);
-                string address = json["results"][0]["formatted_address"].ToString();
+                var json = JsonSerializer.Deserialize<JsonElement>(response);
+                string address = json.GetProperty("display_name").GetString() ?? "Unknown address";
 
                 return Ok(new { Address = address });
             }
@@ -149,26 +192,37 @@ namespace ToySharingAPI.Controllers
             }
         }
 
-        // Get Coordinates from Address
+        // Get Coordinates from Address (dùng Nominatim)
         [HttpGet("location/coordinates")]
         public async Task<IActionResult> GetCoordinatesFromAddress(string address)
         {
             try
             {
-                using var client = new HttpClient();
+                var client = _httpClientFactory.CreateClient();
                 var encodedAddress = Uri.EscapeDataString(address);
-                var url = $"https://maps.googleapis.com/maps/api/geocode/json?address={encodedAddress}&key=YOUR_API_KEY";
+                var url = $"https://nominatim.openstreetmap.org/search?q={encodedAddress}&format=jsonv2";
+                client.DefaultRequestHeaders.Add("User-Agent", "ToySharingAPI"); 
                 var response = await client.GetStringAsync(url);
-                var json = JsonSerializer.Deserialize<dynamic>(response);
-                decimal latitude = json["results"][0]["geometry"]["location"]["lat"];
-                decimal longitude = json["results"][0]["geometry"]["location"]["lng"];
-
-                return Ok(new { Latitude = latitude, Longitude = longitude });
+                var json = JsonSerializer.Deserialize<JsonElement>(response);
+                if (json.TryGetProperty("0", out var firstResult))
+                {
+                    decimal latitude = firstResult.GetProperty("lat").GetDecimal();
+                    decimal longitude = firstResult.GetProperty("lon").GetDecimal();
+                    return Ok(new { Latitude = latitude, Longitude = longitude });
+                }
+                return NotFound("No coordinates found for this address.");
             }
             catch (Exception ex)
             {
                 return StatusCode(500, $"Error retrieving coordinates: {ex.Message}");
             }
         }
+    }
+
+    public class LocationUpdateDTO
+    {
+        public decimal? Latitude { get; set; }
+        public decimal? Longitude { get; set; }
+        public string? Address { get; set; }
     }
 }
