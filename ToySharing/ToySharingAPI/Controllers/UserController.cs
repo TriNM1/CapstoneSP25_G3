@@ -33,7 +33,7 @@ namespace ToySharingAPI.Controllers
             var banLog = new BanLog
             {
                 UserId = request.UserId,
-                Reasons = request.Reason,
+                Reason = request.Reason,
                 Timestamp = DateTime.Now
             };
 
@@ -56,7 +56,7 @@ namespace ToySharingAPI.Controllers
             var banLog = new BanLog
             {
                 UserId = request.UserId,
-                Reasons = request.Reason,
+                Reason = request.Reason,
                 Timestamp = DateTime.Now
             };
 
@@ -72,8 +72,8 @@ namespace ToySharingAPI.Controllers
             var logs = await _context.BanLogs
                 .Select(log => new BanLogDTO
                 {
-                    UserId = log.UserId ?? 0,
-                    Reasons = log.Reasons,
+                    UserId = log.UserId,
+                    Reasons = log.Reason,
                     Timestamp = log.Timestamp ?? DateTime.MinValue
                 })
                 .ToListAsync();
