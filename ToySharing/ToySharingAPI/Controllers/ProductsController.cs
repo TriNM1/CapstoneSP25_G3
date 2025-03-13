@@ -10,8 +10,8 @@ namespace ToySharingAPI.Controllers
     [ApiController]
     public class ProductsController : ControllerBase
     {
-        private readonly ToysharingVer2Context _context;
-        public ProductsController(ToysharingVer2Context context)
+        private readonly ToySharingVer3Context _context;
+        public ProductsController(ToySharingVer3Context context)
         {
             _context = context;
         }
