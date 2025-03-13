@@ -369,9 +369,9 @@ namespace ToySharingAPI.Controllers
             var recommendations = await _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Images)
-                .Where(p => (p.Available ?? 0) == 0 && p.UserId != userId) // Sản phẩm sẵn sàng và không phải của user
-                .OrderBy(p => Guid.NewGuid()) // Ngẫu nhiên
-                .Take(5) // Lấy 5 sản phẩm
+                .Where(p => (p.Available ?? 0) == 0 && p.UserId != userId) 
+                .OrderBy(p => Guid.NewGuid()) 
+                .Take(5) 
                 .Select(p => new ProductDTO
                 {
                     ProductId = p.ProductId,
