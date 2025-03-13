@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using ToySharingAPI.Data;
+using ToySharingAPI.Hubs;
 using ToySharingAPI.Models;
 using ToySharingAPI.Repositories;
 using ToySharingAPI.Services;
@@ -99,6 +100,8 @@ builder.Services.AddSession(options =>
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
 
+builder.Services.AddSignalR();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -117,5 +120,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<ChatHub>("/chatHub");
 
 app.Run();

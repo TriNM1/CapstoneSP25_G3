@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ToySharingAPI.DTO;
+using ToySharingAPI.Models;
 using ToySharingAPI.Repositories;
 using ToySharingAPI.Services;
 
@@ -15,14 +16,16 @@ namespace ToySharingAPI.Controllers
         private readonly ITokenRepository tokenRepository;
         private readonly IEmailService emailService;
         private readonly IHttpContextAccessor httpContextAccessor;
+        private readonly ToySharingVer3Context mainContext;
 
         public AuthController(UserManager<IdentityUser> userManager, ITokenRepository tokenRepository, IEmailService emailService,
-            IHttpContextAccessor httpContextAccessor)
+            IHttpContextAccessor httpContextAccessor, ToySharingVer3Context mainContext)
         {
             this.userManager = userManager;
             this.tokenRepository = tokenRepository;
             this.emailService = emailService;
             this.httpContextAccessor = httpContextAccessor;
+            this.mainContext = mainContext;
         }
 
         [HttpPost("RequestOTP")]
@@ -54,11 +57,35 @@ namespace ToySharingAPI.Controllers
             var userExists = await userManager.FindByEmailAsync(request.Email);
             if (userExists != null) return BadRequest("Email already registered!");
 
+            // Tạo IdentityUser ở bảng AspNetUsers
             var identityUser = new IdentityUser { UserName = request.Email, Email = request.Email };
             var result = await userManager.CreateAsync(identityUser, request.Password);
             if (!result.Succeeded) return BadRequest("Failed to create account!");
 
             await userManager.AddToRoleAsync(identityUser, "User");
+
+            // Sau khi tạo thành công IdentityUser, tạo record tương ứng trong bảng Users của DB chính
+            if (!Guid.TryParse(identityUser.Id, out Guid authUserGuid))
+                return BadRequest("User id format is invalid.");
+
+            var newUser = new User
+            {
+                AuthUserId = authUserGuid,   
+                Name = request.Email,         
+                CreatedAt = DateTime.UtcNow,
+                Address = string.Empty,      
+                Latitude = 0,
+                Longtitude = 0,
+                Status = 0,
+                Avatar = string.Empty,
+                Gender = true,                   
+                Age = 0,
+                Rating = 0
+            };
+
+            mainContext.Users.Add(newUser);
+            await mainContext.SaveChangesAsync();
+
             return Ok("Account created successfully.");
         }
 
