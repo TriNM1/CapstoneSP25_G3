@@ -7,17 +7,17 @@ public partial class Product
 {
     public int ProductId { get; set; }
 
-    public int? UserId { get; set; }
+    public int UserId { get; set; }
 
-    public string? Name { get; set; }
+    public int CategoryId { get; set; }
 
-    public int? CategoryId { get; set; }
+    public string Name { get; set; } = null!;
 
-    public int? ProductStatus { get; set; }
+    public int ProductStatus { get; set; }
 
-    public int? SuitableAge { get; set; }
+    public int SuitableAge { get; set; }
 
-    public decimal? Price { get; set; }
+    public decimal Price { get; set; }
 
     public string? Description { get; set; }
 
@@ -27,9 +27,7 @@ public partial class Product
 
     public DateTime? UpdatedAt { get; set; }
 
-    public string? Address { get; set; }
-
-    public virtual Category? Category { get; set; }
+    public virtual Category Category { get; set; } = null!;
 
     public virtual ICollection<History> Histories { get; set; } = new List<History>();
 
@@ -37,5 +35,5 @@ public partial class Product
 
     public virtual ICollection<RentRequest> RentRequests { get; set; } = new List<RentRequest>();
 
-    public virtual User? User { get; set; }
+    public virtual User User { get; set; } = null!;
 }
