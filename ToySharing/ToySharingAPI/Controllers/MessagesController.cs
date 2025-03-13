@@ -42,12 +42,10 @@ namespace ToySharingAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> SendMessage(int conversationId, [FromBody] SendMessageRequestDTO request)
         {
-            // Kiểm tra tồn tại cuộc trò chuyện
             var conversation = await _context.Conversations.FirstOrDefaultAsync(c => c.ConversationId == conversationId);
             if (conversation == null)
                 return NotFound("Cuộc trò chuyện không tồn tại.");
 
-            // Kiểm tra người gửi có thuộc cuộc trò chuyện hay không
             if (conversation.User1Id != request.SenderId && conversation.User2Id != request.SenderId)
                 return Unauthorized("Người dùng không thuộc cuộc trò chuyện.");
 
@@ -61,18 +59,57 @@ namespace ToySharingAPI.Controllers
             };
 
             _context.Messages.Add(message);
-            // Cập nhật thời gian tin nhắn cuối trong conversation
             conversation.LastMessageAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
-            // Xác định receiverId dựa trên senderId
             var receiverId = (conversation.User1Id == request.SenderId) ? conversation.User2Id : conversation.User1Id;
 
-            // Sử dụng SignalR để đẩy tin nhắn mới tới receiver
             await _chatHubContext.Clients.User(receiverId.ToString())
                 .SendAsync("ReceiveMessage", conversationId, request.SenderId, request.Content, message.SentAt);
 
-            return Ok(message);
+            var responseDto = new MessageResponseDTO
+            {
+                MessageId = message.MessageId,
+                ConversationId = message.ConversationId,
+                SenderId = message.SenderId.GetValueOrDefault(),
+                Content = message.Content,
+                SentAt = message.SentAt.GetValueOrDefault(),
+                IsRead = message.IsRead.GetValueOrDefault()
+            };
+
+            return Ok(responseDto);
+        }
+
+        // PUT: api/conversations/{conversationId}/messages/{messageId}
+        // Cập nhật nội dung tin nhắn
+        [HttpPut("{messageId}")]
+        public async Task<IActionResult> UpdateMessage(int conversationId, int messageId, [FromBody] UpdateMessageRequestDTO request)
+        {
+            var conversation = await _context.Conversations.FirstOrDefaultAsync(c => c.ConversationId == conversationId);
+            if (conversation == null)
+                return NotFound("Cuộc trò chuyện không tồn tại.");
+
+            var message = await _context.Messages.FirstOrDefaultAsync(m => m.MessageId == messageId && m.ConversationId == conversationId);
+            if (message == null)
+                return NotFound("Tin nhắn không tồn tại trong cuộc trò chuyện này.");
+
+            if (message.SenderId != request.SenderId)
+                return Unauthorized("Bạn không có quyền cập nhật tin nhắn này.");
+
+            message.Content = request.Content;
+            await _context.SaveChangesAsync();
+
+            var responseDto = new MessageResponseDTO
+            {
+                MessageId = message.MessageId,
+                ConversationId = message.ConversationId,
+                SenderId = message.SenderId.GetValueOrDefault(),
+                Content = message.Content,
+                SentAt = message.SentAt.GetValueOrDefault(),
+                IsRead = message.IsRead.GetValueOrDefault()
+            };
+
+            return Ok(responseDto);
         }
 
         // PUT: api/conversations/{conversationId}/messages/{messageId}/read
@@ -80,7 +117,6 @@ namespace ToySharingAPI.Controllers
         [HttpPut("{messageId}/read")]
         public async Task<IActionResult> MarkMessageAsRead(int conversationId, int messageId)
         {
-            // Kiểm tra tin nhắn có tồn tại và thuộc cuộc trò chuyện được cung cấp hay không
             var message = await _context.Messages.FirstOrDefaultAsync(m => m.MessageId == messageId && m.ConversationId == conversationId);
             if (message == null)
                 return NotFound("Tin nhắn không tồn tại trong cuộc trò chuyện này.");

@@ -180,6 +180,32 @@
   },
   {
     "ContainingType": "ToySharingAPI.Controllers.MessagesController",
+    "Method": "UpdateMessage",
+    "RelativePath": "api/conversations/{conversationId}/Messages/{messageId}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "conversationId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "messageId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "ToySharingAPI.DTO.ChatDTO.UpdateMessageRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ToySharingAPI.Controllers.MessagesController",
     "Method": "MarkMessageAsRead",
     "RelativePath": "api/conversations/{conversationId}/Messages/{messageId}/read",
     "HttpMethod": "PUT",
