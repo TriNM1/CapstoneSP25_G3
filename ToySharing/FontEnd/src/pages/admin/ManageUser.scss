@@ -1,0 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700;800&display=swap');
+
+.manage-user-page {
+  background-color: #f7f9fc;
+  font-family: 'Comic Neue', sans-serif;
+  color: #444;
+  padding-bottom: 40px;
+
+  // Main Content được đặt cố định rộng 70vw và căn giữa
+  .main-content {
+    width: 65vw;
+    margin: 0 auto;
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  // Thanh tìm kiếm và bộ lọc
+  form {
+    margin-bottom: 20px;
+    .form-control,
+    .form-select {
+      font-size: 1rem;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      &::placeholder {
+        opacity: 0.3;
+      }
+    }
+    button {
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+  }
+
+  table {
+    th,
+    td {
+      font-size: 0.95rem;
+      text-align: center;
+      vertical-align: middle;
+    }
+  }
+
+  .pagination-container {
+    margin-top: 20px;
+    button {
+      font-size: 0.9rem;
+      padding: 5px 12px;
+    }
+  }
+}
