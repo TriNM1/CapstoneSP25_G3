@@ -18,6 +18,7 @@ namespace ToySharingAPI.Repositories
         {
             // Create claims
             var claim = new List<Claim>();
+            claim.Add(new Claim(ClaimTypes.NameIdentifier, user.Id));
             claim.Add(new Claim(ClaimTypes.Email, user.Email));
 
             foreach (var role in roles)

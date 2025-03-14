@@ -26,6 +26,7 @@ namespace ToySharingAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetConversations()
         {
+            // Lấy Claim NameIdentifier từ JWT token
             var authUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(authUserIdStr))
                 return Unauthorized();
@@ -33,18 +34,52 @@ namespace ToySharingAPI.Controllers
             if (!Guid.TryParse(authUserIdStr, out Guid authUserId))
                 return Unauthorized("User id không hợp lệ.");
 
+            // Tìm user trong DB chính theo trường auth_user_id
             var mainUser = await _context.Users.FirstOrDefaultAsync(u => u.AuthUserId == authUserId);
             if (mainUser == null)
-                return Unauthorized("Không tìm thấy user trong DB chính.");
+                return Unauthorized("Không tìm thấy user trong cơ sở dữ liệu.");
 
             int mainUserId = mainUser.Id;
 
+            // Lấy danh sách cuộc trò chuyện của user, bao gồm tin nhắn để có thể lấy tin nhắn cuối cùng
             var conversations = await _context.Conversations
+                .Include(c => c.Messages)
                 .Where(c => c.User1Id == mainUserId || c.User2Id == mainUserId)
                 .OrderByDescending(c => c.LastMessageAt)
                 .ToListAsync();
 
-            return Ok(conversations);
+            var conversationSummaries = new List<ConversationSummaryDTO>();
+
+            foreach (var conv in conversations)
+            {
+                // Xác định đối tượng đối diện: nếu mainUser là User1 thì opponent là User2, ngược lại.
+                int opponentId = conv.User1Id == mainUserId ? conv.User2Id : conv.User1Id;
+                var opponent = await _context.Users.FirstOrDefaultAsync(u => u.Id == opponentId);
+                if (opponent == null)
+                    continue;
+
+                // Lấy tin nhắn cuối cùng nếu có trong cuộc trò chuyện
+                var lastMessage = conv.Messages?
+                    .OrderByDescending(m => m.SentAt)
+                    .FirstOrDefault();
+
+                conversationSummaries.Add(new ConversationSummaryDTO
+                {
+                    ConversationId = conv.ConversationId,
+                    OtherUser = new OtherUserDTO
+                    {
+                        Id = opponent.Id,
+                        Name = opponent.Name,
+                        Avatar = opponent.Avatar
+                    },
+                    LastMessageContent = lastMessage != null ? lastMessage.Content : string.Empty,
+                    LastMessageAt = lastMessage != null
+                                    ? lastMessage.SentAt.GetValueOrDefault()
+                                    : conv.LastMessageAt.GetValueOrDefault()
+                });
+            }
+
+            return Ok(conversationSummaries);
         }
 
         // GET: api/conversations/{id}

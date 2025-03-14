@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ToySharingAPI.Data
 {
-    public class ToyshareAuthDbContext : IdentityDbContext
+    public class ToyshareAuthDbContext : IdentityDbContext<IdentityUser>
     {
         public ToyshareAuthDbContext(DbContextOptions<ToyshareAuthDbContext> options) : base(options)
         {
