@@ -66,7 +66,7 @@ namespace ToySharingAPI.Controllers
             return Ok("User unbanned successfully");
         }
         [HttpGet("ban-history")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllBanHistory()
         {
             var logs = await _context.BanLogs

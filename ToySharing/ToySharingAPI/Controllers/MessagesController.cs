@@ -11,7 +11,7 @@ namespace ToySharingAPI.Controllers
 {
     [Route("api/conversations/{conversationId}/[controller]")]
     [ApiController]
-    //    [Authorize]
+    [Authorize]
     public class MessagesController : ControllerBase
     {
         private readonly ToySharingVer3Context _context;
