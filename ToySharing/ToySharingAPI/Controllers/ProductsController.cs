@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ToySharingAPI.DTO;
@@ -15,6 +16,24 @@ namespace ToySharingAPI.Controllers
         public ProductsController(ToySharingVer3Context context)
         {
             _context = context;
+        }
+
+        [HttpPut("{id}/visibility-status")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ToggleProductVisibility(int id)
+        {
+            var product = await _context.Products.FindAsync(id);
+            if (product == null)
+            {
+                return NotFound("Product not found.");
+            }
+
+            // Toggle available status
+            product.Available = (product.Available == 0) ? 2 : 0;
+            _context.Entry(product).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Product visibility updated.", product });
         }
 
         // View all products
@@ -65,14 +84,9 @@ namespace ToySharingAPI.Controllers
                     ImagePaths = p.Images.Select(i => i.Path).ToList()
                 })
                 .FirstOrDefaultAsync();
-
-            if (product == null)
-            {
-                return NotFound("Product not found.");
-            }
-
             return Ok(product);
         }
+
 
         // View product detail
         [HttpGet("detail/{productId}")]
@@ -369,9 +383,9 @@ namespace ToySharingAPI.Controllers
             var recommendations = await _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Images)
-                .Where(p => (p.Available ?? 0) == 0 && p.UserId != userId) 
-                .OrderBy(p => Guid.NewGuid()) 
-                .Take(5) 
+                .Where(p => (p.Available ?? 0) == 0 && p.UserId != userId)
+                .OrderBy(p => Guid.NewGuid())
+                .Take(5)
                 .Select(p => new ProductDTO
                 {
                     ProductId = p.ProductId,
