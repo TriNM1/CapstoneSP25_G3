@@ -17,11 +17,28 @@ namespace ToySharingAPI.Controllers
             _context = context;
         }
 
-        // Create a request
+        // Hàm hỗ trợ tạo thông báo
+        private async Task CreateNotification(int userId, string content)
+        {
+            var notification = new Notification
+            {
+                UserId = userId,
+                Content = content,
+                CreatedDate = DateTime.UtcNow,
+                ReadStatus = false
+            };
+            _context.Notifications.Add(notification);
+            await _context.SaveChangesAsync();
+        }
+
+        // Create a request + Tạo thông báo cho chủ sở hữu
         [HttpPost]
         public async Task<ActionResult<RequestDTO>> CreateRequest(RequestDTO requestDto)
         {
-            var product = await _context.Products.FindAsync(requestDto.ProductId);
+            var product = await _context.Products
+                .Include(p => p.User)
+                .FirstOrDefaultAsync(p => p.ProductId == requestDto.ProductId);
+
             if (product == null || product.Available != 0)
             {
                 return BadRequest("Product is not available for rent.");
@@ -33,7 +50,7 @@ namespace ToySharingAPI.Controllers
                 ProductId = requestDto.ProductId,
                 Message = requestDto.Message,
                 Status = 0, // Chờ duyệt
-                RequestDate = requestDto.RequestDate ?? DateTime.UtcNow, // Xử lý nullable với mặc định
+                RequestDate = requestDto.RequestDate ?? DateTime.UtcNow,
                 RentDate = requestDto.RentDate,
                 ReturnDate = requestDto.ReturnDate
             };
@@ -41,17 +58,23 @@ namespace ToySharingAPI.Controllers
             _context.RentRequests.Add(request);
             await _context.SaveChangesAsync();
 
+            // Tạo thông báo cho chủ sở hữu
+            var ownerId = product.UserId;
+            var borrowerName = (await _context.Users.FindAsync(requestDto.UserId))?.Name ?? "Someone";
+            await CreateNotification(ownerId, $"{borrowerName} has requested to rent your product '{product.Name}'.");
+
             requestDto.RequestId = request.RequestId;
-            requestDto.RequestDate = request.RequestDate; 
+            requestDto.RequestDate = request.RequestDate;
             return CreatedAtAction(nameof(GetRequestById), new { id = request.RequestId }, requestDto);
         }
 
-        // Update request status (chủ sở hữu duyệt/từ chối request)
+        // Update request status (chủ sở hữu duyệt/từ chối) + Tạo thông báo cho người mượn
         [HttpPut("{requestId}/status")]
         public async Task<ActionResult<RequestStatusDTO>> ConfirmOrRejectBorrowingRequest(int requestId, int userId, int newStatus)
         {
             var request = await _context.RentRequests
                 .Include(r => r.Product)
+                .ThenInclude(p => p.User)
                 .FirstOrDefaultAsync(r => r.RequestId == requestId);
 
             if (request == null)
@@ -70,6 +93,9 @@ namespace ToySharingAPI.Controllers
                 return NotFound("Associated product not found.");
             }
 
+            var borrowerId = request.UserId;
+            var productName = product.Name;
+
             switch (newStatus)
             {
                 case 1: // Accepted
@@ -84,10 +110,11 @@ namespace ToySharingAPI.Controllers
                         RequestId = request.RequestId,
                         UserId = request.UserId,
                         ProductId = request.ProductId,
-                        Status = 0, // Chưa lấy
+                        Status = 1, // Nhảy thẳng sang "Accepted", bỏ "Not Picked Up"
                         ReturnDate = request.ReturnDate
                     };
                     _context.Histories.Add(history);
+                    await CreateNotification(borrowerId, $"Your request to rent '{productName}' has been accepted.");
                     break;
 
                 case 2: // Rejected
@@ -97,6 +124,7 @@ namespace ToySharingAPI.Controllers
                     }
                     request.Status = 2;
                     product.Available = 0;
+                    await CreateNotification(borrowerId, $"Your request to rent '{productName}' has been rejected.");
                     break;
 
                 default:
@@ -218,8 +246,7 @@ namespace ToySharingAPI.Controllers
                     RequestStatus = r.Status == 0 ? "Pending" :
                                     r.Status == 1 ? "Accepted" : "Rejected",
                     HistoryStatus = r.History == null ? null :
-                                    r.History.Status == 0 ? "Not Picked Up" :
-                                    r.History.Status == 1 ? "Picked Up" : "Completed",
+                                    r.History.Status == 1 ? "Accepted" : "Completed",
                     RequestDate = r.RequestDate,
                     RentDate = r.RentDate,
                     ReturnDate = r.History != null ? r.History.ReturnDate : r.ReturnDate,
@@ -257,38 +284,7 @@ namespace ToySharingAPI.Controllers
             return Ok(request);
         }
 
-        // Người mượn xác nhận đã lấy đồ chơi
-        [HttpPut("history/{requestId}/pickup")]
-        public async Task<ActionResult<HistoryDTO>> ConfirmPickup(int requestId, int userId)
-        {
-            var history = await _context.Histories
-                .FirstOrDefaultAsync(h => h.RequestId == requestId && h.UserId == userId);
-
-            if (history == null)
-            {
-                return NotFound("History record not found.");
-            }
-
-            if (history.Status != 0)
-            {
-                return BadRequest("Can only confirm pickup from 'not picked up' status.");
-            }
-
-            history.Status = 1; // Đã lấy
-            await _context.SaveChangesAsync();
-
-            return Ok(new HistoryDTO
-            {
-                RequestId = history.RequestId,
-                UserId = history.UserId,
-                ProductId = history.ProductId,
-                Status = history.Status,
-                Rating = history.Rating,
-                ReturnDate = history.ReturnDate
-            });
-        }
-
-        // Người mượn xác nhận đã trả và đánh giá
+        // Người mượn xác nhận hoàn thành + Tạo thông báo cho chủ sở hữu
         [HttpPut("history/{requestId}/complete")]
         public async Task<ActionResult<HistoryDTO>> ConfirmComplete(int requestId, int userId, int rating)
         {
@@ -309,7 +305,7 @@ namespace ToySharingAPI.Controllers
 
             if (history.Status != 1)
             {
-                return BadRequest("Can only complete from 'picked up' status.");
+                return BadRequest("Can only complete from 'accepted' status.");
             }
 
             if (rating < 1 || rating > 5)
@@ -321,6 +317,11 @@ namespace ToySharingAPI.Controllers
             history.Rating = rating;
             history.ReturnDate = DateTime.UtcNow;
             product.Available = 0;
+
+            // Tạo thông báo cho chủ sở hữu
+            var ownerId = product.UserId;
+            var borrowerName = (await _context.Users.FindAsync(userId))?.Name ?? "Someone";
+            await CreateNotification(ownerId, $"{borrowerName} has completed renting your product '{product.Name}' and rated it {rating}/5.");
 
             await _context.SaveChangesAsync();
 
@@ -335,7 +336,7 @@ namespace ToySharingAPI.Controllers
             });
         }
 
-        // Send Feedback After Done
+        // Send Feedback After Done + Tạo thông báo cho chủ sở hữu
         [HttpPut("history/{requestId}/feedback")]
         public async Task<ActionResult<FeedbackDTO>> SendFeedbackAfterDone(int requestId, int userId, int rating, string comment)
         {
@@ -348,9 +349,9 @@ namespace ToySharingAPI.Controllers
                 return NotFound("History record not found.");
             }
 
-            if (history.Status != 1 && history.Status != 2)
+            if (history.Status != 1)
             {
-                return BadRequest("Feedback can only be sent after picking up the product.");
+                return BadRequest("Feedback can only be sent from 'accepted' status.");
             }
 
             if (rating < 1 || rating > 5)
@@ -361,11 +362,15 @@ namespace ToySharingAPI.Controllers
             history.Status = 2;
             history.Rating = rating;
             history.ReturnDate = DateTime.UtcNow;
-
             if (history.Product != null)
             {
                 history.Product.Available = 0;
             }
+
+            // Tạo thông báo cho chủ sở hữu
+            var ownerId = history.Product.UserId;
+            var borrowerName = (await _context.Users.FindAsync(userId))?.Name ?? "Someone";
+            await CreateNotification(ownerId, $"{borrowerName} has completed renting your product '{history.Product.Name}' and left feedback: {rating}/5 - '{comment}'.");
 
             await _context.SaveChangesAsync();
 

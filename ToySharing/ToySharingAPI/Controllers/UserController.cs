@@ -21,7 +21,7 @@ namespace ToySharingAPI.Controllers
             _httpClientFactory = httpClientFactory;
         }
 
-        // Get user by ID (không bao gồm danh sách đồ chơi)
+        // Get user by ID (không hiển thị Latitude, Longitude)
         [HttpGet("{id}")]
         public async Task<ActionResult<UserDTO>> GetUserById(int id)
         {
@@ -39,9 +39,7 @@ namespace ToySharingAPI.Controllers
                     Rating = _context.Histories
                         .Where(h => h.Product.UserId == u.Id && h.Status == 2)
                         .Average(h => (double?)h.Rating) ?? 0,
-                    CreatedAt = u.CreatedAt,
-                    Latitude = u.Latitude,
-                    Longitude = u.Longtitude
+                    CreatedAt = u.CreatedAt
                 })
                 .FirstOrDefaultAsync();
 
@@ -80,7 +78,7 @@ namespace ToySharingAPI.Controllers
             return Ok(products);
         }
 
-        // View Other User's Profile
+        // View Other User's Profile (không hiển thị Latitude, Longitude)
         [HttpGet("profile/{userId}")]
         public async Task<ActionResult<UserProfileDTO>> GetOtherUserProfile(int userId)
         {
@@ -109,7 +107,7 @@ namespace ToySharingAPI.Controllers
             return Ok(userProfile);
         }
 
-        // Edit account (Update user)
+        // Edit account (Update user) - Lưu Latitude/Longitude từ Address
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser(int id, UserDTO userDto)
         {
@@ -123,15 +121,25 @@ namespace ToySharingAPI.Controllers
             existingUser.Address = userDto.Address;
             existingUser.Status = userDto.Status;
             existingUser.Avatar = userDto.Avatar;
-            existingUser.Latitude = userDto.Latitude;
-            existingUser.Longtitude = userDto.Longitude;
             existingUser.Gender = userDto.Gender;
             existingUser.Age = userDto.Age;
+
+            // Nếu có address, tự động cập nhật Latitude và Longitude
+            if (!string.IsNullOrEmpty(userDto.Address))
+            {
+                var coordinates = await GetCoordinatesFromAddressAsync(userDto.Address);
+                if (coordinates != null)
+                {
+                    existingUser.Latitude = coordinates.Value.Latitude;
+                    existingUser.Longtitude = coordinates.Value.Longitude;
+                }
+            }
+
             await _context.SaveChangesAsync();
-            return Ok();
+            return Ok(new { message = "User updated successfully" });
         }
 
-        // Get User Location
+        // Get User Location (chỉ trả về Address)
         [HttpGet("{id}/location")]
         public async Task<IActionResult> GetUserLocation(int id)
         {
@@ -139,8 +147,6 @@ namespace ToySharingAPI.Controllers
                 .Where(u => u.Id == id)
                 .Select(u => new
                 {
-                    Latitude = u.Latitude,
-                    Longitude = u.Longtitude,
                     Address = u.Address
                 })
                 .FirstOrDefaultAsync();
@@ -153,7 +159,7 @@ namespace ToySharingAPI.Controllers
             return Ok(user);
         }
 
-        // Update User Location
+        // Update User Location - Lưu Latitude/Longitude từ Address
         [HttpPut("{id}/location")]
         public async Task<IActionResult> UpdateUserLocation(int id, [FromBody] LocationUpdateDTO locationDto)
         {
@@ -163,66 +169,98 @@ namespace ToySharingAPI.Controllers
                 return NotFound("User not found.");
             }
 
-            user.Latitude = locationDto.Latitude;
-            user.Longtitude = locationDto.Longitude;
-            user.Address = locationDto.Address;
+            if (!string.IsNullOrEmpty(locationDto.Address))
+            {
+                var coordinates = await GetCoordinatesFromAddressAsync(locationDto.Address);
+                if (coordinates != null)
+                {
+                    user.Latitude = coordinates.Value.Latitude;
+                    user.Longtitude = coordinates.Value.Longitude;
+                    user.Address = locationDto.Address;
+                }
+                else
+                {
+                    return BadRequest("Could not retrieve coordinates from the provided address.");
+                }
+            }
 
             await _context.SaveChangesAsync();
             return Ok(new { message = "User location updated successfully" });
         }
 
-        // Get Address from Coordinates (dùng Nominatim)
-        [HttpGet("location/address")]
-        public async Task<IActionResult> GetAddressFromCoordinates(decimal latitude, decimal longitude)
-        {
-            try
-            {
-                var client = _httpClientFactory.CreateClient();
-                var url = $"https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat={latitude}&lon={longitude}";
-                client.DefaultRequestHeaders.Add("User-Agent", "ToySharingAPI"); // Nominatim yêu cầu User-Agent
-                var response = await client.GetStringAsync(url);
-                var json = JsonSerializer.Deserialize<JsonElement>(response);
-                string address = json.GetProperty("display_name").GetString() ?? "Unknown address";
-
-                return Ok(new { Address = address });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error retrieving address: {ex.Message}");
-            }
-        }
-
-        // Get Coordinates from Address (dùng Nominatim)
-        [HttpGet("location/coordinates")]
-        public async Task<IActionResult> GetCoordinatesFromAddress(string address)
+        // Hàm hỗ trợ lấy tọa độ từ địa chỉ bằng Nominatim
+        private async Task<(decimal Latitude, decimal Longitude)?> GetCoordinatesFromAddressAsync(string address)
         {
             try
             {
                 var client = _httpClientFactory.CreateClient();
                 var encodedAddress = Uri.EscapeDataString(address);
                 var url = $"https://nominatim.openstreetmap.org/search?q={encodedAddress}&format=jsonv2";
-                client.DefaultRequestHeaders.Add("User-Agent", "ToySharingAPI"); 
+                client.DefaultRequestHeaders.Add("User-Agent", "ToySharingAPI");
                 var response = await client.GetStringAsync(url);
                 var json = JsonSerializer.Deserialize<JsonElement>(response);
                 if (json.TryGetProperty("0", out var firstResult))
                 {
                     decimal latitude = firstResult.GetProperty("lat").GetDecimal();
                     decimal longitude = firstResult.GetProperty("lon").GetDecimal();
-                    return Ok(new { Latitude = latitude, Longitude = longitude });
+                    return (latitude, longitude);
                 }
-                return NotFound("No coordinates found for this address.");
+                return null;
             }
-            catch (Exception ex)
+            catch
             {
-                return StatusCode(500, $"Error retrieving coordinates: {ex.Message}");
+                return null;
             }
         }
-    }
 
-    public class LocationUpdateDTO
-    {
-        public decimal? Latitude { get; set; }
-        public decimal? Longitude { get; set; }
-        public string? Address { get; set; }
+        // Calculate Distance to Product Owner (dùng Haversine thay vì Google Maps)
+        [HttpGet("distance-to-product/{productId}")]
+        public async Task<IActionResult> CalculateDistanceToProduct(int productId, decimal myLatitude, decimal myLongitude)
+        {
+            var product = await _context.Products
+                .Include(p => p.User)
+                .FirstOrDefaultAsync(p => p.ProductId == productId);
+
+            if (product == null)
+            {
+                return NotFound("Product not found.");
+            }
+
+            var owner = product.User;
+            if (owner == null || !owner.Latitude.HasValue || !owner.Longtitude.HasValue)
+            {
+                return BadRequest("Owner location is not available.");
+            }
+
+            var ownerLatitude = owner.Latitude.Value;
+            var ownerLongitude = owner.Longtitude.Value;
+
+            // Tính khoảng cách bằng công thức Haversine
+            double distance = CalculateHaversineDistance(myLatitude, myLongitude, ownerLatitude, ownerLongitude);
+
+            return Ok(new
+            {
+                DistanceKilometers = distance,
+                DistanceText = $"{distance:F2} km"
+            });
+        }
+
+        // Công thức Haversine tính khoảng cách (km)
+        private double CalculateHaversineDistance(decimal lat1, decimal lon1, decimal lat2, decimal lon2)
+        {
+            const double R = 6371; // Bán kính Trái Đất (km)
+            double dLat = ToRadians((double)(lat2 - lat1));
+            double dLon = ToRadians((double)(lon2 - lon1));
+            double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                       Math.Cos(ToRadians((double)lat1)) * Math.Cos(ToRadians((double)lat2)) *
+                       Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+            double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            return R * c;
+        }
+
+        private double ToRadians(double degrees)
+        {
+            return degrees * Math.PI / 180;
+        }
     }
 }
