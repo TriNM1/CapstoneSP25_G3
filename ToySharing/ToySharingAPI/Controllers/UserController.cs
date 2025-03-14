@@ -188,7 +188,7 @@ namespace ToySharingAPI.Controllers
             return Ok(new { message = "User location updated successfully" });
         }
 
-        // Hàm hỗ trợ lấy tọa độ từ địa chỉ bằng Nominatim
+        // Hàm hỗ trợ lấy tọa độ từ địa chỉ bằng Nominatim (đã sửa)
         private async Task<(decimal Latitude, decimal Longitude)?> GetCoordinatesFromAddressAsync(string address)
         {
             try
@@ -199,16 +199,24 @@ namespace ToySharingAPI.Controllers
                 client.DefaultRequestHeaders.Add("User-Agent", "ToySharingAPI");
                 var response = await client.GetStringAsync(url);
                 var json = JsonSerializer.Deserialize<JsonElement>(response);
-                if (json.TryGetProperty("0", out var firstResult))
+
+                // Kiểm tra nếu JSON là mảng và có ít nhất 1 phần tử
+                if (json.ValueKind == JsonValueKind.Array && json.GetArrayLength() > 0)
                 {
-                    decimal latitude = firstResult.GetProperty("lat").GetDecimal();
-                    decimal longitude = firstResult.GetProperty("lon").GetDecimal();
-                    return (latitude, longitude);
+                    var firstResult = json[0]; // Lấy phần tử đầu tiên trong mảng
+                    if (firstResult.TryGetProperty("lat", out var latProp) && firstResult.TryGetProperty("lon", out var lonProp))
+                    {
+                        // Chuyển đổi chuỗi lat/lon thành decimal
+                        decimal latitude = decimal.Parse(latProp.GetString());
+                        decimal longitude = decimal.Parse(lonProp.GetString());
+                        return (latitude, longitude);
+                    }
                 }
                 return null;
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"Error in GetCoordinatesFromAddressAsync: {ex.Message}");
                 return null;
             }
         }

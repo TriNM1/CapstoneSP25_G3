@@ -44,6 +44,11 @@ namespace ToySharingAPI.Controllers
                 return BadRequest("Product is not available for rent.");
             }
 
+            if (product.UserId == requestDto.UserId)
+            {
+                return BadRequest("You cannot request to rent your own product.");
+            }
+
             var request = new RentRequest
             {
                 UserId = requestDto.UserId,
@@ -51,20 +56,27 @@ namespace ToySharingAPI.Controllers
                 Message = requestDto.Message,
                 Status = 0, // Chờ duyệt
                 RequestDate = requestDto.RequestDate ?? DateTime.UtcNow,
-                RentDate = requestDto.RentDate,
-                ReturnDate = requestDto.ReturnDate
+                RentDate = requestDto.RentDate ?? DateTime.UtcNow,
+                ReturnDate = requestDto.ReturnDate ?? DateTime.UtcNow.AddDays(7)
             };
 
             _context.RentRequests.Add(request);
             await _context.SaveChangesAsync();
 
-            // Tạo thông báo cho chủ sở hữu
             var ownerId = product.UserId;
-            var borrowerName = (await _context.Users.FindAsync(requestDto.UserId))?.Name ?? "Someone";
+            var borrower = await _context.Users.FindAsync(requestDto.UserId);
+            var borrowerName = borrower?.Name ?? "Someone";
             await CreateNotification(ownerId, $"{borrowerName} has requested to rent your product '{product.Name}'.");
 
             requestDto.RequestId = request.RequestId;
             requestDto.RequestDate = request.RequestDate;
+            requestDto.ProductName = product.Name;
+            requestDto.Price = product.Price;
+            requestDto.BorrowerName = borrowerName;
+            requestDto.BorrowerAvatar = borrower?.Avatar;
+            requestDto.OwnerId = product.UserId;
+            requestDto.OwnerName = product.User.Name;
+
             return CreatedAtAction(nameof(GetRequestById), new { id = request.RequestId }, requestDto);
         }
 
@@ -75,6 +87,7 @@ namespace ToySharingAPI.Controllers
             var request = await _context.RentRequests
                 .Include(r => r.Product)
                 .ThenInclude(p => p.User)
+                .Include(r => r.User)
                 .FirstOrDefaultAsync(r => r.RequestId == requestId);
 
             if (request == null)
@@ -110,7 +123,7 @@ namespace ToySharingAPI.Controllers
                         RequestId = request.RequestId,
                         UserId = request.UserId,
                         ProductId = request.ProductId,
-                        Status = 1, // Nhảy thẳng sang "Accepted", bỏ "Not Picked Up"
+                        Status = 1,
                         ReturnDate = request.ReturnDate
                     };
                     _context.Histories.Add(history);
@@ -145,12 +158,20 @@ namespace ToySharingAPI.Controllers
         {
             var requests = await _context.RentRequests
                 .Include(r => r.Product)
+                .ThenInclude(p => p.User)
+                .Include(r => r.User)
                 .Where(r => r.Product.UserId == userId)
                 .Select(r => new RequestDTO
                 {
                     RequestId = r.RequestId,
                     UserId = r.UserId,
+                    BorrowerName = r.User.Name,
+                    BorrowerAvatar = r.User.Avatar,
                     ProductId = r.ProductId,
+                    ProductName = r.Product.Name,
+                    Price = r.Product.Price,
+                    OwnerId = r.Product.UserId,
+                    OwnerName = r.Product.User.Name,
                     Message = r.Message,
                     Status = r.Status,
                     RequestDate = r.RequestDate,
@@ -167,15 +188,29 @@ namespace ToySharingAPI.Controllers
         public async Task<ActionResult<IEnumerable<HistoryDTO>>> GetRequestHistory(int userId)
         {
             var history = await _context.Histories
+                .Include(h => h.Product)
+                .ThenInclude(p => p.User)
                 .Where(h => h.UserId == userId)
-                .Select(h => new HistoryDTO
+                .Select(h => new
                 {
-                    RequestId = h.RequestId,
-                    UserId = h.UserId,
-                    ProductId = h.ProductId,
-                    Status = h.Status,
-                    Rating = h.Rating,
-                    ReturnDate = h.ReturnDate
+                    History = h,
+                    // Fetch BorrowerName from RentRequest
+                    BorrowerName = _context.RentRequests
+                        .Where(r => r.RequestId == h.RequestId)
+                        .Include(r => r.User)
+                        .Select(r => r.User.Name)
+                        .FirstOrDefault() ?? "Unknown"
+                })
+                .Select(x => new HistoryDTO
+                {
+                    RequestId = x.History.RequestId,
+                    UserId = x.History.UserId,
+                    BorrowerName = x.BorrowerName,
+                    ProductId = x.History.ProductId,
+                    ProductName = x.History.Product.Name,
+                    Status = x.History.Status,
+                    Rating = x.History.Rating,
+                    ReturnDate = x.History.ReturnDate
                 })
                 .ToListAsync();
 
@@ -190,11 +225,15 @@ namespace ToySharingAPI.Controllers
                 .Where(r => r.ProductId == productId && r.UserId == userId)
                 .Include(r => r.User)
                 .Include(r => r.Product)
+                .ThenInclude(p => p.User)
                 .Select(r => new
                 {
                     BorrowerName = r.User.Name,
+                    BorrowerAvatar = r.User.Avatar,
+                    ProductName = r.Product.Name,
+                    OwnerName = r.Product.User.Name,
                     BorrowDate = r.RentDate,
-                    Avatar = r.User.Avatar,
+                    ReturnDate = r.ReturnDate,
                     Message = r.Message
                 })
                 .ToListAsync();
@@ -213,12 +252,20 @@ namespace ToySharingAPI.Controllers
         {
             var requests = await _context.RentRequests
                 .Include(r => r.Product)
+                .ThenInclude(p => p.User)
+                .Include(r => r.User)
                 .Where(r => r.Product.UserId == userId && r.Status == 0)
                 .Select(r => new RequestDTO
                 {
                     RequestId = r.RequestId,
                     UserId = r.UserId,
+                    BorrowerName = r.User.Name,
+                    BorrowerAvatar = r.User.Avatar,
                     ProductId = r.ProductId,
+                    ProductName = r.Product.Name,
+                    Price = r.Product.Price,
+                    OwnerId = r.Product.UserId,
+                    OwnerName = r.Product.User.Name,
                     Message = r.Message,
                     Status = r.Status,
                     RequestDate = r.RequestDate,
@@ -236,18 +283,22 @@ namespace ToySharingAPI.Controllers
         {
             var requests = await _context.RentRequests
                 .Include(r => r.Product)
+                .ThenInclude(p => p.User)
+                .Include(r => r.User)
                 .Include(r => r.History)
                 .Where(r => r.Product.UserId == userId)
                 .Select(r => new BorrowHistoryDTO
                 {
                     RequestId = r.RequestId,
                     BorrowerId = r.UserId,
+                    BorrowerName = r.User.Name,
                     ProductId = r.ProductId,
+                    ProductName = r.Product.Name,
                     RequestStatus = r.Status == 0 ? "Pending" :
                                     r.Status == 1 ? "Accepted" : "Rejected",
                     HistoryStatus = r.History == null ? null :
                                     r.History.Status == 1 ? "Accepted" : "Completed",
-                    RequestDate = r.RequestDate,
+                    RequestDate = r.RentDate,
                     RentDate = r.RentDate,
                     ReturnDate = r.History != null ? r.History.ReturnDate : r.ReturnDate,
                     Rating = r.History != null ? r.History.Rating : null
@@ -262,12 +313,21 @@ namespace ToySharingAPI.Controllers
         public async Task<ActionResult<RequestDTO>> GetRequestById(int id)
         {
             var request = await _context.RentRequests
+                .Include(r => r.User)
+                .Include(r => r.Product)
+                .ThenInclude(p => p.User)
                 .Where(r => r.RequestId == id)
                 .Select(r => new RequestDTO
                 {
                     RequestId = r.RequestId,
                     UserId = r.UserId,
+                    BorrowerName = r.User.Name,
+                    BorrowerAvatar = r.User.Avatar,
                     ProductId = r.ProductId,
+                    ProductName = r.Product.Name,
+                    Price = r.Product.Price,
+                    OwnerId = r.Product.UserId,
+                    OwnerName = r.Product.User.Name,
                     Message = r.Message,
                     Status = r.Status,
                     RequestDate = r.RequestDate,
@@ -290,6 +350,7 @@ namespace ToySharingAPI.Controllers
         {
             var history = await _context.Histories
                 .Include(h => h.Product)
+                .ThenInclude(p => p.User)
                 .FirstOrDefaultAsync(h => h.RequestId == requestId && h.UserId == userId);
 
             if (history == null)
@@ -313,14 +374,18 @@ namespace ToySharingAPI.Controllers
                 return BadRequest("Rating must be between 1 and 5.");
             }
 
-            history.Status = 2; // Completed
+            history.Status = 2;
             history.Rating = rating;
             history.ReturnDate = DateTime.UtcNow;
             product.Available = 0;
 
-            // Tạo thông báo cho chủ sở hữu
+            // Fetch BorrowerName from RentRequest
+            var borrowerName = await _context.RentRequests
+                .Where(r => r.RequestId == history.RequestId)
+                .Include(r => r.User)
+                .Select(r => r.User.Name)
+                .FirstOrDefaultAsync() ?? "Someone";
             var ownerId = product.UserId;
-            var borrowerName = (await _context.Users.FindAsync(userId))?.Name ?? "Someone";
             await CreateNotification(ownerId, $"{borrowerName} has completed renting your product '{product.Name}' and rated it {rating}/5.");
 
             await _context.SaveChangesAsync();
@@ -329,7 +394,9 @@ namespace ToySharingAPI.Controllers
             {
                 RequestId = history.RequestId,
                 UserId = history.UserId,
+                BorrowerName = borrowerName,
                 ProductId = history.ProductId,
+                ProductName = history.Product.Name,
                 Status = history.Status,
                 Rating = history.Rating,
                 ReturnDate = history.ReturnDate
@@ -342,6 +409,7 @@ namespace ToySharingAPI.Controllers
         {
             var history = await _context.Histories
                 .Include(h => h.Product)
+                .ThenInclude(p => p.User)
                 .FirstOrDefaultAsync(h => h.RequestId == requestId && h.UserId == userId);
 
             if (history == null)
@@ -367,9 +435,13 @@ namespace ToySharingAPI.Controllers
                 history.Product.Available = 0;
             }
 
-            // Tạo thông báo cho chủ sở hữu
+            // Fetch BorrowerName from RentRequest
+            var borrowerName = await _context.RentRequests
+                .Where(r => r.RequestId == history.RequestId)
+                .Include(r => r.User)
+                .Select(r => r.User.Name)
+                .FirstOrDefaultAsync() ?? "Someone";
             var ownerId = history.Product.UserId;
-            var borrowerName = (await _context.Users.FindAsync(userId))?.Name ?? "Someone";
             await CreateNotification(ownerId, $"{borrowerName} has completed renting your product '{history.Product.Name}' and left feedback: {rating}/5 - '{comment}'.");
 
             await _context.SaveChangesAsync();
