@@ -16,6 +16,12 @@ import Policy from "./pages/user/generate/Policy";
 import UserGuide from "./pages/user/generate/UserGuide";
 import SendingRequest from "./pages/user/borrower/SendingRequest";
 
+import AdminPage from "./pages/admin/AdminPage";
+import ManageUser from "./pages/admin/ManageUser";
+import CheckingPost from "./pages/admin/CheckingPost";
+import ManageFeedback from "./pages/admin/ManageFeedback";
+import Statistic from "./pages/admin/Statistic";
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 function App() {
@@ -51,8 +57,14 @@ function App() {
         <Route path="/inlending" element={<InLending />} />
         <Route path="/transferhistory" element={<TransferHistory />} />
 
+        <Route path="/adminpage" element={<AdminPage />} />
+        <Route path="/manageuser" element={<ManageUser />} />
+        <Route path="/checkingpost" element={<CheckingPost />} />
+        <Route path="/managefeedback" element={<ManageFeedback />} />
+        <Route path="/statistic" element={<Statistic />} />
+
         {/* Route mặc định nếu không khớp */}
-        <Route path="*" element={<SendingRequest />} />
+        <Route path="*" element={<ManageFeedback />} />
       </Routes>
     </BrowserRouter>
   );

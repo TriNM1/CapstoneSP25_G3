@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700;800&display=swap');
+
+.admin-side-menu {
+  background-color: #fff;
+  padding: 1rem;
+  border-right: 1px solid #ddd;
+  height: 100vh;
+
+  .top-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 2rem;
+
+    .logo-container {
+      margin-bottom: 1rem;
+      .logo {
+        width: 150px;
+        height: auto;
+        object-fit: contain;
+      }
+    }
+
+    .icons {
+      display: flex;
+      gap: 10px;
+      .icon-link {
+        color: #333;
+        transition: color 0.3s;
+        &:hover {
+          color: #ff9800;
+        }
+        svg {
+          color: #000; // icon thông báo, tin nhắn màu đen
+        }
+      }
+      .user-icon {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 1px solid #ddd;
+      }
+    }
+  }
+
+  .menu-links {
+    .nav-link {
+      font-family: 'Comic Neue', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 0.75rem;
+      text-decoration: none;
+      transition: color 0.3s;
+      padding: 0.25rem 0;
+
+      &:hover {
+        color: #ff9800; // màu cam khi hover
+      }
+
+      &.active {
+        color: #ff9800; // màu cam khi active
+        font-weight: 800;
+      }
+    }
+  }
+}
