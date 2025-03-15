@@ -17,6 +17,8 @@ public partial class History
 
     public DateTime ReturnDate { get; set; }
 
+    public string? Message { get; set; }
+
     public virtual Product Product { get; set; } = null!;
 
     public virtual RentRequest Request { get; set; } = null!;

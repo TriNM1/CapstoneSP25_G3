@@ -43,7 +43,7 @@ public partial class ToySharingVer3Context : DbContext
     {
         modelBuilder.Entity<BanLog>(entity =>
         {
-            entity.HasKey(e => e.LogId).HasName("PK__Ban_Log__9E2397E0FE77B3F5");
+            entity.HasKey(e => e.LogId).HasName("PK__Ban_Log__9E2397E09AA33CA8");
 
             entity.ToTable("Ban_Log");
 
@@ -52,7 +52,7 @@ public partial class ToySharingVer3Context : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("reason");
             entity.Property(e => e.Timestamp)
-                .HasDefaultValueSql("(getdate())")
+                .HasDefaultValue(new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified))
                 .HasColumnType("datetime")
                 .HasColumnName("timestamp");
             entity.Property(e => e.UserId).HasColumnName("user_id");
@@ -64,9 +64,9 @@ public partial class ToySharingVer3Context : DbContext
 
         modelBuilder.Entity<Category>(entity =>
         {
-            entity.HasKey(e => e.CategoryId).HasName("PK__Categori__D54EE9B41213BE4F");
+            entity.HasKey(e => e.CategoryId).HasName("PK__Categori__D54EE9B4E1D8832D");
 
-            entity.HasIndex(e => e.CategoryName, "UQ__Categori__5189E255080ED9AA").IsUnique();
+            entity.HasIndex(e => e.CategoryName, "UQ__Categori__5189E25599C21C43").IsUnique();
 
             entity.Property(e => e.CategoryId).HasColumnName("category_id");
             entity.Property(e => e.CategoryName)
@@ -76,15 +76,15 @@ public partial class ToySharingVer3Context : DbContext
 
         modelBuilder.Entity<Conversation>(entity =>
         {
-            entity.HasKey(e => e.ConversationId).HasName("PK__Conversa__311E7E9A7BB8ABE1");
+            entity.HasKey(e => e.ConversationId).HasName("PK__Conversa__311E7E9AB005892A");
 
             entity.Property(e => e.ConversationId).HasColumnName("conversation_id");
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
+                .HasDefaultValue(new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified))
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
             entity.Property(e => e.LastMessageAt)
-                .HasDefaultValueSql("(getdate())")
+                .HasDefaultValue(new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified))
                 .HasColumnType("datetime")
                 .HasColumnName("lastMessageAt");
             entity.Property(e => e.User1Id).HasColumnName("user1_id");
@@ -102,13 +102,16 @@ public partial class ToySharingVer3Context : DbContext
 
         modelBuilder.Entity<History>(entity =>
         {
-            entity.HasKey(e => e.RequestId).HasName("PK__History__18D3B90F78916FBC");
+            entity.HasKey(e => e.RequestId).HasName("PK__History__18D3B90F5F3A342D");
 
             entity.ToTable("History");
 
             entity.Property(e => e.RequestId)
                 .ValueGeneratedNever()
                 .HasColumnName("request_id");
+            entity.Property(e => e.Message)
+                .HasMaxLength(255)
+                .HasColumnName("message");
             entity.Property(e => e.ProductId).HasColumnName("product_id");
             entity.Property(e => e.Rating).HasColumnName("rating");
             entity.Property(e => e.ReturnDate)
@@ -129,11 +132,11 @@ public partial class ToySharingVer3Context : DbContext
 
         modelBuilder.Entity<Image>(entity =>
         {
-            entity.HasKey(e => e.ImageId).HasName("PK__Images__DC9AC9553D662AF4");
+            entity.HasKey(e => e.ImageId).HasName("PK__Images__DC9AC95579EC9D53");
 
             entity.Property(e => e.ImageId).HasColumnName("image_id");
             entity.Property(e => e.CreateTime)
-                .HasDefaultValueSql("(getdate())")
+                .HasDefaultValue(new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified))
                 .HasColumnType("datetime")
                 .HasColumnName("create_time");
             entity.Property(e => e.Path)
@@ -148,7 +151,7 @@ public partial class ToySharingVer3Context : DbContext
 
         modelBuilder.Entity<Message>(entity =>
         {
-            entity.HasKey(e => e.MessageId).HasName("PK__Messages__0BBF6EE66D3EFEDA");
+            entity.HasKey(e => e.MessageId).HasName("PK__Messages__0BBF6EE6E0155DC0");
 
             entity.Property(e => e.MessageId).HasColumnName("message_id");
             entity.Property(e => e.Content)
@@ -160,7 +163,7 @@ public partial class ToySharingVer3Context : DbContext
                 .HasColumnName("isRead");
             entity.Property(e => e.SenderId).HasColumnName("sender_id");
             entity.Property(e => e.SentAt)
-                .HasDefaultValueSql("(getdate())")
+                .HasDefaultValue(new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified))
                 .HasColumnType("datetime")
                 .HasColumnName("sent_at");
 
@@ -175,14 +178,14 @@ public partial class ToySharingVer3Context : DbContext
 
         modelBuilder.Entity<Notification>(entity =>
         {
-            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__E059842F01D880A5");
+            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__E059842F654D3F58");
 
             entity.Property(e => e.NotificationId).HasColumnName("notification_id");
             entity.Property(e => e.Content)
                 .HasMaxLength(255)
                 .HasColumnName("content");
             entity.Property(e => e.CreatedDate)
-                .HasDefaultValueSql("(getdate())")
+                .HasDefaultValue(new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified))
                 .HasColumnType("datetime")
                 .HasColumnName("created_date");
             entity.Property(e => e.ReadStatus)
@@ -197,7 +200,7 @@ public partial class ToySharingVer3Context : DbContext
 
         modelBuilder.Entity<Product>(entity =>
         {
-            entity.HasKey(e => e.ProductId).HasName("PK__Products__47027DF5D4F56B32");
+            entity.HasKey(e => e.ProductId).HasName("PK__Products__47027DF5BCAD7D15");
 
             entity.Property(e => e.ProductId).HasColumnName("product_id");
             entity.Property(e => e.Available)
@@ -205,7 +208,7 @@ public partial class ToySharingVer3Context : DbContext
                 .HasColumnName("available");
             entity.Property(e => e.CategoryId).HasColumnName("category_id");
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
+                .HasDefaultValue(new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified))
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
             entity.Property(e => e.Description)
@@ -220,7 +223,7 @@ public partial class ToySharingVer3Context : DbContext
             entity.Property(e => e.ProductStatus).HasColumnName("product_status");
             entity.Property(e => e.SuitableAge).HasColumnName("suitable_age");
             entity.Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("(getdate())")
+                .HasDefaultValue(new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified))
                 .HasColumnType("datetime")
                 .HasColumnName("updated_at");
             entity.Property(e => e.UserId).HasColumnName("user_id");
@@ -236,7 +239,7 @@ public partial class ToySharingVer3Context : DbContext
 
         modelBuilder.Entity<RentRequest>(entity =>
         {
-            entity.HasKey(e => e.RequestId).HasName("PK__Rent_req__18D3B90F52385D20");
+            entity.HasKey(e => e.RequestId).HasName("PK__Rent_req__18D3B90F0D1323CD");
 
             entity.ToTable("Rent_requests");
 
@@ -249,7 +252,7 @@ public partial class ToySharingVer3Context : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("rent_date");
             entity.Property(e => e.RequestDate)
-                .HasDefaultValueSql("(getdate())")
+                .HasDefaultValue(new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified))
                 .HasColumnType("datetime")
                 .HasColumnName("request_date");
             entity.Property(e => e.ReturnDate)
@@ -270,7 +273,7 @@ public partial class ToySharingVer3Context : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Users__3213E83FA8E97896");
+            entity.HasKey(e => e.Id).HasName("PK__Users__3213E83F2DC4D3AD");
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Address)
@@ -283,7 +286,7 @@ public partial class ToySharingVer3Context : DbContext
                 .IsUnicode(false)
                 .HasColumnName("avatar");
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
+                .HasDefaultValue(new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified))
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
             entity.Property(e => e.Gender).HasColumnName("gender");
