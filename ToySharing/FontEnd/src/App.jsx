@@ -8,6 +8,7 @@ import ListBorrowRequests from "./pages/user/lender/ListBorrowRequests";
 import SearchToy from "./pages/user/borrower/SearchingToy";
 import Message from "./pages/user/generate/Message";
 import UserInfor from "./pages/user/generate/UserInfor";
+import UserDetail from "./pages/user/generate/UserDetail"; 
 import AddToy from "./pages/user/lender/AddToy";
 import MyToy from "./pages/user/lender/MyToy";
 import InLending from "./pages/user/lender/InLendeing";
@@ -15,7 +16,8 @@ import TransferHistory from "./pages/user/lender/TransferHistory";
 import Policy from "./pages/user/generate/Policy";
 import UserGuide from "./pages/user/generate/UserGuide";
 import SendingRequest from "./pages/user/borrower/SendingRequest";
-
+import ToyDetail from "./pages/user/generate/ToyDetail";
+//admin
 import AdminPage from "./pages/admin/AdminPage";
 import ManageUser from "./pages/admin/ManageUser";
 import CheckingPost from "./pages/admin/CheckingPost";
@@ -25,6 +27,8 @@ import Statistic from "./pages/admin/Statistic";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 function App() {
+  
+
   return (
     <BrowserRouter>
       <Routes>
@@ -52,6 +56,7 @@ function App() {
 
         <Route path="/message" element={<Message />} />
         <Route path="/userinfor" element={<UserInfor />} />
+        <Route path="/userdetail" element={<UserDetail/>} />
         <Route path="/addtoy" element={<AddToy />} />
         <Route path="/mytoy" element={<MyToy />} />
         <Route path="/inlending" element={<InLending />} />
@@ -62,6 +67,9 @@ function App() {
         <Route path="/checkingpost" element={<CheckingPost />} />
         <Route path="/managefeedback" element={<ManageFeedback />} />
         <Route path="/statistic" element={<Statistic />} />
+
+        {/* Route ToyDetail */}
+        <Route path="/toydetail/:toyId" element={<ToyDetail />} />
 
         {/* Route mặc định nếu không khớp */}
         <Route path="*" element={<ManageFeedback />} />

@@ -123,6 +123,9 @@ const Home = () => {
     handleCloseBorrowModal();
   };
 
+  const handleNavigateToDetail = (toyId) => {
+    navigate(`/toydetail/${toyId}`);
+  };
   return (
     <div className="home-page">
       {/* Header dùng chung */}
@@ -155,7 +158,7 @@ const Home = () => {
         <Row>
           {toyList.map((toy) => (
             <Col key={toy.id} xs={12} md={4} className="mb-4">
-              <Card className="toy-card">
+              <Card className="toy-card" onClick={() => handleNavigateToDetail(toy.id)} style={{ cursor: "pointer" }}>
                 <Card.Img variant="top" src={toy.image} className="toy-image" />
                 <Card.Body>
                   <Card.Title className="toy-name">{toy.name}</Card.Title>

@@ -119,7 +119,7 @@ const Header = ({
               </Nav.Link>
             ) : (
               <Nav.Link
-                href="#profile"
+                href="/userdetail"
                 onClick={() => setActiveLink("profile")}
                 className={activeLink === "profile" ? "active" : ""}
               >
