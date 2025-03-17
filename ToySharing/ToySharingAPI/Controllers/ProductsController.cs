@@ -148,17 +148,31 @@ namespace ToySharingAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<ProductDTO>> CreateProduct(int userId, [FromBody] ProductDTO productDto)
         {
-            if (string.IsNullOrEmpty(productDto.Name) || productDto.Price < 0)
+            if (productDto == null)
             {
-                return BadRequest("Product name is required and price cannot be negative.");
+                return BadRequest("Product data is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(productDto.Name))
+            {
+                return BadRequest("Product name is required and cannot be empty or whitespace.");
+            }
+            if (productDto.SuitableAge < 0 || productDto.SuitableAge > 100)
+            {
+                return BadRequest("Suitable age must be between 0 and 100.");
+            }
+
+            if (!string.IsNullOrEmpty(productDto.Description) && productDto.Description.Length > 500)
+            {
+                return BadRequest("Description cannot exceed 500 characters.");
             }
 
             var product = new Product
             {
                 UserId = userId,
-                Name = productDto.Name,
-                Available = productDto.Available, // Không cần ?? vì Available trong DTO là int
-                Description = productDto.Description,
+                Name = productDto.Name.Trim(),
+                Available = productDto.Available,
+                Description = productDto.Description?.Trim(),
                 ProductStatus = productDto.ProductStatus,
                 Price = productDto.Price,
                 SuitableAge = productDto.SuitableAge,
@@ -166,47 +180,72 @@ namespace ToySharingAPI.Controllers
                 UpdatedAt = DateTime.UtcNow
             };
 
-            if (!string.IsNullOrEmpty(productDto.CategoryName))
+            // Xử lý Category
+            if (!string.IsNullOrWhiteSpace(productDto.CategoryName))
             {
                 var category = await _context.Categories
-                    .FirstOrDefaultAsync(c => c.CategoryName == productDto.CategoryName);
-                if (category != null)
-                {
-                    product.CategoryId = category.CategoryId;
-                }
-                else
+                    .FirstOrDefaultAsync(c => c.CategoryName == productDto.CategoryName.Trim());
+                if (category == null)
                 {
                     category = new Category
                     {
-                        CategoryName = productDto.CategoryName
+                        CategoryName = productDto.CategoryName.Trim()
                     };
                     _context.Categories.Add(category);
                     await _context.SaveChangesAsync();
-                    product.CategoryId = category.CategoryId;
                 }
+                product.CategoryId = category.CategoryId;
             }
 
-            if (productDto.ImagePaths.Any())
+            // Xử lý ImagePaths
+            if (productDto.ImagePaths != null && productDto.ImagePaths.Any())
             {
+                if (productDto.ImagePaths.Count > 10) // Giới hạn số lượng ảnh
+                {
+                    return BadRequest("Maximum 10 images are allowed.");
+                }
+                foreach (var path in productDto.ImagePaths)
+                {
+                    if (string.IsNullOrWhiteSpace(path))
+                    {
+                        return BadRequest("Image path cannot be empty.");
+                    }
+                    if (path.Length > 255) // Giới hạn độ dài đường dẫn
+                    {
+                        return BadRequest("Image path cannot exceed 255 characters.");
+                    }
+                }
                 product.Images = productDto.ImagePaths.Select(path => new Image
                 {
-                    Path = path,
+                    Path = path.Trim(),
                     CreateTime = DateTime.UtcNow
                 }).ToList();
             }
 
-            _context.Products.Add(product);
-            await _context.SaveChangesAsync();
-            productDto.ProductId = product.ProductId;
-            productDto.UserId = product.UserId;
-            productDto.CreatedAt = product.CreatedAt ?? DateTime.UtcNow;
-            return CreatedAtAction(nameof(GetProductById), new { id = product.ProductId }, productDto);
+            try
+            {
+                _context.Products.Add(product);
+                await _context.SaveChangesAsync();
+                productDto.ProductId = product.ProductId;
+                productDto.UserId = product.UserId;
+                productDto.CreatedAt = DateTime.Now;
+                return CreatedAtAction(nameof(GetProductById), new { id = product.ProductId }, productDto);
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(500, $"Database error occurred: {ex.InnerException?.Message}");
+            }
         }
 
         // Manage product
         [HttpPut("{id}")]
-        public async Task<ActionResult<ProductDTO>> UpdateProduct(int id, int userId, ProductDTO productDto)
+        public async Task<ActionResult<ProductDTO>> UpdateProduct(int id, int userId, [FromBody] ProductDTO productDto)
         {
+            if (productDto == null)
+            {
+                return BadRequest("Product data is required.");
+            }
+
             var product = await _context.Products
                 .Include(p => p.Images)
                 .FirstOrDefaultAsync(p => p.ProductId == id);
@@ -214,15 +253,29 @@ namespace ToySharingAPI.Controllers
             {
                 return NotFound("Product not found.");
             }
+
             if (product.UserId != userId)
             {
                 return Forbid("You are not authorized to update this product.");
             }
-            if (string.IsNullOrEmpty(productDto.Name) || productDto.Price < 0)
+
+            // Kiểm tra các trường bắt buộc
+            if (string.IsNullOrWhiteSpace(productDto.Name))
             {
-                return BadRequest("Product name is required and price cannot be negative.");
+                return BadRequest("Product name is required and cannot be empty or whitespace.");
+            }
+            if (productDto.SuitableAge < 0 || productDto.SuitableAge > 100)
+            {
+                return BadRequest("Suitable age must be between 0 and 100.");
             }
 
+            // Kiểm tra độ dài chuỗi
+            if (!string.IsNullOrEmpty(productDto.Description) && productDto.Description.Length > 500)
+            {
+                return BadRequest("Description cannot exceed 500 characters.");
+            }
+
+            // Kiểm tra trạng thái Available
             if (productDto.Available != product.Available)
             {
                 var activeRequest = await _context.RentRequests
@@ -233,45 +286,65 @@ namespace ToySharingAPI.Controllers
                 }
             }
 
-            product.Name = productDto.Name;
-            if (!string.IsNullOrEmpty(productDto.CategoryName))
+            // Cập nhật thông tin sản phẩm
+            product.Name = productDto.Name.Trim();
+            if (!string.IsNullOrWhiteSpace(productDto.CategoryName))
             {
                 var category = await _context.Categories
-                    .FirstOrDefaultAsync(c => c.CategoryName == productDto.CategoryName);
-                if (category != null)
-                {
-                    product.CategoryId = category.CategoryId;
-                }
-                else
+                    .FirstOrDefaultAsync(c => c.CategoryName == productDto.CategoryName.Trim());
+                if (category == null)
                 {
                     category = new Category
                     {
-                        CategoryName = productDto.CategoryName
+                        CategoryName = productDto.CategoryName.Trim()
                     };
                     _context.Categories.Add(category);
                     await _context.SaveChangesAsync();
-                    product.CategoryId = category.CategoryId;
                 }
+                product.CategoryId = category.CategoryId;
             }
             product.Available = productDto.Available;
-            product.Description = productDto.Description;
+            product.Description = productDto.Description?.Trim();
             product.ProductStatus = productDto.ProductStatus;
             product.Price = productDto.Price;
             product.SuitableAge = productDto.SuitableAge;
             product.UpdatedAt = DateTime.UtcNow;
 
+            // Xử lý ImagePaths
             if (productDto.ImagePaths != null)
             {
+                if (productDto.ImagePaths.Count > 10) // Giới hạn số lượng ảnh
+                {
+                    return BadRequest("Maximum 10 images are allowed.");
+                }
+                foreach (var path in productDto.ImagePaths)
+                {
+                    if (string.IsNullOrWhiteSpace(path))
+                    {
+                        return BadRequest("Image path cannot be empty.");
+                    }
+                    if (path.Length > 255)
+                    {
+                        return BadRequest("Image path cannot exceed 255 characters.");
+                    }
+                }
                 product.Images.Clear();
                 product.Images = productDto.ImagePaths.Select(path => new Image
                 {
-                    Path = path,
+                    Path = path.Trim(),
                     CreateTime = DateTime.UtcNow
                 }).ToList();
             }
 
-            await _context.SaveChangesAsync();
-            return Ok(productDto);
+            try
+            {
+                await _context.SaveChangesAsync();
+                return Ok(productDto);
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(500, $"Database error occurred: {ex.InnerException?.Message}");
+            }
         }
 
         // View user's toys

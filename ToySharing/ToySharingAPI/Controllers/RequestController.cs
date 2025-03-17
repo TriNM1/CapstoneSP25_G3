@@ -257,9 +257,8 @@ namespace ToySharingAPI.Controllers
             return Ok(requests);
         }
 
-        // My toy borrower list
-        [HttpGet("my-toys/borrowers/{userId}")]
-        public async Task<ActionResult<IEnumerable<RequestDTO>>> GetMyToyBorrowers(int userId)
+        [HttpGet("borrowing/{userId}")]
+        public async Task<ActionResult<IEnumerable<RequestDTO>>> GetBorrowingRequests(int userId)
         {
             var requests = await _context.RentRequests
                 .Include(r => r.Product)
@@ -267,7 +266,63 @@ namespace ToySharingAPI.Controllers
                 .Include(r => r.Product)
                 .ThenInclude(p => p.User)
                 .Include(r => r.User)
-                .Where(r => r.Product.UserId == userId && r.Status == 0)
+                .Include(r => r.History)
+                .Where(r => r.Product.UserId == userId && (r.Status == 0 || r.Status == 1)) // Pending hoặc Accepted
+                .Select(r => new RequestDTO
+                {
+                    RequestId = r.RequestId,
+                    UserId = r.UserId,
+                    BorrowerName = r.User.Name,
+                    BorrowerAvatar = r.User.Avatar,
+                    ProductId = r.ProductId,
+                    ProductName = r.Product.Name,
+                    Price = r.Product.Price,
+                    OwnerId = r.Product.UserId,
+                    OwnerName = r.Product.User.Name,
+                    Message = r.Message,
+                    MessageFeedback = r.History != null ? r.History.Message : null,
+                    Status = r.Status,
+                    RequestDate = r.RequestDate,
+                    RentDate = r.RentDate,
+                    ReturnDate = r.History != null ? r.History.ReturnDate : r.ReturnDate,
+                    Rating = r.History != null ? r.History.Rating : null,
+                    Image = r.Product.Images.FirstOrDefault() != null ? r.Product.Images.FirstOrDefault().Path : null
+                })
+                .ToListAsync();
+
+            if (!requests.Any())
+            {
+                return NotFound("No borrowing requests found.");
+            }
+
+            var result = requests.Select(r => new
+            {
+                r.RequestId,
+                r.UserId,
+                r.BorrowerName,
+                r.BorrowerAvatar,
+                r.ProductId,
+                r.ProductName,
+                r.Price,
+                r.Image,
+                RequestStatus = r.Status == 0 ? "Pending" : r.Status == 1 ? "Accepted" : "Unknown",
+                r.RequestDate,
+                r.RentDate,
+                r.ReturnDate
+            });
+
+            return Ok(result);
+        }
+        [HttpGet("pending/{userId}")]
+        public async Task<ActionResult<IEnumerable<RequestDTO>>> GetPendingRequests(int userId)
+        {
+            var requests = await _context.RentRequests
+                .Include(r => r.Product)
+                .ThenInclude(p => p.Images)
+                .Include(r => r.Product)
+                .ThenInclude(p => p.User)
+                .Include(r => r.User)
+                .Where(r => r.Product.UserId == userId && r.Status == 0) // Chỉ lấy pending requests
                 .Select(r => new RequestDTO
                 {
                     RequestId = r.RequestId,
