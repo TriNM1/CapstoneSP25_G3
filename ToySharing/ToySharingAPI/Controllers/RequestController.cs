@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using ToySharingAPI.DTO;
 using ToySharingAPI.Models;
 
@@ -153,16 +155,32 @@ namespace ToySharingAPI.Controllers
         }
 
         // View list request (danh sách request cho sản phẩm của userId - chủ sở hữu)
-        [HttpGet("user/{userId}")]
-        public async Task<ActionResult<IEnumerable<RequestDTO>>> GetRequestsByUserId(int userId)
+        [HttpGet("user")]
+        [Authorize(Roles = "User")]
+        public async Task<ActionResult<IEnumerable<RequestDTO>>> GetRequestsByUserId()
         {
+            // Lấy Claim NameIdentifier từ JWT token
+            var authUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(authUserIdStr))
+                return Unauthorized();
+
+            if (!Guid.TryParse(authUserIdStr, out Guid authUserId))
+                return Unauthorized("User id không hợp lệ.");
+
+            // Tìm user trong DB chính theo trường auth_user_id
+            var mainUser = await _context.Users.FirstOrDefaultAsync(u => u.AuthUserId == authUserId);
+            if (mainUser == null)
+                return Unauthorized("Không tìm thấy user trong cơ sở dữ liệu.");
+
+            int mainUserId = mainUser.Id;
+
             var requests = await _context.RentRequests
                 .Include(r => r.Product)
                 .ThenInclude(p => p.Images)
                 .Include(r => r.Product)
                 .ThenInclude(p => p.User)
                 .Include(r => r.User)
-                .Where(r => r.Product.UserId == userId)
+                .Where(r => r.Product.UserId == mainUserId)
                 .Select(r => new RequestDTO
                 {
                     RequestId = r.RequestId,
