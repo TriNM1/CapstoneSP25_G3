@@ -102,7 +102,7 @@ builder.Services.AddSession(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
-
+builder.Services.AddHttpClient();
 builder.Services.AddSignalR();
 
 var app = builder.Build();
