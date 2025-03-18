@@ -52,8 +52,8 @@ namespace ToySharingAPI.Controllers
             return Ok("OTP verified. Proceed to set password.");
         }
 
-        [HttpPost("SetPassword")]
-        public async Task<IActionResult> SetPassword([FromBody] SetPasswordDTO request)
+        [HttpPost("Register")]
+        public async Task<IActionResult> Register([FromBody] SetPasswordDTO request)
         {
             var userExists = await userManager.FindByEmailAsync(request.Email);
             if (userExists != null) return BadRequest("Email already registered!");
@@ -81,7 +81,7 @@ namespace ToySharingAPI.Controllers
                 Avatar = string.Empty,
                 Gender = true,                   
                 Age = 0,
-                Rating = 0
+                Rating = null
             };
 
             mainContext.Users.Add(newUser);
@@ -135,13 +135,13 @@ namespace ToySharingAPI.Controllers
             await userManager.RemovePasswordAsync(user);
             await userManager.AddPasswordAsync(user, newPassword);
 
-            await emailService.SendEmailAsync(user.Email, "New password", $"Your new password: {newPassword}");
+            await emailService.SendEmailAsync(user.Email, "Toy Sharing reset password", $"Your new password is: {newPassword}");
 
             return Ok("A new password has been sent to your email.");
         }
 
-        [Authorize]
         [HttpPost("ChangePassword")]
+        [Authorize]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDTO changePasswordDTO)
         {
             var user = await userManager.FindByEmailAsync(changePasswordDTO.Email);
