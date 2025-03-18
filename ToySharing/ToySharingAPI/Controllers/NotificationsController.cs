@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using ToySharingAPI.DTO;
 using ToySharingAPI.Models;
 
@@ -10,27 +11,39 @@ namespace ToySharingAPI.Controllers
     [ApiController]
     public class NotificationsController : ControllerBase
     {
-        private readonly ToySharingVer3Context _context; // Đổi sang context mới
+        private readonly ToySharingVer3Context _context;  
 
         public NotificationsController(ToySharingVer3Context context)
         {
             _context = context;
         }
 
-        // DTO cho Notification
-        public class NotificationDTO
+        // Hàm hỗ trợ lấy mainUserId từ JWT token
+        private async Task<int> GetAuthenticatedUserId()
         {
-            public int NotificationId { get; set; }
-            public int? UserId { get; set; }
-            public string? Content { get; set; }
-            public DateTime? CreatedDate { get; set; }
-            public bool ReadStatus { get; set; } // BIT, không nullable
+            // Lấy Claim NameIdentifier từ JWT token
+            var authUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(authUserIdStr))
+                return -1;
+
+            if (!Guid.TryParse(authUserIdStr, out Guid authUserId))
+                return -1;
+
+            // Tìm user trong DB chính theo trường auth_user_id
+            var mainUser = await _context.Users.FirstOrDefaultAsync(u => u.AuthUserId == authUserId);
+            if (mainUser == null)
+                return -1;
+
+            return mainUser.Id;
         }
 
         // 34. Send Notification
         [HttpPost("send")]
-        public async Task<ActionResult<NotificationDTO>> SendNotification(int userId, string content)
+        public async Task<ActionResult<NotificationDTO>> SendNotification(string content)
         {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
             if (string.IsNullOrEmpty(content))
             {
                 return BadRequest("Content cannot be empty.");
@@ -38,7 +51,7 @@ namespace ToySharingAPI.Controllers
 
             var notification = new Notification
             {
-                UserId = userId,
+                UserId = mainUserId,
                 Content = content,
                 CreatedDate = DateTime.UtcNow,
                 ReadStatus = false // Mặc định chưa đọc
@@ -60,11 +73,14 @@ namespace ToySharingAPI.Controllers
         }
 
         // 35. Get User Notifications
-        [HttpGet("user/{userId}")]
-        public async Task<ActionResult<IEnumerable<NotificationDTO>>> GetUserNotifications(int userId)
+        [HttpGet("user")]
+        public async Task<ActionResult<IEnumerable<NotificationDTO>>> GetUserNotifications()
         {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
             var notifications = await _context.Notifications
-                .Where(n => n.UserId == userId)
+                .Where(n => n.UserId == mainUserId)
                 .OrderByDescending(n => n.CreatedDate)
                 .Select(n => new NotificationDTO
                 {

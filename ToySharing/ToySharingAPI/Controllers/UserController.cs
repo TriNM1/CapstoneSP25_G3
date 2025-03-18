@@ -23,7 +23,23 @@ namespace ToySharingAPI.Controllers
             _context = context;
             _httpClientFactory = httpClientFactory;
         }
+        private async Task<int> GetAuthenticatedUserId()
+        {
+            // Lấy Claim NameIdentifier từ JWT token
+            var authUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(authUserIdStr))
+                return -1;
 
+            if (!Guid.TryParse(authUserIdStr, out Guid authUserId))
+                return -1;
+
+            // Tìm user trong DB chính theo trường auth_user_id
+            var mainUser = await _context.Users.FirstOrDefaultAsync(u => u.AuthUserId == authUserId);
+            if (mainUser == null)
+                return -1;
+
+            return mainUser.Id;
+        }
         // Get user by ID (không hiển thị Latitude, Longitude)
         [HttpGet("{id}")]
         public async Task<ActionResult<UserDTO>> GetUserById(int id)
@@ -32,7 +48,6 @@ namespace ToySharingAPI.Controllers
                 .Where(u => u.Id == id)
                 .Select(u => new UserDTO
                 {
-                    Id = u.Id,
                     Name = u.Name,
                     Address = u.Address,
                     Status = u.Status,
@@ -55,11 +70,14 @@ namespace ToySharingAPI.Controllers
         }
 
         // API riêng để lấy danh sách đồ chơi của user
-        [HttpGet("{id}/products")]
-        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetUserProducts(int id)
+        [HttpGet("{mainUserId}/products")]
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetUserProducts()
         {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
             var products = await _context.Products
-                .Where(p => p.UserId == id)
+                .Where(p => p.UserId == mainUserId)
                 .Include(p => p.Category)
                 .Include(p => p.Images)
                 .Select(p => new ProductDTO
@@ -111,10 +129,13 @@ namespace ToySharingAPI.Controllers
         }
 
         // Edit account (Update user) - Lưu Latitude/Longitude từ Address
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, UserDTO userDto)
+        [HttpPut]
+        public async Task<IActionResult> UpdateUser(UserDTO userDto)
         {
-            var existingUser = await _context.Users.FindAsync(id);
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
+            var existingUser = await _context.Users.FindAsync(mainUserId);
             if (existingUser == null)
             {
                 return NotFound();
@@ -163,10 +184,13 @@ namespace ToySharingAPI.Controllers
         }
 
         // Update User Location - Lưu Latitude/Longitude từ Address
-        [HttpPut("{id}/location")]
-        public async Task<IActionResult> UpdateUserLocation(int id, [FromBody] LocationUpdateDTO locationDto)
+        [HttpPut("{mainUserId}/location")]
+        public async Task<IActionResult> UpdateUserLocation([FromBody] LocationUpdateDTO locationDto)
         {
-            var user = await _context.Users.FindAsync(id);
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
+            var user = await _context.Users.FindAsync(mainUserId);
             if (user == null)
             {
                 return NotFound("User not found.");
