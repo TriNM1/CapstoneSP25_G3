@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using ToySharingAPI.DTO.ChatDTO;
 using ToySharingAPI.Hubs;
 using ToySharingAPI.Models;
@@ -23,17 +24,46 @@ namespace ToySharingAPI.Controllers
             _chatHubContext = chatHubContext;
         }
 
-        // GET: api/conversations/{conversationId}/messages?page=1&pageSize=20
+        // GET: api/conversations/{conversationId}/messages?page=1&pageSize=10
         // Lấy danh sách tin nhắn của một cuộc trò chuyện
         [HttpGet]
-        public async Task<IActionResult> GetMessages(int conversationId, int page = 1, int pageSize = 20)
+        public async Task<IActionResult> GetMessages(int conversationId, int page = 1, int pageSize = 10)
         {
+            var authUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(authUserIdStr))
+                return Unauthorized();
+
+            if (!Guid.TryParse(authUserIdStr, out Guid authUserId))
+                return Unauthorized("User id không hợp lệ.");
+
+            var mainUser = await _context.Users.FirstOrDefaultAsync(u => u.AuthUserId == authUserId);
+            if (mainUser == null)
+                return Unauthorized("Không tìm thấy user trong cơ sở dữ liệu.");
+
+            var conversation = await _context.Conversations.FirstOrDefaultAsync(c => c.ConversationId == conversationId);
+            if (conversation == null)
+                return NotFound("Cuộc trò chuyện không tồn tại.");
+
+            if (conversation.User1Id != mainUser.Id && conversation.User2Id != mainUser.Id)
+                return Unauthorized("Bạn không có quyền truy cập cuộc trò chuyện này.");
+
+            // Lấy danh sách tin nhắn của cuộc trò chuyện với phân trang và chuyển đổi sang DTO
             var messages = await _context.Messages
                 .Where(m => m.ConversationId == conversationId)
                 .OrderByDescending(m => m.SentAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
+                .Select(m => new MessageDTO
+                {
+                    MessageId = m.MessageId,
+                    ConversationId = m.ConversationId,
+                    SenderId = m.SenderId.GetValueOrDefault(),
+                    Content = m.Content,
+                    SentAt = m.SentAt.GetValueOrDefault(),
+                    IsRead = m.IsRead.GetValueOrDefault()
+                })
                 .ToListAsync();
+
             return Ok(messages);
         }
 
@@ -42,17 +72,30 @@ namespace ToySharingAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> SendMessage(int conversationId, [FromBody] SendMessageRequestDTO request)
         {
+            var authUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(authUserIdStr))
+                return Unauthorized();
+
+            if (!Guid.TryParse(authUserIdStr, out Guid authUserId))
+                return Unauthorized("User id không hợp lệ.");
+
+            var mainUser = await _context.Users.FirstOrDefaultAsync(u => u.AuthUserId == authUserId);
+            if (mainUser == null)
+                return Unauthorized("Không tìm thấy user trong cơ sở dữ liệu.");
+
+            int mainUserId = mainUser.Id;
+
             var conversation = await _context.Conversations.FirstOrDefaultAsync(c => c.ConversationId == conversationId);
             if (conversation == null)
                 return NotFound("Cuộc trò chuyện không tồn tại.");
 
-            if (conversation.User1Id != request.SenderId && conversation.User2Id != request.SenderId)
+            if (conversation.User1Id != mainUserId && conversation.User2Id != mainUserId)
                 return Unauthorized("Người dùng không thuộc cuộc trò chuyện.");
 
             var message = new Message
             {
                 ConversationId = conversationId,
-                SenderId = request.SenderId,
+                SenderId = mainUserId,
                 Content = request.Content,
                 SentAt = DateTime.UtcNow,
                 IsRead = false
@@ -62,12 +105,12 @@ namespace ToySharingAPI.Controllers
             conversation.LastMessageAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
-            var receiverId = (conversation.User1Id == request.SenderId) ? conversation.User2Id : conversation.User1Id;
+            var receiverId = (conversation.User1Id == mainUserId) ? conversation.User2Id : conversation.User1Id;
 
             await _chatHubContext.Clients.User(receiverId.ToString())
-                .SendAsync("ReceiveMessage", conversationId, request.SenderId, request.Content, message.SentAt);
+                .SendAsync("ReceiveMessage", conversationId, mainUserId, request.Content, message.SentAt);
 
-            var responseDto = new MessageResponseDTO
+            var responseDTO = new MessageResponseDTO
             {
                 MessageId = message.MessageId,
                 ConversationId = message.ConversationId,
@@ -77,7 +120,7 @@ namespace ToySharingAPI.Controllers
                 IsRead = message.IsRead.GetValueOrDefault()
             };
 
-            return Ok(responseDto);
+            return Ok(responseDTO);
         }
 
         // PUT: api/conversations/{conversationId}/messages/{messageId}
@@ -93,13 +136,26 @@ namespace ToySharingAPI.Controllers
             if (message == null)
                 return NotFound("Tin nhắn không tồn tại trong cuộc trò chuyện này.");
 
-            if (message.SenderId != request.SenderId)
+            var authUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(authUserIdStr))
+                return Unauthorized();
+
+            if (!Guid.TryParse(authUserIdStr, out Guid authUserId))
+                return Unauthorized("User id không hợp lệ.");
+
+            var mainUser = await _context.Users.FirstOrDefaultAsync(u => u.AuthUserId == authUserId);
+            if (mainUser == null)
+                return Unauthorized("Không tìm thấy user trong cơ sở dữ liệu.");
+
+            int mainUserId = mainUser.Id;
+
+            if (message.SenderId != mainUserId)
                 return Unauthorized("Bạn không có quyền cập nhật tin nhắn này.");
 
             message.Content = request.Content;
             await _context.SaveChangesAsync();
 
-            var responseDto = new MessageResponseDTO
+            var responseDTO = new MessageResponseDTO
             {
                 MessageId = message.MessageId,
                 ConversationId = message.ConversationId,
@@ -109,7 +165,7 @@ namespace ToySharingAPI.Controllers
                 IsRead = message.IsRead.GetValueOrDefault()
             };
 
-            return Ok(responseDto);
+            return Ok(responseDTO);
         }
 
         // PUT: api/conversations/{conversationId}/messages/{messageId}/read
