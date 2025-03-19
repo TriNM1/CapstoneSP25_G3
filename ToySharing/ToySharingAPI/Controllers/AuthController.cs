@@ -28,7 +28,7 @@ namespace ToySharingAPI.Controllers
             this.httpContextAccessor = httpContextAccessor;
             this.mainContext = mainContext;
         }
-
+        // Nhập email đăng ký
         [HttpPost("RequestOTP")]
         public async Task<IActionResult> RequestOTP([FromBody] OTPRequestDTO request)
         {
@@ -37,55 +37,72 @@ namespace ToySharingAPI.Controllers
 
             var otp = new Random().Next(100000, 999999).ToString();
 
-            httpContextAccessor.HttpContext.Session.SetString(request.Email, otp);
 
-            await emailService.SendEmailAsync(request.Email, "OTP Code", $"Your OTP: {otp}");
+            HttpContext.Session.SetString("RegistrationEmail", request.Email);
+            HttpContext.Session.SetString("RegistrationOTP", otp);
+
+            await emailService.SendEmailAsync(request.Email, "Toy Sharing OTP Code", $"Here is your OTP: {otp}");
             return Ok("OTP sent to email.");
         }
 
+        // Xác nhận OTP 
         [HttpPost("ConfirmOTP")]
         public IActionResult ConfirmOTP([FromBody] ConfirmOTPRequestDTO request)
         {
-            var savedOTP = HttpContext.Session.GetString(request.Email);
-            if (savedOTP == null || savedOTP != request.OTP) return BadRequest("Invalid OTP!");
+            var savedOTP = HttpContext.Session.GetString("RegistrationOTP");
+            if (savedOTP == null || savedOTP != request.OTP)
+                return BadRequest("Invalid OTP!");
 
+            HttpContext.Session.SetString("OTPConfirmed", "true");
             return Ok("OTP verified. Proceed to set password.");
         }
 
         [HttpPost("Register")]
         public async Task<IActionResult> Register([FromBody] SetPasswordDTO request)
         {
-            var userExists = await userManager.FindByEmailAsync(request.Email);
+            var otpConfirmed = HttpContext.Session.GetString("OTPConfirmed");
+            if (otpConfirmed != "true")
+                return BadRequest("OTP not confirmed.");
+
+            var email = HttpContext.Session.GetString("RegistrationEmail");
+            if (string.IsNullOrEmpty(email))
+                return BadRequest("Email session expired or not set.");
+
+            var userExists = await userManager.FindByEmailAsync(email);
             if (userExists != null) return BadRequest("Email already registered!");
 
             // Tạo IdentityUser ở bảng AspNetUsers
-            var identityUser = new IdentityUser { UserName = request.Email, Email = request.Email };
+            var identityUser = new IdentityUser { UserName = email, Email = email };
             var result = await userManager.CreateAsync(identityUser, request.Password);
             if (!result.Succeeded) return BadRequest("Failed to create account!");
 
             await userManager.AddToRoleAsync(identityUser, "User");
 
-            // Sau khi tạo thành công IdentityUser, tạo record tương ứng trong bảng Users của DB chính
+            // Tạo record tương ứng trong bảng Users của DB chính
             if (!Guid.TryParse(identityUser.Id, out Guid authUserGuid))
                 return BadRequest("User id format is invalid.");
 
             var newUser = new User
             {
-                AuthUserId = authUserGuid,   
-                Name = request.Email,         
+                AuthUserId = authUserGuid,
+                Name = email,
                 CreatedAt = DateTime.UtcNow,
-                Address = string.Empty,      
+                Address = string.Empty,
                 Latitude = 0,
                 Longtitude = 0,
                 Status = 0,
                 Avatar = string.Empty,
-                Gender = true,                   
+                Gender = true,
                 Age = 0,
                 Rating = null
             };
 
             mainContext.Users.Add(newUser);
             await mainContext.SaveChangesAsync();
+
+            HttpContext.Session.Remove("RegistrationEmail");
+            HttpContext.Session.Remove("RegistrationOTP");
+            HttpContext.Session.Remove("OTPConfirmed");
 
             return Ok("Account created successfully.");
         }
