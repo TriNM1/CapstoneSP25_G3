@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -89,6 +89,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
             RoleClaimType = ClaimTypes.Role,
             NameClaimType = ClaimTypes.NameIdentifier
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var tokenRepo = context.HttpContext.RequestServices.GetRequiredService<ITokenRepository>();
+                var token = context.HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                if (tokenRepo.IsTokenRevoked(token))
+                {
+                    context.Fail("This token has been revoked.");
+                }
+            }
         };
     });
 builder.Services.AddHttpClient();
