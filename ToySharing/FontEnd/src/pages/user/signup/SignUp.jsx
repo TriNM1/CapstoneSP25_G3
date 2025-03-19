@@ -1,29 +1,46 @@
 import React, { useState } from "react";
 import "./SignUp.scss";
 import banner from "../../../assets/bannerdangnhap.jpg";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const SignUp = () => {
   const [contact, setContact] = useState("");
-  const navigate = useNavigate(); // Khởi tạo hook navigate
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Đăng nhập thành công, chuyển hướng sang trang home
-    navigate("/validatemail");
+    setLoading(true);
+    setMessage("");
+
+    try {
+      const response = await axios.post("https://localhost:7128/api/Auth/RequestOTP", { email: contact });
+
+      if (response.status === 200) {
+        setMessage("OTP đã được gửi đến email của bạn!");
+        setTimeout(() => {
+          navigate("/validatemail", { state: { email: contact } }); // Chuyển trang & gửi email
+        }, 1000);
+      } else {
+        setMessage("Lỗi khi gửi OTP.");
+      }
+    } catch (error) {
+      setMessage("Không thể gửi OTP. Kiểm tra lại email!");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="container signup-wrapper">
       <div className="row justify-content-center align-items-center min-vh-100">
         <div className="col-md-8 p-0">
-          {/* Container chứa banner và form đăng ký */}
           <div className="signup-container row no-gutters h-100">
-            {/* Cột banner bên trái */}
             <div className="col-md-6 banner">
               <img src={banner} alt="Banner" className="img-fluid h-100" />
             </div>
-            {/* Cột form đăng ký bên phải */}
             <div className="col-md-6 signup-form-container d-flex align-items-center justify-content-center">
               <form className="signup-form" onSubmit={handleSubmit}>
                 <h2>Đăng Ký</h2>
@@ -34,13 +51,14 @@ const SignUp = () => {
                     id="contact"
                     value={contact}
                     onChange={(e) => setContact(e.target.value)}
-                    placeholder="Nhập email hoặc số điện thoại của bạn"
+                    placeholder="Nhập email của bạn"
                     required
                   />
                 </div>
-                <button type="submit" className="btn verify-btn">
-                  Xác thực
+                <button type="submit" className="btn verify-btn" disabled={loading}>
+                  {loading ? "Đang gửi OTP..." : "Xác thực"}
                 </button>
+                {message && <p className="message">{message}</p>}
               </form>
             </div>
           </div>
