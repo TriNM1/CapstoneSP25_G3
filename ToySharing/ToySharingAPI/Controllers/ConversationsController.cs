@@ -87,12 +87,29 @@ namespace ToySharingAPI.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetConversation(int id)
         {
+            var authUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(authUserIdStr))
+                return Unauthorized();
+
+            if (!Guid.TryParse(authUserIdStr, out Guid authUserId))
+                return Unauthorized("User id không hợp lệ.");
+
+            var mainUser = await _context.Users.FirstOrDefaultAsync(u => u.AuthUserId == authUserId);
+            if (mainUser == null)
+                return Unauthorized("Không tìm thấy user trong cơ sở dữ liệu.");
+
             var conversation = await _context.Conversations
-                .Include(c => c.Messages)
-                .FirstOrDefaultAsync(c => c.ConversationId == id);
+                        .Include(c => c.Messages)
+                        .FirstOrDefaultAsync(c => c.ConversationId == id);
 
             if (conversation == null)
                 return NotFound();
+
+            // Kiểm tra xem user hiện tại có tham gia cuộc trò chuyện này hay không
+            if (conversation.User1Id != mainUser.Id && conversation.User2Id != mainUser.Id)
+            {
+                return Unauthorized("Bạn không có quyền truy cập cuộc trò chuyện này.");
+            }
 
             var conversationDTO = new ConversationDetailsDTO
             {
@@ -120,19 +137,41 @@ namespace ToySharingAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateConversation([FromBody] CreateConversationRequestDTO request)
         {
-            if (request.User1Id == request.User2Id)
+            var authUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(authUserIdStr))
+                return Unauthorized();
+
+            if (!Guid.TryParse(authUserIdStr, out Guid authUserId))
+                return Unauthorized("User id không hợp lệ.");
+
+            var mainUser = await _context.Users.FirstOrDefaultAsync(u => u.AuthUserId == authUserId);
+            if (mainUser == null)
+                return Unauthorized("Không tìm thấy user trong cơ sở dữ liệu.");
+
+            int User1Id = mainUser.Id;
+            if (User1Id == request.User2Id)
                 return BadRequest("Không thể tạo cuộc trò chuyện với chính mình.");
 
             var existingConversation = await _context.Conversations.FirstOrDefaultAsync(c =>
-                (c.User1Id == request.User1Id && c.User2Id == request.User2Id) ||
-                (c.User1Id == request.User2Id && c.User2Id == request.User1Id)
+                (c.User1Id == User1Id && c.User2Id == request.User2Id) ||
+                (c.User1Id == request.User2Id && c.User2Id == User1Id)
             );
             if (existingConversation != null)
-                return Ok(existingConversation);
+            {
+                var existingDTO = new ConversationDTO
+                {
+                    ConversationId = existingConversation.ConversationId,
+                    User1Id = existingConversation.User1Id,
+                    User2Id = existingConversation.User2Id,
+                    CreatedAt = existingConversation.CreatedAt.GetValueOrDefault(),
+                    LastMessageAt = existingConversation.LastMessageAt.GetValueOrDefault()
+                };
+                return Ok(existingDTO);
+            }
 
             var conversation = new Conversation
             {
-                User1Id = request.User1Id,
+                User1Id = User1Id,
                 User2Id = request.User2Id,
                 CreatedAt = DateTime.UtcNow,
                 LastMessageAt = DateTime.UtcNow
@@ -141,7 +180,16 @@ namespace ToySharingAPI.Controllers
             _context.Conversations.Add(conversation);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetConversation), new { id = conversation.ConversationId }, conversation);
+            var conversationDTO = new ConversationDTO
+            {
+                ConversationId = conversation.ConversationId,
+                User1Id = conversation.User1Id,
+                User2Id = conversation.User2Id,
+                CreatedAt = conversation.CreatedAt.GetValueOrDefault(),
+                LastMessageAt = conversation.LastMessageAt.GetValueOrDefault()
+            };
+
+            return CreatedAtAction(nameof(GetConversation), new { id = conversation.ConversationId }, conversationDTO);
         }
     }
 }
