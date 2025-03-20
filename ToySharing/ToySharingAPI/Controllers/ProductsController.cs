@@ -21,18 +21,20 @@ namespace ToySharingAPI.Controllers
         // Hàm hỗ trợ lấy mainUserId từ JWT token
         private async Task<int> GetAuthenticatedUserId()
         {
-            // Lấy Claim NameIdentifier từ JWT token
+            // Kiểm tra xem User có được xác thực không
+            if (!User.Identity.IsAuthenticated)
+                throw new UnauthorizedAccessException("Người dùng chưa đăng nhập.");
+
             var authUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(authUserIdStr))
-                return -1;
+                throw new UnauthorizedAccessException("Không tìm thấy thông tin xác thực người dùng.");
 
             if (!Guid.TryParse(authUserIdStr, out Guid authUserId))
-                return -1;
+                throw new UnauthorizedAccessException("ID người dùng không hợp lệ.");
 
-            // Tìm user trong DB chính theo trường auth_user_id
             var mainUser = await _context.Users.FirstOrDefaultAsync(u => u.AuthUserId == authUserId);
             if (mainUser == null)
-                return -1;
+                throw new UnauthorizedAccessException("Không tìm thấy người dùng trong hệ thống.");
 
             return mainUser.Id;
         }

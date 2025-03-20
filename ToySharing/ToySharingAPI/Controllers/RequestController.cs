@@ -35,73 +35,85 @@ namespace ToySharingAPI.Controllers
 
         private async Task<int> GetAuthenticatedUserId()
         {
+            // Kiểm tra xem User có được xác thực không
+            if (!User.Identity.IsAuthenticated)
+                throw new UnauthorizedAccessException("Người dùng chưa đăng nhập.");
+
             var authUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(authUserIdStr))
-                return -1;
+                throw new UnauthorizedAccessException("Không tìm thấy thông tin xác thực người dùng.");
 
             if (!Guid.TryParse(authUserIdStr, out Guid authUserId))
-                return -1;
+                throw new UnauthorizedAccessException("ID người dùng không hợp lệ.");
 
             var mainUser = await _context.Users.FirstOrDefaultAsync(u => u.AuthUserId == authUserId);
-            return mainUser?.Id ?? -1;
+            if (mainUser == null)
+                throw new UnauthorizedAccessException("Không tìm thấy người dùng trong hệ thống.");
+
+            return mainUser.Id;
         }
 
         [HttpPost]
         [Authorize(Roles = "User")]
         public async Task<ActionResult<RequestDTO>> CreateRequest([FromForm] CreateRequestDTO formData)
         {
-            var mainUserId = await GetAuthenticatedUserId();
-            if (mainUserId == -1)
-                return Unauthorized("Không thể xác thực người dùng.");
-
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var product = await _context.Products
-                .Include(p => p.User)
-                .FirstOrDefaultAsync(p => p.ProductId == formData.ProductId);
-
-            if (product == null || product.Available != 0)
-                return BadRequest("Product is not available for rent.");
-
-            if (product.UserId == mainUserId)
-                return BadRequest("You cannot request to rent your own product.");
-
-            var request = new RentRequest
+            try
             {
-                UserId = mainUserId,
-                ProductId = formData.ProductId,
-                Message = formData.Message?.Trim(),
-                Status = 0,
-                RequestDate = formData.RequestDate ?? DateTime.UtcNow,
-                RentDate = formData.RentDate,
-                ReturnDate = formData.ReturnDate
-            };
+                var mainUserId = await GetAuthenticatedUserId();
 
-            _context.RentRequests.Add(request);
-            await _context.SaveChangesAsync();
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
 
-            var ownerId = product.UserId;
-            var borrower = await _context.Users.FindAsync(mainUserId);
-            var borrowerName = borrower?.Name ?? "Không xác định";
-            await CreateNotification(ownerId, $"{borrowerName} has requested to rent your product '{product.Name}'.");
+                var product = await _context.Products
+                    .Include(p => p.User)
+                    .FirstOrDefaultAsync(p => p.ProductId == formData.ProductId);
 
-            var response = new RequestDTO
+                if (product == null || product.Available != 0)
+                    return BadRequest("Product is not available for rent.");
+
+                if (product.UserId == mainUserId)
+                    return BadRequest("You cannot request to rent your own product.");
+
+                var request = new RentRequest
+                {
+                    UserId = mainUserId,
+                    ProductId = formData.ProductId,
+                    Message = formData.Message?.Trim(),
+                    Status = 0,
+                    RequestDate = formData.RequestDate ?? DateTime.UtcNow,
+                    RentDate = formData.RentDate,
+                    ReturnDate = formData.ReturnDate
+                };
+
+                _context.RentRequests.Add(request);
+                await _context.SaveChangesAsync();
+
+                var ownerId = product.UserId;
+                var borrower = await _context.Users.FindAsync(mainUserId);
+                var borrowerName = borrower?.Name ?? "Không xác định";
+                await CreateNotification(ownerId, $"{borrowerName} has requested to rent your product '{product.Name}'.");
+
+                var response = new RequestDTO
+                {
+                    RequestId = request.RequestId,
+                    UserId = request.UserId,
+                    RequestDate = request.RequestDate,
+                    ProductId = request.ProductId,
+                    ProductName = product.Name,
+                    Price = product.Price,
+                    BorrowerName = borrowerName,
+                    BorrowerAvatar = borrower?.Avatar,
+                    OwnerId = product.UserId,
+                    OwnerName = product.User.Name,
+                    Status = request.Status
+                };
+
+                return CreatedAtAction(nameof(GetRequestById), new { id = request.RequestId }, response);
+            }
+            catch (UnauthorizedAccessException ex)
             {
-                RequestId = request.RequestId,
-                UserId = request.UserId,
-                RequestDate = request.RequestDate,
-                ProductId = request.ProductId,
-                ProductName = product.Name,
-                Price = product.Price,
-                BorrowerName = borrowerName,
-                BorrowerAvatar = borrower?.Avatar,
-                OwnerId = product.UserId,
-                OwnerName = product.User.Name,
-                Status = request.Status
-            };
-
-            return CreatedAtAction(nameof(GetRequestById), new { id = request.RequestId }, response);
+                return Unauthorized(ex.Message);
+            }
         }
 
         [HttpPut("{requestId}/status")]
