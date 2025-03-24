@@ -37,9 +37,10 @@ namespace ToySharingAPI.Controllers
 
             var otp = new Random().Next(100000, 999999).ToString();
 
-
             HttpContext.Session.SetString("RegistrationEmail", request.Email);
             HttpContext.Session.SetString("RegistrationOTP", otp);
+
+            Console.WriteLine($"📩 Đã lưu Session: Email = {request.Email}, OTP = {otp}");
 
             await emailService.SendEmailAsync(request.Email, "Toy Sharing OTP Code", $"Here is your OTP: {otp}");
             return Ok("OTP sent to email.");
@@ -49,13 +50,30 @@ namespace ToySharingAPI.Controllers
         [HttpPost("ConfirmOTP")]
         public IActionResult ConfirmOTP([FromBody] ConfirmOTPRequestDTO request)
         {
+            Console.WriteLine($"📩 Nhận request: Email = {request.email}, OTP = {request.OTP}");
+
+            if (string.IsNullOrEmpty(request.email) || string.IsNullOrEmpty(request.OTP))
+            {
+                Console.WriteLine("❌ Thiếu email hoặc OTP!");
+                return BadRequest("Email và OTP không được để trống!");
+            }
+
             var savedOTP = HttpContext.Session.GetString("RegistrationOTP");
-            if (savedOTP == null || savedOTP != request.OTP)
-                return BadRequest("Invalid OTP!");
+            var savedEmail = HttpContext.Session.GetString("RegistrationEmail");
+
+            Console.WriteLine($"🎯 Session: Email = {savedEmail}, OTP = {savedOTP}");
+
+            if (savedOTP == null || savedEmail == null || savedOTP != request.OTP || savedEmail != request.email)
+            {
+                Console.WriteLine("❌ OTP không đúng hoặc không khớp email!");
+                return BadRequest("Invalid OTP or email mismatch!");
+            }
 
             HttpContext.Session.SetString("OTPConfirmed", "true");
-            return Ok("OTP verified. Proceed to set password.");
+            Console.WriteLine("✅ OTP xác thực thành công!");
+            return Ok(new { message = "OTP verified. Proceed to set password." });
         }
+
 
         [HttpPost("Register")]
         public async Task<IActionResult> Register([FromBody] SetPasswordDTO request)

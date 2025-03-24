@@ -20,8 +20,12 @@ const SignUp = () => {
 
       if (response.status === 200) {
         setMessage("OTP đã được gửi đến email của bạn!");
+
+        // 🔹 Lưu email vào localStorage để dùng ở trang xác thực OTP
+        localStorage.setItem("userEmail", contact);
+
         setTimeout(() => {
-          navigate("/validatemail", { state: { email: contact } }); // Chuyển trang & gửi email
+          navigate("/validatemail"); // Chuyển trang mà không cần truyền email qua state
         }, 1000);
       } else {
         setMessage("Lỗi khi gửi OTP.");

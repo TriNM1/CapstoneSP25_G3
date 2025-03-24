@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./ValidateMail.scss";
 import banner from "../../../assets/bannerdangnhap.jpg";
@@ -9,10 +9,9 @@ const ValidateMail = () => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
 
-  // Nhận email từ SignUp
-  const email = location.state?.email || "";
+  // 🔹 Lấy email từ localStorage (không bị mất khi refresh)
+  const email = localStorage.getItem("userEmail")?.trim().toLowerCase() || "";
 
   useEffect(() => {
     if (!email) {
@@ -21,37 +20,46 @@ const ValidateMail = () => {
   }, [email]);
 
   // Xác thực OTP
-  const handleVerifyOtp = async (e) => {
-  e.preventDefault();
-  if (!email || !otp) {
-    setMessage("Email hoặc mã OTP không hợp lệ!");
-    return;
-  }
-
-  setLoading(true);
-  setMessage("");
-
-  try {
-    const response = await axios.post("https://localhost:7128/api/Auth/ConfirmOTP", {
-      email: email.trim(), // Đảm bảo không có khoảng trắng
-      otp: otp.toString().trim(), // Chuyển OTP thành string và loại bỏ khoảng trắng
-    });
-
-    console.log("Kết quả API:", response.data);
-
-    if (response.status === 200 && response.data.success) {
-      setMessage("Xác thực thành công! Chuyển hướng...");
-      setTimeout(() => navigate("/login"), 2000);
-    } else {
-      setMessage("Mã OTP không đúng, vui lòng thử lại.");
+  const handleConfirmOtp = async (e) => {
+    e.preventDefault();
+    if (!email || !otp) {
+      setMessage("Email hoặc mã OTP không hợp lệ!");
+      return;
     }
-  } catch (error) {
-    console.error("Lỗi API:", error.response?.data);
-    setMessage("Lỗi khi xác thực OTP. Kiểm tra lại mã và email!");
-  } finally {
-    setLoading(false);
-  }
-};
+  
+    setLoading(true);
+    setMessage("");
+  
+    const payload = {
+      email: email.trim().toLowerCase(),  // Đảm bảo email không có khoảng trắng
+      otp: otp.toString().trim(),
+    };
+  
+    console.log("📤 Dữ liệu gửi lên API:", payload); // Kiểm tra dữ liệu gửi đi
+  
+    try {
+      const response = await axios.post("https://localhost:7128/api/Auth/ConfirmOTP", payload, {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: true,
+      });
+  
+      console.log("✅ Kết quả API:", response.data);
+  
+      if (response.status === 200) {
+        setMessage("Xác thực thành công! Chuyển hướng...");
+        setTimeout(() => navigate("/login"), 2000);
+      } else {
+        setMessage("Mã OTP không đúng, vui lòng thử lại.");
+      }
+    } catch (error) {
+      console.error("❌ Lỗi API:", error.response);
+      setMessage("Lỗi khi xác thực OTP. Kiểm tra lại mã và email!");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  
 
   return (
     <div className="container signup-wrapper">
@@ -62,7 +70,7 @@ const ValidateMail = () => {
               <img src={banner} alt="Banner" className="img-fluid h-100" />
             </div>
             <div className="col-md-6 signup-form-container d-flex align-items-center justify-content-center">
-              <form className="signup-form" onSubmit={handleVerifyOtp}>
+              <form className="signup-form" onSubmit={handleConfirmOtp}>
                 <h2>Xác nhận OTP</h2>
                 {email && <p>Email: {email}</p>}
                 <div className="form-group">
