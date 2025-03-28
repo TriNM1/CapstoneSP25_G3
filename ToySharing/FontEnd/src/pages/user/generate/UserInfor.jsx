@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Row,
@@ -14,30 +14,40 @@ import "react-datepicker/dist/react-datepicker.css";
 import { FaFilter } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Header from "../../../components/Header";
 import SideMenu from "../../../components/SideMenu";
 import toy1 from "../../../assets/toy1.jpg";
 import userAvatar from "../../../assets/user.png";
 import "./UserInfor.scss";
+import axios from "axios";
 
 const UserInfor = () => {
   const navigate = useNavigate();
+  const { userId } = useParams(); // Get userId from URL params
 
-  // State cho header active link
+  // State for header active link
   const [activeLink, setActiveLink] = useState("user-info");
 
-  // Dữ liệu thông tin người dùng
-  const userInfo = {
-    avatar: userAvatar,
-    name: "Nguyễn Văn A",
-    age: 30,
-    distance: 2.5, // km
-    address: "123 Đường ABC, Quận 1, TP.HCM",
-    reputation: 97, // số uy tín
-  };
+  // State for user information
+  const [userInfo, setUserInfo] = useState({
+    name: "",
+    age: 0,
+    distance: null, // Distance might be null
+    address: "",
+    avatar: "",
+    reputation: 0,
+    gender: null, // Gender might be null
+  });
 
-  // Bộ lọc giống trang SearchToy
+  // State for loading
+  const [loading, setLoading] = useState(true);
+
+  // State for toy list
+  const [toyList, setToyList] = useState([]);
+  const [noToysMessage, setNoToysMessage] = useState("");
+
+  // State for filter
   const [showFilter, setShowFilter] = useState(false);
   const [color, setColor] = useState("");
   const [condition, setCondition] = useState("");
@@ -45,6 +55,81 @@ const UserInfor = () => {
   const [ageRange, setAgeRange] = useState("");
   const [brand, setBrand] = useState("");
   const [distanceFilter, setDistanceFilter] = useState("");
+
+  // State for borrow modal
+  const [showBorrowModal, setShowBorrowModal] = useState(false);
+  const [borrowStart, setBorrowStart] = useState(null);
+  const [borrowEnd, setBorrowEnd] = useState(null);
+  const [note, setNote] = useState("");
+  const [selectedToyId, setSelectedToyId] = useState(null);
+
+  const API_BASE_URL = "https://localhost:7128/api"; // Adjust this to your backend URL
+
+  // Fetch user profile and toys when component mounts
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get(
+          `${API_BASE_URL}/Users/profile/${userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        const { userProfile, distance } = response.data; // Distance is returned separately
+        const data = userProfile.userInfo;
+        setUserInfo({
+          name: data.name || "Không xác định",
+          age: data.age || 0,
+          distance: distance, // Distance might be null
+          address: data.address || "Chưa cung cấp địa chỉ",
+          avatar: data.avatar || userAvatar,
+          reputation: data.rating || 0,
+          gender: data.gender, // Gender might be null (true: Male, false: Female, null: Not specified)
+        });
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+        toast.error("Không thể tải thông tin người dùng.");
+      }
+    };
+
+    const fetchUserToys = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get(`${API_BASE_URL}/Products/my-toys`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const products = response.data;
+        if (products.length === 0) {
+          setNoToysMessage("Người dùng này chưa đăng đồ chơi nào.");
+        } else {
+          const mappedToys = products.map((product) => ({
+            id: product.productId,
+            image:
+              product.imagePaths && product.imagePaths.length > 0
+                ? product.imagePaths[0]
+                : toy1,
+            name: product.name || "Không xác định",
+            status: product.available === 0 ? "Còn trống" : "Hết đồ",
+            price: `${product.price.toLocaleString("vi-VN")} VND`,
+          }));
+          setToyList(mappedToys);
+        }
+      } catch (error) {
+        console.error("Error fetching user toys:", error);
+        setNoToysMessage("Người dùng này chưa đăng đồ chơi nào.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+    fetchUserToys();
+  }, [userId]);
 
   const handleFilterSubmit = (e) => {
     e.preventDefault();
@@ -56,47 +141,8 @@ const UserInfor = () => {
       brand,
       distance: distanceFilter,
     });
-    // Tích hợp logic lọc nếu cần
+    // Add filter logic if needed
   };
-
-  // Dữ liệu mẫu cho các đồ chơi của người dùng
-  const [toyList, setToyList] = useState([
-    {
-      id: 1,
-      image: toy1,
-      name: "Xe đua mini",
-      status: "Còn trống",
-      price: "50,000 VND",
-    },
-    {
-      id: 2,
-      image: toy1,
-      name: "Robot chơi",
-      status: "Hết đồ",
-      price: "70,000 VND",
-    },
-    {
-      id: 3,
-      image: toy1,
-      name: "Búp bê Barbie",
-      status: "Còn trống",
-      price: "60,000 VND",
-    },
-    {
-      id: 4,
-      image: toy1,
-      name: "Khối xếp hình",
-      status: "Còn trống",
-      price: "40,000 VND",
-    },
-  ]);
-
-  // State cho Modal nhập thông tin mượn
-  const [showBorrowModal, setShowBorrowModal] = useState(false);
-  const [borrowStart, setBorrowStart] = useState(null);
-  const [borrowEnd, setBorrowEnd] = useState(null);
-  const [note, setNote] = useState("");
-  const [selectedToyId, setSelectedToyId] = useState(null);
 
   const handleOpenBorrowModal = (toyId) => {
     setSelectedToyId(toyId);
@@ -111,13 +157,48 @@ const UserInfor = () => {
     setSelectedToyId(null);
   };
 
-  const handleSendRequest = () => {
-    console.log({ borrowStart, borrowEnd, note, selectedToyId });
-    setToyList((prevList) =>
-      prevList.filter((toy) => toy.id !== selectedToyId)
-    );
-    toast.success("Gửi yêu cầu mượn thành công!");
-    handleCloseBorrowModal();
+  const handleSendRequest = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const requestData = {
+        productId: selectedToyId,
+        message: note,
+        requestDate: new Date().toISOString(),
+        rentDate: borrowStart ? borrowStart.toISOString() : null,
+        returnDate: borrowEnd ? borrowEnd.toISOString() : null,
+      };
+
+      const response = await axios.post(
+        `${API_BASE_URL}/Requests`,
+        requestData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.status === 201) {
+        setToyList((prevList) =>
+          prevList.filter((toy) => toy.id !== selectedToyId)
+        );
+        toast.success("Gửi yêu cầu mượn thành công!");
+        handleCloseBorrowModal();
+      }
+    } catch (error) {
+      console.error("Error sending borrow request:", error);
+      toast.error(
+        error.response?.data?.message ||
+          "Không thể gửi yêu cầu mượn. Vui lòng thử lại."
+      );
+    }
+  };
+
+  // Helper function to convert gender (bool?) to display text
+  const getGenderText = (gender) => {
+    if (gender === null || gender === undefined) return "Chưa xác định";
+    return gender ? "Nam" : "Nữ";
   };
 
   return (
@@ -155,7 +236,15 @@ const UserInfor = () => {
               </Col>
               <Col xs={12} sm={6}>
                 <p>
-                  <strong>Khoảng cách:</strong> {userInfo.distance} km
+                  <strong>Giới tính:</strong> {getGenderText(userInfo.gender)}
+                </p>
+              </Col>
+              <Col xs={12} sm={6}>
+                <p>
+                  <strong>Khoảng cách:</strong>{" "}
+                  {userInfo.distance != null
+                    ? `${userInfo.distance} km`
+                    : "Không xác định"}
                 </p>
               </Col>
               <Col xs={12} sm={6}>
@@ -168,10 +257,10 @@ const UserInfor = () => {
                   <strong>Uy tín:</strong>{" "}
                   <span
                     className={`reputation ${
-                      userInfo.reputation > 95 ? "high" : ""
+                      userInfo.reputation > 4 ? "high" : ""
                     }`}
                   >
-                    {userInfo.reputation}
+                    {userInfo.reputation.toFixed(1)}/5
                   </span>
                 </p>
               </Col>
@@ -186,7 +275,7 @@ const UserInfor = () => {
               <Button
                 variant="secondary"
                 className="ms-2"
-                onClick={() => navigate("/message")}
+                onClick={() => navigate(`/message/${userId}`)}
               >
                 Nhắn tin
               </Button>
@@ -312,46 +401,69 @@ const UserInfor = () => {
           </Col>
         </Row>
 
-        {/* Phần danh sách đồ chơi (3 item/1 dòng) */}
-        <Row className="toy-items-section">
-          {toyList.map((toy) => (
-            <Col key={toy.id} xs={12} md={4} className="mb-4">
-              <Card className="toy-card">
-                <Card.Img variant="top" src={toy.image} className="toy-image" />
-                <Card.Body className="text-center">
-                  <Card.Title className="toy-name">{toy.name}</Card.Title>
-                  <Card.Text className="toy-status">
-                    <strong>Trạng thái:</strong>{" "}
-                    <span
-                      className={
-                        toy.status === "Còn trống" ? "available" : "unavailable"
-                      }
-                    >
-                      {toy.status}
-                    </span>
-                  </Card.Text>
-                  <Card.Text className="toy-price">
-                    <strong>Giá:</strong> {toy.price}
-                  </Card.Text>
-                  <div className="toy-actions">
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      onClick={() => handleOpenBorrowModal(toy.id)}
-                    >
-                      Mượn
-                    </Button>
-                  </div>
-                </Card.Body>
-              </Card>
+        {/* Phần danh sách đồ chơi */}
+        {loading ? (
+          <Row>
+            <Col className="text-center">
+              <p>Đang tải...</p>
             </Col>
-          ))}
-        </Row>
-        <div className="text-center">
-          <Button variant="outline-primary" className="view-more-btn">
-            Xem thêm
-          </Button>
-        </div>
+          </Row>
+        ) : noToysMessage ? (
+          <Row>
+            <Col className="text-center">
+              <p>{noToysMessage}</p>
+            </Col>
+          </Row>
+        ) : (
+          <>
+            <Row className="toy-items-section">
+              {toyList.map((toy) => (
+                <Col key={toy.id} xs={12} md={4} className="mb-4">
+                  <Card className="toy-card">
+                    <Card.Img
+                      variant="top"
+                      src={toy.image}
+                      className="toy-image"
+                    />
+                    <Card.Body className="text-center">
+                      <Card.Title className="toy-name">{toy.name}</Card.Title>
+                      <Card.Text className="toy-status">
+                        <strong>Trạng thái:</strong>{" "}
+                        <span
+                          className={
+                            toy.status === "Còn trống"
+                              ? "available"
+                              : "unavailable"
+                          }
+                        >
+                          {toy.status}
+                        </span>
+                      </Card.Text>
+                      <Card.Text className="toy-price">
+                        <strong>Giá:</strong> {toy.price}
+                      </Card.Text>
+                      <div className="toy-actions">
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          onClick={() => handleOpenBorrowModal(toy.id)}
+                          disabled={toy.status !== "Còn trống"}
+                        >
+                          Mượn
+                        </Button>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+            <div className="text-center">
+              <Button variant="outline-primary" className="view-more-btn">
+                Xem thêm
+              </Button>
+            </div>
+          </>
+        )}
       </Container>
 
       {/* Modal Nhập thông tin mượn */}
@@ -369,6 +481,7 @@ const UserInfor = () => {
                 dateFormat="yyyy-MM-dd"
                 className="form-control"
                 placeholderText="Chọn ngày bắt đầu"
+                minDate={new Date()}
               />
             </Form.Group>
             <Form.Group controlId="borrowEndDate" className="mb-3">
@@ -379,6 +492,7 @@ const UserInfor = () => {
                 dateFormat="yyyy-MM-dd"
                 className="form-control"
                 placeholderText="Chọn ngày kết thúc"
+                minDate={borrowStart || new Date()}
               />
             </Form.Group>
             <Form.Group controlId="borrowNote">
@@ -397,7 +511,11 @@ const UserInfor = () => {
           <Button variant="secondary" onClick={handleCloseBorrowModal}>
             Quay lại
           </Button>
-          <Button variant="primary" onClick={handleSendRequest}>
+          <Button
+            variant="primary"
+            onClick={handleSendRequest}
+            disabled={!borrowStart || !borrowEnd}
+          >
             Gửi yêu cầu
           </Button>
         </Modal.Footer>

@@ -34,30 +34,9 @@ const InLending = () => {
   ];
 
   const [selectedDate, setSelectedDate] = useState(null);
-
-  const initialLendings = [
-    {
-      id: 1,
-      image: toy1,
-      name: "Xe đua mini",
-      borrowDate: "2023-07-01",
-      returnDate: "2023-07-10",
-      lenderId: 1,
-      lenderAvatar: user,
-    },
-    {
-      id: 2,
-      image: toy1,
-      name: "Robot chơi",
-      borrowDate: "2023-07-02",
-      returnDate: "2023-07-11",
-      lenderId: 2,
-      lenderAvatar: user,
-    },
-  ];
-
-  const [lendings, setLendings] = useState(initialLendings);
+  const [lendings, setLendings] = useState([]);
   const [visibleItems, setVisibleItems] = useState(4);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [rating, setRating] = useState(null);
@@ -69,7 +48,28 @@ const InLending = () => {
   const [reportReason, setReportReason] = useState("");
   const [selectedReportId, setSelectedReportId] = useState(null);
 
+  const API_BASE_URL = "https://localhost:7128/api";
+
   useEffect(() => {
+    const fetchCurrentUserId = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
+          return;
+        }
+        const response = await axios.get(`${API_BASE_URL}/Users/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setCurrentUserId(response.data.id);
+      } catch (error) {
+        console.error("Error fetching current user ID:", error);
+        // Suppress the toast message
+      }
+    };
+
     const fetchLendings = async () => {
       try {
         const token = localStorage.getItem("token");
@@ -77,7 +77,7 @@ const InLending = () => {
           toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
           return;
         }
-        const response = await axios.get("https://localhost:7128/api/Requests/borrowing", {
+        const response = await axios.get(`${API_BASE_URL}/Requests/borrowing`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -93,18 +93,19 @@ const InLending = () => {
             lenderId: req.userId,
             lenderAvatar: req.borrowerAvatar || user,
           }));
-        setLendings([...initialLendings, ...filteredLendings]);
+        setLendings(filteredLendings);
       } catch (error) {
         console.error("Error fetching lendings:", error);
         if (error.response && error.response.status === 401) {
           toast.error("Token không hợp lệ hoặc đã hết hạn! Vui lòng đăng nhập lại.");
         } else {
-          toast.error("Không thể tải dữ liệu từ API! Hiển thị 2 mục cố định.");
+          toast.error("Không thể tải dữ liệu từ API!");
         }
-        setLendings(initialLendings);
+        setLendings([]);
       }
     };
 
+    fetchCurrentUserId();
     fetchLendings();
   }, []);
 
@@ -114,7 +115,6 @@ const InLending = () => {
   };
 
   const handleSendRating = async () => {
-    // Debug giá trị rating và reviewText trước khi gửi
     console.log("Rating trước khi gửi:", rating);
     console.log("ReviewText trước khi gửi:", reviewText);
 
@@ -125,10 +125,10 @@ const InLending = () => {
         return;
       }
       const response = await axios.put(
-        `https://localhost:7128/api/Requests/history/${selectedLendingId}/complete`,
+        `${API_BASE_URL}/Requests/history/${selectedLendingId}/complete`,
         {
-          rating: rating, // Gửi rating (có thể null)
-          message: reviewText || null, // Gửi message (có thể null)
+          rating: rating,
+          message: reviewText || null,
         },
         {
           headers: {
@@ -170,7 +170,7 @@ const InLending = () => {
         return;
       }
       await axios.put(
-        `https://localhost:7128/api/Requests/${selectedReportId}/cancel`,
+        `${API_BASE_URL}/Requests/${selectedReportId}/cancel`,
         {
           reason: reportReason,
         },
@@ -199,7 +199,7 @@ const InLending = () => {
   };
 
   const handleViewProfile = (lenderId) => {
-    navigate(`/user/${lenderId}`);
+    navigate(`/user-info/${lenderId}`);
   };
 
   const handleLoadMore = () => {
@@ -239,84 +239,92 @@ const InLending = () => {
                 placeholderText="Tìm kiếm theo ngày"
               />
             </Form.Group>
-            <Row className="lending-items-section">
-              {visibleLendings.map((item) => (
-                <Col key={item.id} xs={12} md={6} className="mb-4">
-                  <Card className="lending-card">
-                    <Card.Img
-                      variant="top"
-                      src={item.image}
-                      className="toy-image"
-                    />
-                    <Card.Body className="text-center">
-                      <Card.Title className="toy-name">{item.name}</Card.Title>
-                      <Card.Text className="borrow-date">
-                        <strong>Ngày mượn:</strong> {item.borrowDate}
-                      </Card.Text>
-                      <Card.Text className="return-date">
-                        <strong>Ngày trả:</strong> {item.returnDate}
-                      </Card.Text>
-                      <Card.Text className="lending-status">
-                        <strong>Trạng thái:</strong>{" "}
-                        <span className="in-progress">Đang cho mượn</span>
-                      </Card.Text>
-                      <div className="lender-info mt-2 d-flex align-items-center justify-content-center">
-                        <img
-                          src={item.lenderAvatar}
-                          alt="Avatar"
-                          className="lender-avatar"
-                        />
-                        <span className="ms-2">
-                          <Button
-                            variant="link"
-                            className="p-0 text-decoration-none"
-                            onClick={() => handleViewProfile(item.lenderId)}
-                          >
-                            Trang cá nhân người mượn
-                          </Button>
-                        </span>
-                      </div>
-                      <div className="lending-actions mt-3">
-                        <Button
-                          variant="primary"
-                          size="lg"
-                          onClick={() => handleMessage(item.lenderId)}
-                        >
-                          Nhắn tin
-                        </Button>
-                      </div>
-                      <div className="lending-buttons mt-3">
-                        <Button
-                          variant="success"
-                          size="lg"
-                          onClick={() => handleReturn(item.id)}
-                        >
-                          Đã trả
-                        </Button>
-                        <Button
-                          variant="danger"
-                          size="lg"
-                          className="ms-2"
-                          onClick={() => handleReport(item.id)}
-                        >
-                          Hủy yêu cầu
-                        </Button>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-            {visibleLendings.length < filteredLendings.length && (
-              <div className="text-center">
-                <Button
-                  variant="outline-primary"
-                  className="view-more-btn"
-                  onClick={handleLoadMore}
-                >
-                  Xem thêm
-                </Button>
+            {visibleLendings.length === 0 ? (
+              <div className="text-center mt-5">
+                <h5>Không có đồ chơi nào trong trạng thái đang cho mượn</h5>
               </div>
+            ) : (
+              <>
+                <Row className="lending-items-section">
+                  {visibleLendings.map((item) => (
+                    <Col key={item.id} xs={12} md={6} className="mb-4">
+                      <Card className="lending-card">
+                        <Card.Img
+                          variant="top"
+                          src={item.image}
+                          className="toy-image"
+                        />
+                        <Card.Body className="text-center">
+                          <Card.Title className="toy-name">{item.name}</Card.Title>
+                          <Card.Text className="borrow-date">
+                            <strong>Ngày mượn:</strong> {item.borrowDate}
+                          </Card.Text>
+                          <Card.Text className="return-date">
+                            <strong>Ngày trả:</strong> {item.returnDate}
+                          </Card.Text>
+                          <Card.Text className="lending-status">
+                            <strong>Trạng thái:</strong>{" "}
+                            <span className="in-progress">Đang cho mượn</span>
+                          </Card.Text>
+                          <div className="lender-info mt-2 d-flex align-items-center justify-content-center">
+                            <img
+                              src={item.lenderAvatar}
+                              alt="Avatar"
+                              className="lender-avatar"
+                            />
+                            <span className="ms-2">
+                              <Button
+                                variant="link"
+                                className="p-0 text-decoration-none"
+                                onClick={() => handleViewProfile(item.lenderId)}
+                              >
+                                Trang cá nhân người mượn
+                              </Button>
+                            </span>
+                          </div>
+                          <div className="lending-actions mt-3">
+                            <Button
+                              variant="primary"
+                              size="lg"
+                              onClick={() => handleMessage(item.lenderId)}
+                            >
+                              Nhắn tin
+                            </Button>
+                          </div>
+                          <div className="lending-buttons mt-3">
+                            <Button
+                              variant="success"
+                              size="lg"
+                              onClick={() => handleReturn(item.id)}
+                            >
+                              Đã trả
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="lg"
+                              className="ms-2"
+                              onClick={() => handleReport(item.id)}
+                            >
+                              Hủy yêu cầu
+                            </Button>
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  ))}
+                </Row>
+                {visibleLendings.length < filteredLendings.length && (
+                  <div className="text-center">
+                    <Button
+                      variant="outline-primary"
+                      className="view-more-btn"
+                      onClick={handleLoadMore}
+                    >
+                      Xem thêm
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </Col>
         </Row>
@@ -340,7 +348,7 @@ const InLending = () => {
                     key={star}
                     onClick={() => {
                       setRating(star);
-                      console.log("Đã chọn rating:", star); // Debug khi chọn sao
+                      console.log("Đã chọn rating:", star);
                     }}
                     onMouseEnter={() => setHoverRating(star)}
                     onMouseLeave={() => setHoverRating(0)}
@@ -366,7 +374,7 @@ const InLending = () => {
                 value={reviewText}
                 onChange={(e) => {
                   setReviewText(e.target.value);
-                  console.log("ReviewText đã nhập:", e.target.value); // Debug khi nhập textarea
+                  console.log("ReviewText đã nhập:", e.target.value);
                 }}
               />
             </Form.Group>
