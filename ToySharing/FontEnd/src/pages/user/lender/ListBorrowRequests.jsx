@@ -120,7 +120,7 @@ const ListBorrowRequests = () => {
         setRequests([...initialRequests, ...formattedRequests]);
       } catch (error) {
         console.error("Error fetching requests:", error);
-        toast.error("Không thể tải dữ liệu từ API! Hiển thị 4 mục cố định.");
+        toast.error("Không thể tải dữ liệu từ API!");
         setRequests(initialRequests);
       }
     };
