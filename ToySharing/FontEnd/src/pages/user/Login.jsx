@@ -7,17 +7,48 @@ import { useNavigate } from "react-router-dom"; // Import useNavigate
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(false);
+  const [remember, setRemember] = useState("");
+  const [error, setError] = useState(""); // State lưu lỗi
   const navigate = useNavigate(); // Khởi tạo hook navigate
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Đăng nhập thành công, chuyển hướng sang trang home
-    navigate("/home");
+    setError(""); // Reset lỗi trước khi gọi API
+    console.log("📤 Gửi yêu cầu đăng nhập với:", { email, password });
+    try {
+      const response = await fetch("https://localhost:7128/api/Auth/Login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username: email, password }),
+
+      });
+
+      const data = await response.json();
+      console.log("📥 Phản hồi từ API:", data);
+      if (response.ok) {
+        // Lưu token dựa trên "Ghi nhớ đăng nhập"
+        if (remember) {
+          localStorage.setItem("token", data.token);
+        } else {
+          sessionStorage.setItem("token", data.token);
+        }
+        console.log("✅ Đăng nhập thành công! Chuyển hướng đến /home");
+        // Chuyển hướng sang trang home
+        navigate("/home");
+      } else {
+        
+        setError(data.message || "Đăng nhập thất bại! Vui lòng kiểm tra lại email hoặc mật khẩu.");
+        console.warn("⚠️ Lỗi từ API:", data.message);
+      }
+    } catch (error) {
+      console.error("Lỗi khi đăng nhập:", error);
+      setError("Không thể kết nối đến máy chủ. Hãy thử lại sau!");
+    }
   };
 
   const handleGoogleLogin = () => {
-    // Xử lý đăng nhập với Google tại đây
     console.log("Đăng nhập với Google");
   };
 
@@ -35,6 +66,8 @@ const Login = () => {
             <div className="col-md-6 login-form-container d-flex align-items-center justify-content-center">
               <form className="login-form" onSubmit={handleSubmit}>
                 <h2>Đăng Nhập</h2>
+
+                {error && <p className="error-message">{error}</p>}
 
                 <div className="form-group">
                   <label htmlFor="email">Email</label>
