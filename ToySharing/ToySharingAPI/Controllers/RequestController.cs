@@ -482,7 +482,7 @@ namespace ToySharingAPI.Controllers
 
         [HttpPut("history/{requestId}/complete")]
         [Authorize(Roles = "User")]
-        public async Task<ActionResult<HistoryDTO>> ConfirmComplete(int requestId, [FromForm] CompleteRequestDTO formData)
+        public async Task<ActionResult<HistoryDTO>> ConfirmComplete(int requestId, [FromBody] CompleteRequestDTO formData)
         {
             var mainUserId = await GetAuthenticatedUserId();
             if (mainUserId == -1)
@@ -507,8 +507,8 @@ namespace ToySharingAPI.Controllers
                 return BadRequest("Can only complete from 'accepted' status.");
 
             history.Status = 2;
-            history.Rating = formData.Rating;
-            history.Message = formData.Message;
+            history.Rating = formData.Rating; // Có thể null
+            history.Message = formData.Message; // Có thể null
             history.ReturnDate = DateTime.UtcNow;
             product.Available = 0;
 
@@ -519,9 +519,13 @@ namespace ToySharingAPI.Controllers
                 .FirstOrDefaultAsync() ?? "Không xác định";
             var ownerId = product.UserId;
 
-            var notificationContent = $"{borrowerName} has completed renting your product '{product.Name}' and rated it {formData.Rating}/5.";
+            var notificationContent = $"{borrowerName} has completed renting your product '{product.Name}'";
+            if (formData.Rating.HasValue)
+                notificationContent += $" and rated it {formData.Rating}/5";
             if (!string.IsNullOrEmpty(formData.Message))
-                notificationContent += $" Feedback: {formData.Message}";
+                notificationContent += $". Feedback: {formData.Message}";
+            else
+                notificationContent += ".";
             await CreateNotification(ownerId, notificationContent);
 
             await _context.SaveChangesAsync();
@@ -540,32 +544,9 @@ namespace ToySharingAPI.Controllers
             });
         }
 
-        [HttpDelete("{requestId}")]
-        [Authorize(Roles = "User")]
-        public async Task<IActionResult> RemoveSendingRequest(int requestId)
-        {
-            var mainUserId = await GetAuthenticatedUserId();
-            if (mainUserId == -1)
-                return Unauthorized("Không thể xác thực người dùng.");
-
-            var request = await _context.RentRequests
-                .FirstOrDefaultAsync(r => r.RequestId == requestId && r.UserId == mainUserId);
-
-            if (request == null)
-                return NotFound("Request not found.");
-
-            if (request.Status != 0)
-                return BadRequest("Only pending requests can be removed.");
-
-            _context.RentRequests.Remove(request);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Request removed successfully" });
-        }
-
         [HttpPut("{requestId}/cancel")]
         [Authorize(Roles = "User")]
-        public async Task<IActionResult> CancelAcceptedRequest(int requestId)
+        public async Task<IActionResult> CancelAcceptedRequest(int requestId, [FromBody] CancelRequestDTO cancelDto)
         {
             var mainUserId = await GetAuthenticatedUserId();
             if (mainUserId == -1)
@@ -575,6 +556,7 @@ namespace ToySharingAPI.Controllers
                 .Include(r => r.Product)
                 .ThenInclude(p => p.User)
                 .Include(r => r.User)
+                .Include(r => r.History)
                 .FirstOrDefaultAsync(r => r.RequestId == requestId);
 
             if (request == null)
@@ -586,16 +568,47 @@ namespace ToySharingAPI.Controllers
             if (request.Status != 1)
                 return BadRequest("Only accepted requests can be canceled.");
 
+            // Hủy yêu cầu
             request.Status = 3;
             request.Product.Available = 0;
 
+            // Cập nhật History để hoàn thành và gán rating 1 sao
+            if (request.History != null)
+            {
+                request.History.Status = 2; // Hoàn thành
+                request.History.Rating = 1; // Gán rating 1 sao
+                request.History.ReturnDate = DateTime.UtcNow;
+                request.History.Message = $"Request canceled by owner due to report. Reason: {cancelDto.Reason}";
+            }
+            else
+            {
+                // Nếu chưa có History, tạo mới
+                var history = new History
+                {
+                    RequestId = request.RequestId,
+                    UserId = request.UserId,
+                    ProductId = request.ProductId,
+                    Status = 2,
+                    Rating = 1,
+                    Message = $"Request canceled by owner due to report. Reason: {cancelDto.Reason}",
+                    ReturnDate = DateTime.UtcNow
+                };
+                _context.Histories.Add(history);
+            }
+
             var borrowerId = request.UserId;
             var productName = request.Product.Name;
-            await CreateNotification(borrowerId, $"The request to rent '{productName}' has been canceled by the owner.");
+            await CreateNotification(borrowerId, $"The request to rent '{productName}' has been canceled by the owner and rated 1 star due to a report. Reason: {cancelDto.Reason}");
 
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Request canceled successfully" });
+            return Ok(new { message = "Request canceled successfully with 1-star rating" });
+        }
+
+        // DTO cho cancel request
+        public class CancelRequestDTO
+        {
+            public string Reason { get; set; }
         }
     }
 }

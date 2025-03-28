@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Row,
@@ -14,10 +14,12 @@ import { FaStar, FaPaperPlane } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Header from "../../../components/Header";
 import SideMenu from "../../../components/SideMenu";
-import "./InLending.scss";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
 import toy1 from "../../../assets/toy1.jpg";
+import user from "../../../assets/user.png";
+import "./InLending.scss";
 
 const InLending = () => {
   const navigate = useNavigate();
@@ -31,10 +33,8 @@ const InLending = () => {
     { id: 5, label: "Lịch sử trao đổi", link: "/transferhistory" },
   ];
 
-  // DatePicker state
   const [selectedDate, setSelectedDate] = useState(null);
 
-  // Dữ liệu mẫu cho giao dịch cho mượn
   const initialLendings = [
     {
       id: 1,
@@ -42,7 +42,8 @@ const InLending = () => {
       name: "Xe đua mini",
       borrowDate: "2023-07-01",
       returnDate: "2023-07-10",
-      lenderAvatar: toy1,
+      lenderId: 1,
+      lenderAvatar: user,
     },
     {
       id: 2,
@@ -50,91 +51,168 @@ const InLending = () => {
       name: "Robot chơi",
       borrowDate: "2023-07-02",
       returnDate: "2023-07-11",
-      lenderAvatar: toy1,
-    },
-    {
-      id: 3,
-      image: toy1,
-      name: "Búp bê Barbie",
-      borrowDate: "2023-07-03",
-      returnDate: "2023-07-12",
-      lenderAvatar: toy1,
-    },
-    {
-      id: 4,
-      image: toy1,
-      name: "Khối xếp hình",
-      borrowDate: "2023-07-04",
-      returnDate: "2023-07-13",
-      lenderAvatar: toy1,
-    },
-    {
-      id: 5,
-      image: toy1,
-      name: "Xe điều khiển",
-      borrowDate: "2023-07-05",
-      returnDate: "2023-07-14",
-      lenderAvatar: toy1,
-    },
-    {
-      id: 6,
-      image: toy1,
-      name: "Đồ chơi xếp hình",
-      borrowDate: "2023-07-06",
-      returnDate: "2023-07-15",
-      lenderAvatar: toy1,
+      lenderId: 2,
+      lenderAvatar: user,
     },
   ];
 
   const [lendings, setLendings] = useState(initialLendings);
+  const [visibleItems, setVisibleItems] = useState(4);
 
-  // --- Modal đánh giá người mượn ---
   const [showRatingModal, setShowRatingModal] = useState(false);
-  const [rating, setRating] = useState(0);
+  const [rating, setRating] = useState(null);
   const [hoverRating, setHoverRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
+  const [selectedLendingId, setSelectedLendingId] = useState(null);
 
-  const handleReturn = (id) => {
-    // Khi bấm "Đã trả", mở modal đánh giá
-    setShowRatingModal(true);
-  };
-
-  const handleSendRating = () => {
-    console.log({ rating, reviewText });
-    toast.success("Đã gửi đánh giá thành công!");
-    setShowRatingModal(false);
-    setRating(0);
-    setHoverRating(0);
-    setReviewText("");
-  };
-
-  // --- Modal báo cáo ---
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [selectedReportId, setSelectedReportId] = useState(null);
+
+  useEffect(() => {
+    const fetchLendings = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
+          return;
+        }
+        const response = await axios.get("https://localhost:7128/api/Requests/borrowing", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const filteredLendings = response.data
+          .filter((req) => req.requestStatus === "Accepted")
+          .map((req) => ({
+            id: req.requestId,
+            image: req.image || toy1,
+            name: req.productName,
+            borrowDate: new Date(req.rentDate).toISOString().split("T")[0],
+            returnDate: new Date(req.returnDate).toISOString().split("T")[0],
+            lenderId: req.userId,
+            lenderAvatar: req.borrowerAvatar || user,
+          }));
+        setLendings([...initialLendings, ...filteredLendings]);
+      } catch (error) {
+        console.error("Error fetching lendings:", error);
+        if (error.response && error.response.status === 401) {
+          toast.error("Token không hợp lệ hoặc đã hết hạn! Vui lòng đăng nhập lại.");
+        } else {
+          toast.error("Không thể tải dữ liệu từ API! Hiển thị 2 mục cố định.");
+        }
+        setLendings(initialLendings);
+      }
+    };
+
+    fetchLendings();
+  }, []);
+
+  const handleReturn = (id) => {
+    setSelectedLendingId(id);
+    setShowRatingModal(true);
+  };
+
+  const handleSendRating = async () => {
+    // Debug giá trị rating và reviewText trước khi gửi
+    console.log("Rating trước khi gửi:", rating);
+    console.log("ReviewText trước khi gửi:", reviewText);
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
+        return;
+      }
+      const response = await axios.put(
+        `https://localhost:7128/api/Requests/history/${selectedLendingId}/complete`,
+        {
+          rating: rating, // Gửi rating (có thể null)
+          message: reviewText || null, // Gửi message (có thể null)
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log("Response từ API complete:", response.data);
+      setLendings((prev) => prev.filter((item) => item.id !== selectedLendingId));
+      toast.success("Đã hoàn thành yêu cầu thành công!");
+    } catch (error) {
+      console.error("Error completing request:", error);
+      if (error.response) {
+        console.error("Response error data:", error.response.data);
+        console.error("Response status:", error.response.status);
+      }
+      toast.error("Có lỗi xảy ra khi hoàn thành yêu cầu! Chỉ xóa cục bộ.");
+      setLendings((prev) => prev.filter((item) => item.id !== selectedLendingId));
+    } finally {
+      setShowRatingModal(false);
+      setRating(null);
+      setHoverRating(0);
+      setReviewText("");
+      setSelectedLendingId(null);
+    }
+  };
 
   const handleReport = (id) => {
     setSelectedReportId(id);
     setShowReportModal(true);
   };
 
-  const handleSendReport = () => {
-    setLendings((prev) => prev.filter((item) => item.id !== selectedReportId));
-    toast.success("Gửi báo cáo thành công!");
-    setShowReportModal(false);
-    setReportReason("");
-    setSelectedReportId(null);
+  const handleSendReport = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
+        return;
+      }
+      await axios.put(
+        `https://localhost:7128/api/Requests/${selectedReportId}/cancel`,
+        {
+          reason: reportReason,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      setLendings((prev) => prev.filter((item) => item.id !== selectedReportId));
+      toast.success("Đã hủy yêu cầu và gán 1 sao cho người mượn!");
+    } catch (error) {
+      console.error("Error canceling request:", error);
+      toast.error("Có lỗi xảy ra khi hủy yêu cầu! Chỉ xóa cục bộ.");
+      setLendings((prev) => prev.filter((item) => item.id !== selectedReportId));
+    } finally {
+      setShowReportModal(false);
+      setReportReason("");
+      setSelectedReportId(null);
+    }
   };
 
-  // Xử lý nút Nhắn tin: chuyển đến trang /message
-  const handleMessage = (id) => {
-    navigate("/message");
+  const handleMessage = (lenderId) => {
+    toast.info("Chức năng nhắn tin đang chờ API tạo conversation!");
+  };
+
+  const handleViewProfile = (lenderId) => {
+    navigate(`/user/${lenderId}`);
   };
 
   const handleLoadMore = () => {
-    // Giả định: thêm 3 item nữa
-    setLendings([...lendings, ...initialLendings.slice(0, 3)]);
+    setVisibleItems((prev) => prev + 3);
   };
+
+  const formattedFilterDate = selectedDate
+    ? selectedDate.toISOString().split("T")[0]
+    : "";
+  const filteredLendings = formattedFilterDate
+    ? lendings.filter((item) => item.borrowDate === formattedFilterDate)
+    : lendings;
+  const visibleLendings = filteredLendings.slice(0, visibleItems);
 
   return (
     <div className="inlending-page home-page">
@@ -152,6 +230,7 @@ const InLending = () => {
           </Col>
           <Col xs={12} md={10} className="main-content">
             <Form.Group controlId="selectDate" className="mb-3">
+              <Form.Label>Chọn ngày mượn</Form.Label>
               <DatePicker
                 selected={selectedDate}
                 onChange={(date) => setSelectedDate(date)}
@@ -161,7 +240,7 @@ const InLending = () => {
               />
             </Form.Group>
             <Row className="lending-items-section">
-              {lendings.map((item) => (
+              {visibleLendings.map((item) => (
                 <Col key={item.id} xs={12} md={6} className="mb-4">
                   <Card className="lending-card">
                     <Card.Img
@@ -181,24 +260,30 @@ const InLending = () => {
                         <strong>Trạng thái:</strong>{" "}
                         <span className="in-progress">Đang cho mượn</span>
                       </Card.Text>
-                      <div className="lending-actions">
-                        <Button
-                          variant="primary"
-                          size="lg"
-                          onClick={() => handleMessage(item.id)}
-                        >
-                          Nhắn tin
-                        </Button>
-                      </div>
                       <div className="lender-info mt-2 d-flex align-items-center justify-content-center">
                         <img
                           src={item.lenderAvatar}
                           alt="Avatar"
                           className="lender-avatar"
                         />
-                        <a href="/userinfor" className="ms-2 lender-link">
-                          Trang chủ người mượn
-                        </a>
+                        <span className="ms-2">
+                          <Button
+                            variant="link"
+                            className="p-0 text-decoration-none"
+                            onClick={() => handleViewProfile(item.lenderId)}
+                          >
+                            Trang cá nhân người mượn
+                          </Button>
+                        </span>
+                      </div>
+                      <div className="lending-actions mt-3">
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          onClick={() => handleMessage(item.lenderId)}
+                        >
+                          Nhắn tin
+                        </Button>
                       </div>
                       <div className="lending-buttons mt-3">
                         <Button
@@ -214,7 +299,7 @@ const InLending = () => {
                           className="ms-2"
                           onClick={() => handleReport(item.id)}
                         >
-                          Báo cáo
+                          Hủy yêu cầu
                         </Button>
                       </div>
                     </Card.Body>
@@ -222,43 +307,47 @@ const InLending = () => {
                 </Col>
               ))}
             </Row>
-            <div className="text-center">
-              <Button
-                variant="outline-primary"
-                className="view-more-btn"
-                onClick={handleLoadMore}
-              >
-                Xem thêm
-              </Button>
-            </div>
+            {visibleLendings.length < filteredLendings.length && (
+              <div className="text-center">
+                <Button
+                  variant="outline-primary"
+                  className="view-more-btn"
+                  onClick={handleLoadMore}
+                >
+                  Xem thêm
+                </Button>
+              </div>
+            )}
           </Col>
         </Row>
       </Container>
 
-      {/* Modal đánh giá người mượn */}
       <Modal
         show={showRatingModal}
         onHide={() => setShowRatingModal(false)}
         centered
       >
         <Modal.Header closeButton>
-          <Modal.Title>Đánh giá người mượn</Modal.Title>
+          <Modal.Title>Đánh giá người mượn (Tùy chọn)</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
             <Form.Group controlId="ratingStars" className="mb-3">
-              <Form.Label>Đánh giá sao</Form.Label>
+              <Form.Label>Đánh giá sao (Tùy chọn)</Form.Label>
               <div className="rating-stars">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <span
                     key={star}
-                    onClick={() => setRating(star)}
+                    onClick={() => {
+                      setRating(star);
+                      console.log("Đã chọn rating:", star); // Debug khi chọn sao
+                    }}
                     onMouseEnter={() => setHoverRating(star)}
                     onMouseLeave={() => setHoverRating(0)}
                     style={{
                       cursor: "pointer",
                       color:
-                        star <= (hoverRating || rating) ? "#ffc107" : "#ddd",
+                        star <= (hoverRating || (rating || 0)) ? "#ffc107" : "#ddd",
                       fontSize: "1.5rem",
                       marginRight: "5px",
                     }}
@@ -269,13 +358,16 @@ const InLending = () => {
               </div>
             </Form.Group>
             <Form.Group controlId="reviewText">
-              <Form.Label>Đánh giá</Form.Label>
+              <Form.Label>Đánh giá (Tùy chọn)</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={3}
                 placeholder="Nhập đánh giá của bạn"
                 value={reviewText}
-                onChange={(e) => setReviewText(e.target.value)}
+                onChange={(e) => {
+                  setReviewText(e.target.value);
+                  console.log("ReviewText đã nhập:", e.target.value); // Debug khi nhập textarea
+                }}
               />
             </Form.Group>
           </Form>
@@ -285,28 +377,27 @@ const InLending = () => {
             Hủy
           </Button>
           <Button variant="primary" onClick={handleSendRating}>
-            <FaPaperPlane className="me-2" /> Gửi đánh giá
+            <FaPaperPlane className="me-2" /> Xác nhận hoàn thành
           </Button>
         </Modal.Footer>
       </Modal>
 
-      {/* Modal báo cáo */}
       <Modal
         show={showReportModal}
         onHide={() => setShowReportModal(false)}
         centered
       >
         <Modal.Header closeButton>
-          <Modal.Title>Báo cáo đồ chơi</Modal.Title>
+          <Modal.Title>Hủy yêu cầu cho mượn</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
             <Form.Group controlId="reportReason" className="mb-3">
-              <Form.Label>Nhập lý do báo cáo</Form.Label>
+              <Form.Label>Nhập lý do hủy</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={3}
-                placeholder="Nhập lý do báo cáo"
+                placeholder="Nhập lý do hủy yêu cầu"
                 value={reportReason}
                 onChange={(e) => setReportReason(e.target.value)}
               />
@@ -318,7 +409,7 @@ const InLending = () => {
             Hủy
           </Button>
           <Button variant="primary" onClick={handleSendReport}>
-            <FaPaperPlane className="me-2" /> Gửi báo cáo
+            <FaPaperPlane className="me-2" /> Gửi
           </Button>
         </Modal.Footer>
       </Modal>

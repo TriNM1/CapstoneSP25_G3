@@ -116,7 +116,7 @@ const MyToy = () => {
   const sideMenuItems = [
     { id: 1, label: "Thêm đồ chơi cho mượn", link: "/addtoy" },
     { id: 2, label: "Danh sách đồ chơi của tôi", link: "/mytoy" },
-    { id: 3, label: "Đang cho mượn", link: "/lending" },
+    { id: 3, label: "Đang cho mượn", link: "/inlending" },
     { id: 4, label: "Danh sách yêu cầu mượn", link: "/listborrowrequests" },
     { id: 5, label: "Lịch sử trao đổi", link: "/transferhistory" },
   ];
