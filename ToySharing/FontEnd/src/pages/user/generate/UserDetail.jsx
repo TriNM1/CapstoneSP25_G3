@@ -1,21 +1,57 @@
-import  { useState } from "react";
+import { useState, useEffect } from "react";
 import { Container, Form, Button, Row, Col, Card } from "react-bootstrap";
 import Header from "../../../components/Header";
+import axios from "axios";
 
 // eslint-disable-next-line react/prop-types
-const UserDetail = ({ isLoggedIn, setActiveLink }) => {
+const UserDetail = ({ isLoggedIn, setActiveLink, Id }) => {
   const [user, setUser] = useState({
-    name: "Nguyễn Văn A",
-    email: "nguyenvana@example.com",
-    phone: "0987654321",
-    address: "123 Đường ABC, Quận 1, TP. HCM",
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
     avatar: "",
   });
 
   const [editMode, setEditMode] = useState(false);
 
+  // Gọi API GET khi component được mount để lấy thông tin người dùng
+  useEffect(() => {
+    axios
+      .get(`https://localhost:7128/api/User/${Id}`)
+      .then((response) => {
+        const data = response.data;
+        setUser({
+          name: data.userInfo.name,
+          // Nếu API không trả về email, có thể để mặc định hoặc cập nhật sau
+          email: data.userInfo.email || "",
+          // Nếu API không có số điện thoại, bạn có thể xử lý thêm ở BE hoặc để trống
+          phone: data.userInfo.phone || "",
+          address: data.userInfo.address,
+          avatar: data.userInfo.avatar,
+        });
+      })
+      .catch((error) => {
+        console.error("Lỗi khi lấy dữ liệu người dùng:", error);
+      });
+  }, [Id]);
+
+  // Xử lý thay đổi dữ liệu ở input
   const handleChange = (e) => {
     setUser({ ...user, [e.target.name]: e.target.value });
+  };
+
+  // Hàm xử lý lưu thay đổi thông tin người dùng
+  const handleSave = () => {
+    axios
+      .put("https://localhost:7128/api/User", user)
+      .then((response) => {
+        console.log("Cập nhật thông tin thành công:", response.data);
+        setEditMode(false);
+      })
+      .catch((error) => {
+        console.error("Lỗi khi cập nhật thông tin người dùng:", error);
+      });
   };
 
   return (
@@ -36,7 +72,7 @@ const UserDetail = ({ isLoggedIn, setActiveLink }) => {
             <Col md={6}>
               <Form>
                 <Form.Group className="mb-3">
-                  <Form.Label column sm={12} className="text-start">Tên</Form.Label>
+                  <Form.Label>Tên</Form.Label>
                   <Form.Control
                     type="text"
                     name="name"
@@ -46,11 +82,16 @@ const UserDetail = ({ isLoggedIn, setActiveLink }) => {
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
-                  <Form.Label column sm={12} className="text-start">Email</Form.Label>
-                  <Form.Control type="email" name="email" value={user.email} disabled />
+                  <Form.Label>Email</Form.Label>
+                  <Form.Control
+                    type="email"
+                    name="email"
+                    value={user.email}
+                    disabled
+                  />
                 </Form.Group>
                 <Form.Group className="mb-3">
-                  <Form.Label column sm={12} className="text-start">Số điện thoại</Form.Label>
+                  <Form.Label>Số điện thoại</Form.Label>
                   <Form.Control
                     type="text"
                     name="phone"
@@ -60,7 +101,7 @@ const UserDetail = ({ isLoggedIn, setActiveLink }) => {
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
-                  <Form.Label column sm={12} className="text-start">Địa chỉ</Form.Label>
+                  <Form.Label>Địa chỉ</Form.Label>
                   <Form.Control
                     type="text"
                     name="address"
@@ -71,15 +112,25 @@ const UserDetail = ({ isLoggedIn, setActiveLink }) => {
                 </Form.Group>
                 {editMode ? (
                   <>
-                    <Button variant="primary" className="me-2">
+                    <Button
+                      variant="primary"
+                      className="me-2"
+                      onClick={handleSave}
+                    >
                       Lưu
                     </Button>
-                    <Button variant="secondary" onClick={() => setEditMode(false)}>
+                    <Button
+                      variant="secondary"
+                      onClick={() => setEditMode(false)}
+                    >
                       Hủy
                     </Button>
                   </>
                 ) : (
-                  <Button variant="warning" onClick={() => setEditMode(true)}>
+                  <Button
+                    variant="warning"
+                    onClick={() => setEditMode(true)}
+                  >
                     Chỉnh sửa
                   </Button>
                 )}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Carousel,
@@ -11,10 +11,9 @@ import {
 } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { FaMapMarkerAlt, FaPhoneAlt } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
 import toy1 from "../../assets/toy1.jpg";
 import banner1 from "../../assets/banner1.jpg";
@@ -25,17 +24,22 @@ import user from "../../assets/user.png";
 import "./Home.scss";
 
 const Home = () => {
-  // Các state cơ bản
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeLink, setActiveLink] = useState("home");
   const unreadMessages = 3;
   const notificationCount = 2;
 
-  // Banner images
+  useEffect(() => {
+    // Kiểm tra token trong localStorage hoặc sessionStorage để xác định trạng thái đăng nhập
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    setIsLoggedIn(!!token);
+  }, []);
+
+  // Dữ liệu banner
   const banners = [banner1, banner2, banner3, banner4];
 
-  // Dữ liệu đồ chơi (mỗi hàng sẽ hiển thị 3 item: sử dụng md=4)
+  // Dữ liệu danh sách đồ chơi
   const [toyList, setToyList] = useState([
     {
       id: 1,
@@ -93,7 +97,7 @@ const Home = () => {
     },
   ]);
 
-  // State cho modal nhập thông tin mượn
+  // State và hàm xử lý modal mượn đồ chơi
   const [showBorrowModal, setShowBorrowModal] = useState(false);
   const [borrowStart, setBorrowStart] = useState(null);
   const [borrowEnd, setBorrowEnd] = useState(null);
@@ -115,7 +119,6 @@ const Home = () => {
 
   const handleSendRequest = () => {
     console.log({ borrowStart, borrowEnd, note, selectedToyId });
-    // Loại bỏ item đã chọn khỏi danh sách
     setToyList((prevList) =>
       prevList.filter((toy) => toy.id !== selectedToyId)
     );
@@ -126,9 +129,10 @@ const Home = () => {
   const handleNavigateToDetail = (toyId) => {
     navigate(`/toydetail/${toyId}`);
   };
+
   return (
     <div className="home-page">
-      {/* Header dùng chung */}
+      {/* Truyền prop isLoggedIn xuống Header */}
       <Header
         activeLink={activeLink}
         setActiveLink={setActiveLink}
@@ -152,13 +156,17 @@ const Home = () => {
         </Carousel>
       </div>
 
-      {/* Đồ chơi đề xuất */}
+      {/* Danh sách đồ chơi */}
       <Container className="mt-4">
         <h2 className="section-title">Đồ chơi đề xuất</h2>
         <Row>
           {toyList.map((toy) => (
             <Col key={toy.id} xs={12} md={4} className="mb-4">
-              <Card className="toy-card" onClick={() => handleNavigateToDetail(toy.id)} style={{ cursor: "pointer" }}>
+              <Card
+                className="toy-card"
+                onClick={() => handleNavigateToDetail(toy.id)}
+                style={{ cursor: "pointer" }}
+              >
                 <Card.Img variant="top" src={toy.image} className="toy-image" />
                 <Card.Body>
                   <Card.Title className="toy-name">{toy.name}</Card.Title>
@@ -188,7 +196,7 @@ const Home = () => {
                     </a>
                   </div>
                   <div className="toy-actions d-flex justify-content-between">
-                    <Button variant="primary" size="lg">
+                    <Button variant="primary" size="lg" onClick={() => handleOpenBorrowModal(toy.id)}>
                       Mượn
                     </Button>
                     <Button variant="secondary" size="lg">
@@ -207,7 +215,7 @@ const Home = () => {
         </div>
       </Container>
 
-      {/* Modal nhập thông tin mượn */}
+      {/* Modal mượn đồ chơi */}
       <Modal show={showBorrowModal} onHide={handleCloseBorrowModal} centered>
         <Modal.Header closeButton>
           <Modal.Title>Nhập thông tin mượn</Modal.Title>

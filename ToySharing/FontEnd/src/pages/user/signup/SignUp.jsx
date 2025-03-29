@@ -1,29 +1,42 @@
 import React, { useState } from "react";
+import axios from "axios"; // Import axios
 import "./SignUp.scss";
 import banner from "../../../assets/bannerdangnhap.jpg";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom";
 
 const SignUp = () => {
   const [contact, setContact] = useState("");
-  const navigate = useNavigate(); // Khởi tạo hook navigate
+  const [error, setError] = useState(""); // Trạng thái lỗi
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Đăng nhập thành công, chuyển hướng sang trang home
-    navigate("/validatemail");
+    setError(""); // Reset lỗi trước khi gửi request
+
+    try {
+      const response = await axios.post("https://localhost:7128/api/Auth/RequestOTP", {
+        email: contact, // API backend yêu cầu trường `email`
+      });
+
+      if (response.status === 200) {
+        // Lưu contact vào localStorage để dùng ở trang ValidateMail
+        localStorage.setItem("user_contact", contact);
+        navigate("/validatemail");
+      }
+    } catch (error) {
+      console.error("Lỗi gửi OTP:", error);
+      setError("Gửi OTP thất bại. Vui lòng thử lại!");
+    }
   };
 
   return (
     <div className="container signup-wrapper">
       <div className="row justify-content-center align-items-center min-vh-100">
         <div className="col-md-8 p-0">
-          {/* Container chứa banner và form đăng ký */}
           <div className="signup-container row no-gutters h-100">
-            {/* Cột banner bên trái */}
             <div className="col-md-6 banner">
               <img src={banner} alt="Banner" className="img-fluid h-100" />
             </div>
-            {/* Cột form đăng ký bên phải */}
             <div className="col-md-6 signup-form-container d-flex align-items-center justify-content-center">
               <form className="signup-form" onSubmit={handleSubmit}>
                 <h2>Đăng Ký</h2>
@@ -38,6 +51,7 @@ const SignUp = () => {
                     required
                   />
                 </div>
+                {error && <p className="error-text">{error}</p>}
                 <button type="submit" className="btn verify-btn">
                   Xác thực
                 </button>
