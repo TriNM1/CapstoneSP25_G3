@@ -137,8 +137,15 @@ namespace ToySharingAPI.Controllers
         }
 
         [HttpPost("Logout")]
-        public IActionResult Logout()
+        [Authorize]
+        public async Task<IActionResult> Logout()
         {
+            var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+            await tokenRepository.RevokeTokenAsync(token);
+
+            HttpContext.Session.Clear();
+
             return Ok(new { Message = "Logout successful" });
         }
 

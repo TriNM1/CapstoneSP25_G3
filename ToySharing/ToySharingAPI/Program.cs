@@ -90,6 +90,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             RoleClaimType = ClaimTypes.Role,
             NameClaimType = ClaimTypes.NameIdentifier
         };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var tokenRepo = context.HttpContext.RequestServices.GetRequiredService<ITokenRepository>();
+                var token = context.HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                if (tokenRepo.IsTokenRevoked(token))
+                {
+                    context.Fail("This token has been revoked.");
+                }
+            }
+        };
     });
 builder.Services.AddHttpClient();
 builder.Services.AddDistributedMemoryCache();

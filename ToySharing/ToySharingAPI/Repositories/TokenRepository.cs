@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using System.Collections.Concurrent;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -9,6 +10,7 @@ namespace ToySharingAPI.Repositories
     public class TokenRepository : ITokenRepository
     {
         private readonly IConfiguration configuration;
+        private static ConcurrentDictionary<string, DateTime> _revokedTokens = new ConcurrentDictionary<string, DateTime>();
 
         public TokenRepository(IConfiguration configuration)
         {
@@ -38,6 +40,17 @@ namespace ToySharingAPI.Repositories
                 signingCredentials: credentials);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public bool IsTokenRevoked(string token)
+        {
+            return _revokedTokens.ContainsKey(token);
+        }
+
+        public async Task RevokeTokenAsync(string token)
+        {
+            _revokedTokens.TryAdd(token, DateTime.UtcNow);
+            await Task.CompletedTask;
         }
     }
 }
