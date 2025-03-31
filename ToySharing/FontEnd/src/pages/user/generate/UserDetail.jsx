@@ -23,9 +23,7 @@ const UserDetail = ({ isLoggedIn, setActiveLink, Id }) => {
         const data = response.data;
         setUser({
           name: data.userInfo.name,
-          // Nếu API không trả về email, có thể để mặc định hoặc cập nhật sau
           email: data.userInfo.email || "",
-          // Nếu API không có số điện thoại, bạn có thể xử lý thêm ở BE hoặc để trống
           phone: data.userInfo.phone || "",
           address: data.userInfo.address,
           avatar: data.userInfo.avatar,

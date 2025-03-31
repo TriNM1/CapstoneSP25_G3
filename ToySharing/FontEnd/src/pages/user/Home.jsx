@@ -191,7 +191,7 @@ const Home = () => {
                       alt="Lender Avatar"
                       className="lender-avatar"
                     />
-                    <a className="ms-2" href="/userinfor" id="trangcanhanlink">
+                    <a className="ms-2" href="/userdetail" id="trangcanhanlink">
                       Trang cá nhân người cho mượn
                     </a>
                   </div>

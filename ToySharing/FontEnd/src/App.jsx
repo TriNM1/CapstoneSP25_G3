@@ -56,7 +56,7 @@ function App() {
 
         <Route path="/message" element={<Message />} />
         <Route path="/userinfor" element={<UserInfor />} />
-        <Route path="/userdetail/:id" element={<UserDetail/>} />
+        <Route path="/userdetail" element={<UserDetail/>} />
         <Route path="/addtoy" element={<AddToy />} />
         <Route path="/mytoy" element={<MyToy />} />
         <Route path="/inlending" element={<InLending />} />
