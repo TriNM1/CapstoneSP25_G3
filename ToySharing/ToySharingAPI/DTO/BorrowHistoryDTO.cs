@@ -2,10 +2,10 @@
 
 namespace ToySharingAPI.DTO
 {
-    public class RequestDTO
+    public class BorrowHistoryDTO
     {
         public int RequestId { get; set; }
-        public int UserId { get; set; }
+        public int BorrowerId { get; set; }
 
         [StringLength(100, ErrorMessage = "Borrower name cannot exceed 100 characters.")]
         [RegularExpression(@"^[a-zA-Z\sáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđĐ]+$",
@@ -25,33 +25,22 @@ namespace ToySharingAPI.DTO
         public string? ProductName { get; set; }
 
         public decimal Price { get; set; }
-        public int OwnerId { get; set; }
-
-        [StringLength(100, ErrorMessage = "Owner name cannot exceed 100 characters.")]
-        [RegularExpression(@"^[a-zA-Z\sáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđĐ]+$",
-            ErrorMessage = "Owner name can only contain letters, spaces, and Vietnamese characters.")]
-        public string? OwnerName { get; set; }
-
-        [StringLength(255, ErrorMessage = "Message cannot exceed 255 characters.")]
-        [RegularExpression(@"^[a-zA-Z0-9\sáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđĐ,.!?]+$",
-            ErrorMessage = "Message can only contain letters, numbers, Vietnamese characters, spaces, and basic punctuation (,.!?)")]
-        public string? Message { get; set; }
-
-        public int Status { get; set; }
-        public DateTime? RequestDate { get; set; }
-        public DateTime RentDate { get; set; }
-        public DateTime ReturnDate { get; set; }
-
-        public int? Rating { get; set; }
-
-        [StringLength(255, ErrorMessage = "Feedback message cannot exceed 255 characters.")]
-        [RegularExpression(@"^[a-zA-Z0-9\sáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđĐ,.!?]+$",
-            ErrorMessage = "Feedback message can only contain letters, numbers, Vietnamese characters, spaces, and basic punctuation (,.!?)")]
-        public string? MessageFeedback { get; set; }
 
         [StringLength(255, ErrorMessage = "Image path cannot exceed 255 characters.")]
         [RegularExpression(@"^[a-zA-Z0-9\-_/\.]+$",
             ErrorMessage = "Image path can only contain letters, numbers, hyphens, underscores, slashes, and dots.")]
         public string? Image { get; set; }
+
+        public string? RequestStatus { get; set; }
+        public string? HistoryStatus { get; set; }
+        public DateTime? RequestDate { get; set; }
+        public DateTime RentDate { get; set; }
+        public DateTime ReturnDate { get; set; }
+        public int? Rating { get; set; }
+
+        [StringLength(255, ErrorMessage = "Message cannot exceed 255 characters.")]
+        [RegularExpression(@"^[a-zA-Z0-9\sáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđĐ,.!?]+$",
+            ErrorMessage = "Message can only contain letters, numbers, Vietnamese characters, spaces, and basic punctuation (,.!?)")]
+        public string? Message { get; set; }
     }
 }

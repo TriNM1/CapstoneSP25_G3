@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using ToySharingAPI.DTO;
 using ToySharingAPI.Models;
+using System.Text.RegularExpressions;
 
 namespace ToySharingAPI.Controllers
 {
@@ -19,7 +20,6 @@ namespace ToySharingAPI.Controllers
             _context = context;
         }
 
-        // Hàm hỗ trợ tạo thông báo
         private async Task CreateNotification(int userId, string content)
         {
             var notification = new Notification
@@ -33,59 +33,100 @@ namespace ToySharingAPI.Controllers
             await _context.SaveChangesAsync();
         }
 
-        // Create a request + Tạo thông báo cho chủ sở hữu
-        [HttpPost]
-        public async Task<ActionResult<RequestDTO>> CreateRequest(RequestDTO requestDto)
+        private async Task<int> GetAuthenticatedUserId()
         {
-            var product = await _context.Products
-                .Include(p => p.User)
-                .FirstOrDefaultAsync(p => p.ProductId == requestDto.ProductId);
+            // Kiểm tra xem User có được xác thực không
+            if (!User.Identity.IsAuthenticated)
+                throw new UnauthorizedAccessException("Người dùng chưa đăng nhập.");
 
-            if (product == null || product.Available != 0)
-            {
-                return BadRequest("Product is not available for rent.");
-            }
+            var authUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(authUserIdStr))
+                throw new UnauthorizedAccessException("Không tìm thấy thông tin xác thực người dùng.");
 
-            if (product.UserId == requestDto.UserId)
-            {
-                return BadRequest("You cannot request to rent your own product.");
-            }
+            if (!Guid.TryParse(authUserIdStr, out Guid authUserId))
+                throw new UnauthorizedAccessException("ID người dùng không hợp lệ.");
 
-            var request = new RentRequest
-            {
-                UserId = requestDto.UserId,
-                ProductId = requestDto.ProductId,
-                Message = requestDto.Message,
-                Status = 0, // Chờ duyệt
-                RequestDate = requestDto.RequestDate ?? DateTime.UtcNow,
-                RentDate = requestDto.RentDate,
-                ReturnDate = requestDto.ReturnDate
-            };
+            var mainUser = await _context.Users.FirstOrDefaultAsync(u => u.AuthUserId == authUserId);
+            if (mainUser == null)
+                throw new UnauthorizedAccessException("Không tìm thấy người dùng trong hệ thống.");
 
-            _context.RentRequests.Add(request);
-            await _context.SaveChangesAsync();
-
-            var ownerId = product.UserId;
-            var borrower = await _context.Users.FindAsync(requestDto.UserId);
-            var borrowerName = borrower?.Name ?? "Không xác định";
-            await CreateNotification(ownerId, $"{borrowerName} has requested to rent your product '{product.Name}'.");
-
-            requestDto.RequestId = request.RequestId;
-            requestDto.RequestDate = request.RequestDate;
-            requestDto.ProductName = product.Name;
-            requestDto.Price = product.Price;
-            requestDto.BorrowerName = borrowerName;
-            requestDto.BorrowerAvatar = borrower?.Avatar;
-            requestDto.OwnerId = product.UserId;
-            requestDto.OwnerName = product.User.Name;
-
-            return CreatedAtAction(nameof(GetRequestById), new { id = request.RequestId }, requestDto);
+            return mainUser.Id;
         }
 
-        // Update request status (chủ sở hữu duyệt/từ chối) + Tạo thông báo cho người mượn
-        [HttpPut("{requestId}/status")]
-        public async Task<ActionResult<RequestStatusDTO>> ConfirmOrRejectBorrowingRequest(int requestId, int userId, int newStatus)
+        [HttpPost]
+        [Authorize(Roles = "User")]
+        public async Task<ActionResult<RequestDTO>> CreateRequest([FromForm] CreateRequestDTO formData)
         {
+            try
+            {
+                var mainUserId = await GetAuthenticatedUserId();
+
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var product = await _context.Products
+                    .Include(p => p.User)
+                    .FirstOrDefaultAsync(p => p.ProductId == formData.ProductId);
+
+                if (product == null || product.Available != 0)
+                    return BadRequest("Product is not available for rent.");
+
+                if (product.UserId == mainUserId)
+                    return BadRequest("You cannot request to rent your own product.");
+
+                var request = new RentRequest
+                {
+                    UserId = mainUserId,
+                    ProductId = formData.ProductId,
+                    Message = formData.Message?.Trim(),
+                    Status = 0,
+                    RequestDate = formData.RequestDate ?? DateTime.UtcNow,
+                    RentDate = formData.RentDate,
+                    ReturnDate = formData.ReturnDate
+                };
+
+                _context.RentRequests.Add(request);
+                await _context.SaveChangesAsync();
+
+                var ownerId = product.UserId;
+                var borrower = await _context.Users.FindAsync(mainUserId);
+                var borrowerName = borrower?.Name ?? "Không xác định";
+                await CreateNotification(ownerId, $"{borrowerName} has requested to rent your product '{product.Name}'.");
+
+                var response = new RequestDTO
+                {
+                    RequestId = request.RequestId,
+                    UserId = request.UserId,
+                    RequestDate = request.RequestDate,
+                    ProductId = request.ProductId,
+                    ProductName = product.Name,
+                    Price = product.Price,
+                    BorrowerName = borrowerName,
+                    BorrowerAvatar = borrower?.Avatar,
+                    OwnerId = product.UserId,
+                    OwnerName = product.User.Name,
+                    Status = request.Status
+                };
+
+                return CreatedAtAction(nameof(GetRequestById), new { id = request.RequestId }, response);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+        }
+
+        [HttpPut("{requestId}/status")]
+        [Authorize(Roles = "User")]
+        public async Task<ActionResult<RequestStatusDTO>> ConfirmOrRejectBorrowingRequest(int requestId, [FromForm] UpdateRequestStatusDTO formData)
+        {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var request = await _context.RentRequests
                 .Include(r => r.Product)
                 .ThenInclude(p => p.User)
@@ -93,31 +134,23 @@ namespace ToySharingAPI.Controllers
                 .FirstOrDefaultAsync(r => r.RequestId == requestId);
 
             if (request == null)
-            {
                 return NotFound("Request not found.");
-            }
 
-            if (request.Product.UserId != userId)
-            {
+            if (request.Product.UserId != mainUserId)
                 return Forbid("You are not authorized to manage this request.");
-            }
 
             var product = request.Product;
             if (product == null)
-            {
                 return NotFound("Associated product not found.");
-            }
 
             var borrowerId = request.UserId;
             var productName = product.Name;
 
-            switch (newStatus)
+            switch (formData.NewStatus)
             {
-                case 1: // Accepted
+                case 1:
                     if (request.Status != 0)
-                    {
                         return BadRequest("Request can only be approved from 'pending' status.");
-                    }
                     request.Status = 1;
                     product.Available = 1;
                     var history = new History
@@ -132,11 +165,9 @@ namespace ToySharingAPI.Controllers
                     await CreateNotification(borrowerId, $"Your request to rent '{productName}' has been accepted.");
                     break;
 
-                case 2: // Rejected
+                case 2:
                     if (request.Status != 0)
-                    {
                         return BadRequest("Request can only be rejected from 'pending' status.");
-                    }
                     request.Status = 2;
                     product.Available = 0;
                     await CreateNotification(borrowerId, $"Your request to rent '{productName}' has been rejected.");
@@ -154,25 +185,13 @@ namespace ToySharingAPI.Controllers
             });
         }
 
-        // View list request (danh sách request cho sản phẩm của userId - chủ sở hữu)
         [HttpGet("user")]
         [Authorize(Roles = "User")]
         public async Task<ActionResult<IEnumerable<RequestDTO>>> GetRequestsByUserId()
         {
-            // Lấy Claim NameIdentifier từ JWT token
-            var authUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(authUserIdStr))
-                return Unauthorized();
-
-            if (!Guid.TryParse(authUserIdStr, out Guid authUserId))
-                return Unauthorized("User id không hợp lệ.");
-
-            // Tìm user trong DB chính theo trường auth_user_id
-            var mainUser = await _context.Users.FirstOrDefaultAsync(u => u.AuthUserId == authUserId);
-            if (mainUser == null)
-                return Unauthorized("Không tìm thấy user trong cơ sở dữ liệu.");
-
-            int mainUserId = mainUser.Id;
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
 
             var requests = await _context.RentRequests
                 .Include(r => r.Product)
@@ -204,16 +223,20 @@ namespace ToySharingAPI.Controllers
             return Ok(requests);
         }
 
-        // View history list request (lịch sử request của người mượn)
-        [HttpGet("history/{userId}")]
-        public async Task<ActionResult<IEnumerable<HistoryDTO>>> GetRequestHistory(int userId)
+        [HttpGet("history")]
+        [Authorize(Roles = "User")]
+        public async Task<ActionResult<IEnumerable<HistoryDTO>>> GetRequestHistory()
         {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
+
             var history = await _context.Histories
                 .Include(h => h.Product)
                 .ThenInclude(p => p.Images)
                 .Include(h => h.Product)
                 .ThenInclude(p => p.User)
-                .Where(h => h.UserId == userId)
+                .Where(h => h.UserId == mainUserId)
                 .Select(h => new
                 {
                     History = h,
@@ -232,7 +255,7 @@ namespace ToySharingAPI.Controllers
                     ProductName = x.History.Product.Name,
                     Status = x.History.Status,
                     Rating = x.History.Rating,
-                    Message = x.History.Message, // Thêm Message vào HistoryDTO
+                    Message = x.History.Message,
                     ReturnDate = x.History.ReturnDate,
                     Image = x.History.Product.Images.FirstOrDefault() != null ? x.History.Product.Images.FirstOrDefault().Path : null
                 })
@@ -241,22 +264,26 @@ namespace ToySharingAPI.Controllers
             return Ok(history);
         }
 
-        // Toy Request List (Danh sách đồ chơi mà người mượn đang mượn)
-        [HttpGet("toy-request/{userId}")]
-        public async Task<ActionResult<IEnumerable<object>>> GetToyRequestList(int userId)
+        [HttpGet("toy-request")]
+        [Authorize(Roles = "User")]
+        public async Task<ActionResult<IEnumerable<object>>> GetToyRequestList()
         {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
+
             var requests = await _context.RentRequests
-                .Where(r => r.UserId == userId && r.Status == 1) // Chỉ lấy yêu cầu đã được chấp nhận
+                .Where(r => r.UserId == mainUserId && r.Status == 1)
                 .Include(r => r.User)
                 .Include(r => r.Product)
                 .ThenInclude(p => p.Images)
                 .Include(r => r.Product)
                 .ThenInclude(p => p.User)
                 .Include(r => r.History)
-                .Where(r => r.History == null || r.History.Status != 2) // Chưa hoàn thành (History chưa tồn tại hoặc Status không phải là 2)
+                .Where(r => r.History == null || r.History.Status != 2)
                 .Select(r => new
                 {
-                    RequestId = r.RequestId, // Đã thêm từ yêu cầu trước
+                    RequestId = r.RequestId,
                     ProductId = r.ProductId,
                     ProductName = r.Product.Name,
                     OwnerName = r.Product.User.Name,
@@ -268,16 +295,19 @@ namespace ToySharingAPI.Controllers
                 .ToListAsync();
 
             if (!requests.Any())
-            {
                 return NotFound("No toys currently being borrowed.");
-            }
 
             return Ok(requests);
         }
 
-        [HttpGet("borrowing/{userId}")]
-        public async Task<ActionResult<IEnumerable<RequestDTO>>> GetBorrowingRequests(int userId)
+        [HttpGet("borrowing")]
+        [Authorize(Roles = "User")]
+        public async Task<ActionResult<IEnumerable<RequestDTO>>> GetBorrowingRequests()
         {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
+
             var requests = await _context.RentRequests
                 .Include(r => r.Product)
                 .ThenInclude(p => p.Images)
@@ -285,7 +315,7 @@ namespace ToySharingAPI.Controllers
                 .ThenInclude(p => p.User)
                 .Include(r => r.User)
                 .Include(r => r.History)
-                .Where(r => r.Product.UserId == userId && (r.Status == 0 || r.Status == 1)) // Pending hoặc Accepted
+                .Where(r => r.Product.UserId == mainUserId && (r.Status == 0 || r.Status == 1))
                 .Select(r => new RequestDTO
                 {
                     RequestId = r.RequestId,
@@ -309,9 +339,7 @@ namespace ToySharingAPI.Controllers
                 .ToListAsync();
 
             if (!requests.Any())
-            {
                 return NotFound("No borrowing requests found.");
-            }
 
             var result = requests.Select(r => new
             {
@@ -331,16 +359,22 @@ namespace ToySharingAPI.Controllers
 
             return Ok(result);
         }
-        [HttpGet("pending/{userId}")]
-        public async Task<ActionResult<IEnumerable<RequestDTO>>> GetPendingRequests(int userId)
+
+        [HttpGet("pending")]
+        [Authorize(Roles = "User")]
+        public async Task<ActionResult<IEnumerable<RequestDTO>>> GetPendingRequests()
         {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
+
             var requests = await _context.RentRequests
                 .Include(r => r.Product)
                 .ThenInclude(p => p.Images)
                 .Include(r => r.Product)
                 .ThenInclude(p => p.User)
                 .Include(r => r.User)
-                .Where(r => r.Product.UserId == userId && r.Status == 0) // Chỉ lấy pending requests
+                .Where(r => r.Product.UserId == mainUserId && r.Status == 0)
                 .Select(r => new RequestDTO
                 {
                     RequestId = r.RequestId,
@@ -364,10 +398,14 @@ namespace ToySharingAPI.Controllers
             return Ok(requests);
         }
 
-        // Borrow history (danh sách yêu cầu đã được chấp nhận - "In Lending")
-        [HttpGet("borrow-history/{userId}")]
-        public async Task<ActionResult<IEnumerable<BorrowHistoryDTO>>> GetBorrowHistory(int userId)
+        [HttpGet("borrow-history")]
+        [Authorize(Roles = "User")]
+        public async Task<ActionResult<IEnumerable<BorrowHistoryDTO>>> GetBorrowHistory()
         {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
+
             var requests = await _context.RentRequests
                 .Include(r => r.Product)
                 .ThenInclude(p => p.Images)
@@ -375,7 +413,7 @@ namespace ToySharingAPI.Controllers
                 .ThenInclude(p => p.User)
                 .Include(r => r.User)
                 .Include(r => r.History)
-                .Where(r => r.Product.UserId == userId && r.Status == 1) // Chỉ lấy yêu cầu đã được chấp nhận
+                .Where(r => r.Product.UserId == mainUserId && r.Status == 1)
                 .Select(r => new BorrowHistoryDTO
                 {
                     RequestId = r.RequestId,
@@ -395,15 +433,15 @@ namespace ToySharingAPI.Controllers
                     RentDate = r.RentDate,
                     ReturnDate = r.History != null ? r.History.ReturnDate : r.ReturnDate,
                     Rating = r.History != null ? r.History.Rating : null,
-                    Message = r.History != null ? r.History.Message : null // Thêm Message vào BorrowHistoryDTO
+                    Message = r.History != null ? r.History.Message : null
                 })
                 .ToListAsync();
 
             return Ok(requests);
         }
 
-        // Helper method to get request by ID
         [HttpGet("{id}")]
+        [Authorize(Roles = "User")]
         public async Task<ActionResult<RequestDTO>> GetRequestById(int id)
         {
             var request = await _context.RentRequests
@@ -431,52 +469,46 @@ namespace ToySharingAPI.Controllers
                     RentDate = r.RentDate,
                     ReturnDate = r.History != null ? r.History.ReturnDate : r.ReturnDate,
                     Rating = r.History != null ? r.History.Rating : null,
-                    MessageFeedback = r.History != null ? r.History.Message : null, 
+                    MessageFeedback = r.History != null ? r.History.Message : null,
                     Image = r.Product.Images.FirstOrDefault() != null ? r.Product.Images.FirstOrDefault().Path : null
                 })
                 .FirstOrDefaultAsync();
 
             if (request == null)
-            {
                 return NotFound();
-            }
 
             return Ok(request);
         }
 
-        // Người mượn xác nhận hoàn thành + Tạo thông báo cho chủ sở hữu
         [HttpPut("history/{requestId}/complete")]
-        public async Task<ActionResult<HistoryDTO>> ConfirmComplete(int requestId, int userId, [FromBody] CompleteRequestDTO completeRequest)
+        [Authorize(Roles = "User")]
+        public async Task<ActionResult<HistoryDTO>> ConfirmComplete(int requestId, [FromForm] CompleteRequestDTO formData)
         {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var history = await _context.Histories
                 .Include(h => h.Product)
                 .ThenInclude(p => p.User)
-                .FirstOrDefaultAsync(h => h.RequestId == requestId && h.UserId == userId);
+                .FirstOrDefaultAsync(h => h.RequestId == requestId && h.UserId == mainUserId);
 
             if (history == null)
-            {
                 return NotFound("History record not found.");
-            }
 
             var product = history.Product;
             if (product == null)
-            {
                 return NotFound("Associated product not found.");
-            }
 
             if (history.Status != 1)
-            {
                 return BadRequest("Can only complete from 'accepted' status.");
-            }
-
-            if (completeRequest.Rating < 1 || completeRequest.Rating > 5)
-            {
-                return BadRequest("Rating must be between 1 and 5.");
-            }
 
             history.Status = 2;
-            history.Rating = completeRequest.Rating;
-            history.Message = completeRequest.Message; // Lưu nội dung báo cáo tự đánh giá
+            history.Rating = formData.Rating;
+            history.Message = formData.Message;
             history.ReturnDate = DateTime.UtcNow;
             product.Available = 0;
 
@@ -487,12 +519,9 @@ namespace ToySharingAPI.Controllers
                 .FirstOrDefaultAsync() ?? "Không xác định";
             var ownerId = product.UserId;
 
-            // Tạo thông báo cho chủ sở hữu, bao gồm cả message nếu có
-            var notificationContent = $"{borrowerName} has completed renting your product '{product.Name}' and rated it {completeRequest.Rating}/5.";
-            if (!string.IsNullOrEmpty(completeRequest.Message))
-            {
-                notificationContent += $" Feedback: {completeRequest.Message}";
-            }
+            var notificationContent = $"{borrowerName} has completed renting your product '{product.Name}' and rated it {formData.Rating}/5.";
+            if (!string.IsNullOrEmpty(formData.Message))
+                notificationContent += $" Feedback: {formData.Message}";
             await CreateNotification(ownerId, notificationContent);
 
             await _context.SaveChangesAsync();
@@ -506,27 +535,27 @@ namespace ToySharingAPI.Controllers
                 ProductName = history.Product.Name,
                 Status = history.Status,
                 Rating = history.Rating,
-                Message = history.Message, // Trả về Message trong HistoryDTO
+                Message = history.Message,
                 ReturnDate = history.ReturnDate
             });
         }
 
-        // Remove Sending Request
         [HttpDelete("{requestId}")]
-        public async Task<IActionResult> RemoveSendingRequest(int requestId, int userId)
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> RemoveSendingRequest(int requestId)
         {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
+
             var request = await _context.RentRequests
-                .FirstOrDefaultAsync(r => r.RequestId == requestId && r.UserId == userId);
+                .FirstOrDefaultAsync(r => r.RequestId == requestId && r.UserId == mainUserId);
 
             if (request == null)
-            {
                 return NotFound("Request not found.");
-            }
 
             if (request.Status != 0)
-            {
                 return BadRequest("Only pending requests can be removed.");
-            }
 
             _context.RentRequests.Remove(request);
             await _context.SaveChangesAsync();
@@ -534,10 +563,14 @@ namespace ToySharingAPI.Controllers
             return Ok(new { message = "Request removed successfully" });
         }
 
-        // Cancel Accepted Request (Hủy yêu cầu đã được chấp nhận)
         [HttpPut("{requestId}/cancel")]
-        public async Task<IActionResult> CancelAcceptedRequest(int requestId, int userId)
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> CancelAcceptedRequest(int requestId)
         {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
+
             var request = await _context.RentRequests
                 .Include(r => r.Product)
                 .ThenInclude(p => p.User)
@@ -545,21 +578,15 @@ namespace ToySharingAPI.Controllers
                 .FirstOrDefaultAsync(r => r.RequestId == requestId);
 
             if (request == null)
-            {
                 return NotFound("Request not found.");
-            }
 
-            if (request.Product.UserId != userId)
-            {
+            if (request.Product.UserId != mainUserId)
                 return Forbid("You are not authorized to manage this request.");
-            }
 
             if (request.Status != 1)
-            {
                 return BadRequest("Only accepted requests can be canceled.");
-            }
 
-            request.Status = 3; // 3: Canceled
+            request.Status = 3;
             request.Product.Available = 0;
 
             var borrowerId = request.UserId;

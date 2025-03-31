@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using ToySharingAPI.DTO;
 using ToySharingAPI.Models;
 
@@ -17,7 +18,26 @@ namespace ToySharingAPI.Controllers
         {
             _context = context;
         }
+        // Hàm hỗ trợ lấy mainUserId từ JWT token
+        private async Task<int> GetAuthenticatedUserId()
+        {
+            // Kiểm tra xem User có được xác thực không
+            if (!User.Identity.IsAuthenticated)
+                throw new UnauthorizedAccessException("Người dùng chưa đăng nhập.");
 
+            var authUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(authUserIdStr))
+                throw new UnauthorizedAccessException("Không tìm thấy thông tin xác thực người dùng.");
+
+            if (!Guid.TryParse(authUserIdStr, out Guid authUserId))
+                throw new UnauthorizedAccessException("ID người dùng không hợp lệ.");
+
+            var mainUser = await _context.Users.FirstOrDefaultAsync(u => u.AuthUserId == authUserId);
+            if (mainUser == null)
+                throw new UnauthorizedAccessException("Không tìm thấy người dùng trong hệ thống.");
+
+            return mainUser.Id;
+        }
         [HttpPut("{id}/visibility-status")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ToggleProductVisibility(int id)
@@ -134,7 +154,6 @@ namespace ToySharingAPI.Controllers
                 .Where(u => u.Id == product.UserId)
                 .Select(u => new UserDTO
                 {
-                    Id = u.Id,
                     Name = u.Name,
                     Address = u.Address,
                     Status = u.Status,
@@ -160,8 +179,11 @@ namespace ToySharingAPI.Controllers
 
         // Input product (Thêm sản phẩm với ảnh)
         [HttpPost]
-        public async Task<ActionResult<ProductDTO>> CreateProduct(int userId, [FromBody] ProductDTO productDto)
+        public async Task<ActionResult<ProductDTO>> CreateProduct([FromBody] ProductDTO productDto)
         {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
             if (productDto == null)
             {
                 return BadRequest("Product data is required.");
@@ -183,7 +205,7 @@ namespace ToySharingAPI.Controllers
 
             var product = new Product
             {
-                UserId = userId,
+                UserId = mainUserId,
                 Name = productDto.Name.Trim(),
                 Available = productDto.Available,
                 Description = productDto.Description?.Trim(),
@@ -253,8 +275,11 @@ namespace ToySharingAPI.Controllers
 
         // Manage product
         [HttpPut("{id}")]
-        public async Task<ActionResult<ProductDTO>> UpdateProduct(int id, int userId, [FromBody] ProductDTO productDto)
+        public async Task<ActionResult<ProductDTO>> UpdateProduct(int id, [FromBody] ProductDTO productDto)
         {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
             if (productDto == null)
             {
                 return BadRequest("Product data is required.");
@@ -268,7 +293,7 @@ namespace ToySharingAPI.Controllers
                 return NotFound("Product not found.");
             }
 
-            if (product.UserId != userId)
+            if (product.UserId != mainUserId)
             {
                 return Forbid("You are not authorized to update this product.");
             }
@@ -362,13 +387,16 @@ namespace ToySharingAPI.Controllers
         }
 
         // View user's toys
-        [HttpGet("my-toys/{userId}")]
-        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetMyToys(int userId)
+        [HttpGet("my-toys")]
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetMyToys()
         {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
             var products = await _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Images)
-                .Where(p => p.UserId == userId)
+                .Where(p => p.UserId == mainUserId)
                 .Select(p => new ProductDTO
                 {
                     ProductId = p.ProductId,
@@ -389,13 +417,16 @@ namespace ToySharingAPI.Controllers
         }
 
         // View user's borrowing toys
-        [HttpGet("my-toys/borrowing/{userId}")]
-        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetMyBorrowingToys(int userId)
+        [HttpGet("my-toys/borrowing")]
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetMyBorrowingToys()
         {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
             var products = await _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Images)
-                .Where(p => p.UserId == userId && (p.Available ?? 0) == 1)
+                .Where(p => p.UserId == mainUserId && (p.Available ?? 0) == 1)
                 .Select(p => new ProductDTO
                 {
                     ProductId = p.ProductId,
@@ -416,13 +447,16 @@ namespace ToySharingAPI.Controllers
         }
 
         // View all borrowed toys by other users
-        [HttpGet("borrowed/{userId}")]
-        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetBorrowedToys(int userId)
+        [HttpGet("borrowed")]
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetBorrowedToys()
         {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
             var products = await _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Images)
-                .Where(p => p.UserId != userId && (p.Available ?? 0) == 1)
+                .Where(p => p.UserId != mainUserId && (p.Available ?? 0) == 1)
                 .Select(p => new ProductDTO
                 {
                     ProductId = p.ProductId,
@@ -450,13 +484,16 @@ namespace ToySharingAPI.Controllers
         }
 
         // List Toy Recommendations
-        [HttpGet("recommendations/{userId}")]
-        public async Task<ActionResult<IEnumerable<ProductDTO>>> ListToyRecommendations(int userId)
+        [HttpGet("recommendations")]
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> ListToyRecommendations()
         {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
             var recommendations = await _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Images)
-                .Where(p => (p.Available ?? 0) == 0 && p.UserId != userId)
+                .Where(p => (p.Available ?? 0) == 0 && p.UserId != mainUserId)
                 .OrderBy(p => Guid.NewGuid())
                 .Take(5)
                 .Select(p => new ProductDTO
