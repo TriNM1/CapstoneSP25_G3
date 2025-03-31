@@ -72,7 +72,7 @@ function App() {
         <Route path="/toydetail/:toyId" element={<ToyDetail />} />
 
         {/* Route mặc định nếu không khớp */}
-        <Route path="*" element={<ManageFeedback />} />
+        <Route path="*" element={<Home />} />
       </Routes>
     </BrowserRouter>
   );
