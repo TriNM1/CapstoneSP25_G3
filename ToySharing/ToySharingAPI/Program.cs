@@ -120,6 +120,37 @@ builder.Services.AddSignalR();
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+    var adminEmail = builder.Configuration["AdminSettings:Email"];
+    var adminPassword = builder.Configuration["AdminSettings:Password"];
+    var adminRole = "Admin";
+
+    if (!await roleManager.RoleExistsAsync(adminRole))
+    {
+        await roleManager.CreateAsync(new IdentityRole(adminRole));
+    }
+
+    var adminUser = await userManager.FindByEmailAsync(adminEmail);
+    if (adminUser == null)
+    {
+        adminUser = new IdentityUser
+        {
+            UserName = adminEmail,
+            Email = adminEmail,
+            EmailConfirmed = true
+        };
+
+        var result = await userManager.CreateAsync(adminUser, adminPassword);
+        if (result.Succeeded)
+        {
+            await userManager.AddToRoleAsync(adminUser, adminRole);
+        }
+    }
+}
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
