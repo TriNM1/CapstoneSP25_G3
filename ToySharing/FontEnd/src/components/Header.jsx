@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
-import React, { useState } from "react";
+import React from "react";
 import { Container, Navbar, Nav, Badge, Dropdown } from "react-bootstrap";
 import { FaEnvelope, FaBell } from "react-icons/fa";
 import { Link } from "react-router-dom";
@@ -15,7 +15,7 @@ const Header = ({
   unreadMessages,
   notificationCount,
 }) => {
-  // Danh sách thông báo mẫu (bạn có thể thay đổi hoặc lấy từ API)
+  // Danh sách thông báo mẫu
   const notifications = [
     { id: 1, text: "Bạn có tin nhắn mới từ Alice" },
     { id: 2, text: "Xe đua mini của bạn đã được mượn" },
@@ -75,26 +75,16 @@ const Header = ({
             <Nav.Link href="/message" className="position-relative">
               <FaEnvelope size={20} />
               {unreadMessages > 0 && (
-                <Badge
-                  bg="danger"
-                  className="position-absolute top-0 start-100 translate-middle"
-                >
+                <Badge bg="danger" className="position-absolute top-0 start-100 translate-middle">
                   {unreadMessages}
                 </Badge>
               )}
             </Nav.Link>
             <Dropdown align="end" className="notification-dropdown">
-              <Dropdown.Toggle
-                variant="link"
-                id="dropdown-notifications"
-                className="p-0"
-              >
+              <Dropdown.Toggle variant="link" id="dropdown-notifications" className="p-0">
                 <FaBell size={20} className="notification-icon" />
                 {notificationCount > 0 && (
-                  <Badge
-                    bg="danger"
-                    className="position-absolute top-0 start-100 translate-middle"
-                  >
+                  <Badge bg="danger" className="position-absolute top-0 start-100 translate-middle">
                     {notificationCount}
                   </Badge>
                 )}
@@ -102,24 +92,24 @@ const Header = ({
               <Dropdown.Menu className="notification-menu">
                 {notifications.length > 0 ? (
                   notifications.map((notif) => (
-                    <Dropdown.Item key={notif.id}>{notif.text}</Dropdown.Item>
+                    <Dropdown.Item key={notif.id}>
+                      {notif.text}
+                    </Dropdown.Item>
                   ))
                 ) : (
                   <Dropdown.Item>Không có thông báo</Dropdown.Item>
                 )}
               </Dropdown.Menu>
             </Dropdown>
+            {/* Conditional rendering dựa trên isLoggedIn */}
             {!isLoggedIn ? (
-              <Nav.Link
-                as={Link}
-                to="/login"
-                onClick={() => setActiveLink("login")}
-              >
+              <Nav.Link as={Link} to="/login" onClick={() => setActiveLink("login")}>
                 Đăng nhập
               </Nav.Link>
             ) : (
               <Nav.Link
-                href="/userdetail"
+                as={Link}
+                to="/userdetail"
                 onClick={() => setActiveLink("profile")}
                 className={activeLink === "profile" ? "active" : ""}
               >
