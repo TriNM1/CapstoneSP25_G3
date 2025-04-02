@@ -106,7 +106,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddSignalR();
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowLocalhost", builder =>
+    options.AddPolicy("AllowAll", builder =>
     {
         builder.WithOrigins("http://localhost:5173")
                .AllowAnyMethod()
