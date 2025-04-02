@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ToySharingAPI.DTO;
 using ToySharingAPI.Models;
 using ToySharingAPI.Repositories;
@@ -32,14 +33,23 @@ namespace ToySharingAPI.Controllers
         [HttpPost("RequestOTP")]
         public async Task<IActionResult> RequestOTP([FromBody] OTPRequestDTO request)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var userExists = await userManager.FindByEmailAsync(request.Email);
             if (userExists != null) return BadRequest("Email already registered!");
 
             var otp = new Random().Next(100000, 999999).ToString();
 
+            var userOtp = new UserOtp
+            {
+                Email = request.Email,
+                Otp = otp,
+                ExpirationTime = DateTime.Now.AddMinutes(5)
+            };
 
-            HttpContext.Session.SetString("RegistrationEmail", request.Email);
-            HttpContext.Session.SetString("RegistrationOTP", otp);
+            mainContext.UserOtps.Add(userOtp);
+            await mainContext.SaveChangesAsync();
 
             await emailService.SendEmailAsync(request.Email, "Toy Sharing OTP Code", $"Here is your OTP: {otp}");
             return Ok("OTP sent to email.");
@@ -47,34 +57,37 @@ namespace ToySharingAPI.Controllers
 
         // Xác nhận OTP 
         [HttpPost("ConfirmOTP")]
-        public IActionResult ConfirmOTP([FromBody] ConfirmOTPRequestDTO request)
+        public async Task<IActionResult> ConfirmOTP([FromBody] ConfirmOTPRequestDTO request)
         {
-            var savedOTP = HttpContext.Session.GetString("RegistrationOTP");
-            if (savedOTP == null || savedOTP != request.OTP)
-                return BadRequest("Invalid OTP!");
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            HttpContext.Session.SetString("OTPConfirmed", "true");
+            var userOtp = await mainContext.UserOtps
+                .FirstOrDefaultAsync(o => o.Email == request.Email && o.Otp == request.OTP);
+
+            if (userOtp == null || userOtp.ExpirationTime < DateTime.Now)
+                return BadRequest("Invalid or expired OTP!");
+
+            mainContext.UserOtps.Remove(userOtp);
+            await mainContext.SaveChangesAsync();
+
             return Ok("OTP verified. Proceed to set password.");
         }
 
         [HttpPost("Register")]
         public async Task<IActionResult> Register([FromBody] SetPasswordDTO request)
         {
-            var otpConfirmed = HttpContext.Session.GetString("OTPConfirmed");
-            if (otpConfirmed != "true")
-                return BadRequest("OTP not confirmed.");
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            var email = HttpContext.Session.GetString("RegistrationEmail");
-            if (string.IsNullOrEmpty(email))
-                return BadRequest("Email session expired or not set.");
+            var userExists = await userManager.FindByEmailAsync(request.Email);
+            if (userExists != null)
+                return BadRequest("Email already registered!");
 
-            var userExists = await userManager.FindByEmailAsync(email);
-            if (userExists != null) return BadRequest("Email already registered!");
-
-            // Tạo IdentityUser ở bảng AspNetUsers
-            var identityUser = new IdentityUser { UserName = email, Email = email };
+            var identityUser = new IdentityUser { UserName = request.Email, Email = request.Email };
             var result = await userManager.CreateAsync(identityUser, request.Password);
-            if (!result.Succeeded) return BadRequest("Failed to create account!");
+            if (!result.Succeeded)
+                return BadRequest("Failed to create account!");
 
             await userManager.AddToRoleAsync(identityUser, "User");
 
@@ -85,8 +98,8 @@ namespace ToySharingAPI.Controllers
             var newUser = new User
             {
                 AuthUserId = authUserGuid,
-                Name = email,
-                CreatedAt = DateTime.UtcNow,
+                Name = request.Email,
+                CreatedAt = DateTime.Now,
                 Address = string.Empty,
                 Latitude = 0,
                 Longtitude = 0,
@@ -99,10 +112,6 @@ namespace ToySharingAPI.Controllers
 
             mainContext.Users.Add(newUser);
             await mainContext.SaveChangesAsync();
-
-            HttpContext.Session.Remove("RegistrationEmail");
-            HttpContext.Session.Remove("RegistrationOTP");
-            HttpContext.Session.Remove("OTPConfirmed");
 
             return Ok("Account created successfully.");
         }

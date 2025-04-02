@@ -1,31 +1,31 @@
 import React, { useState } from "react";
-import axios from "axios"; // Import axios
+import axios from "axios";
 import "./SignUp.scss";
 import banner from "../../../assets/bannerdangnhap.jpg";
 import { useNavigate } from "react-router-dom";
 
 const SignUp = () => {
   const [contact, setContact] = useState("");
-  const [error, setError] = useState(""); // Trạng thái lỗi
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(""); // Reset lỗi trước khi gửi request
-
+    setError("");
     try {
-      const response = await axios.post("https://localhost:7128/api/Auth/RequestOTP", {
-        email: contact, // API backend yêu cầu trường `email`
-      });
-
+      const response = await axios.post(
+        "https://localhost:7128/api/Auth/RequestOTP",
+        { Email: contact }
+      );
       if (response.status === 200) {
-        // Lưu contact vào localStorage để dùng ở trang ValidateMail
         localStorage.setItem("user_contact", contact);
         navigate("/validatemail");
       }
     } catch (error) {
       console.error("Lỗi gửi OTP:", error);
-      setError("Gửi OTP thất bại. Vui lòng thử lại!");
+      setError(
+        error.response?.data || "Gửi OTP thất bại. Vui lòng thử lại!"
+      );
     }
   };
 
@@ -41,13 +41,13 @@ const SignUp = () => {
               <form className="signup-form" onSubmit={handleSubmit}>
                 <h2>Đăng Ký</h2>
                 <div className="form-group">
-                  <label htmlFor="contact">Email hoặc Số điện thoại</label>
+                  <label htmlFor="contact">Email</label>
                   <input
-                    type="text"
+                    type="email"
                     id="contact"
                     value={contact}
                     onChange={(e) => setContact(e.target.value)}
-                    placeholder="Nhập email hoặc số điện thoại của bạn"
+                    placeholder="Nhập email của bạn"
                     required
                   />
                 </div>
