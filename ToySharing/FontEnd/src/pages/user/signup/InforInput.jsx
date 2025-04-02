@@ -1,44 +1,60 @@
-import React, { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import "./InforInput.scss";
-import cameraImg from "../../../assets/camera.jpg"; // Đảm bảo có file ảnh máy ảnh tại đây
+import banner from "../../../assets/bannerdangnhap.jpg";
 
 const InforInput = () => {
-  const [parentName, setParentName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [childAge, setChildAge] = useState("");
-  const [isMale, setIsMale] = useState(false); // Nếu tích chọn => Nam, nếu không => Nữ
-  const [previewImage, setPreviewImage] = useState("");
-  const fileInputRef = useRef(null);
-  const navigate = useNavigate(); // Khởi tạo hook navigate
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [contact, setContact] = useState("");
+  const navigate = useNavigate();
 
-  const handleImageClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
+  useEffect(() => {
+    const savedContact = localStorage.getItem("user_contact");
+    if (!savedContact) {
+      navigate("/signup");
+    } else {
+      setContact(savedContact);
     }
-  };
+  }, [navigate]);
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setPreviewImage(imageUrl);
-    }
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Xử lý logic đăng ký (ví dụ: kiểm tra mật khẩu, gửi dữ liệu, ...)
-    console.log("Tên phụ huynh:", parentName);
-    console.log("Mật khẩu:", password);
-    console.log("Nhập lại mật khẩu:", confirmPassword);
-    console.log("Tuổi của bé:", childAge);
-    console.log("Giới tính:", isMale ? "Nam" : "Nữ");
-    console.log("Ảnh đã chọn:", previewImage);
+    setError("");
+    setSuccessMessage("");
 
-    // Sau khi xử lý đăng ký thành công, chuyển hướng sang trang home
-    navigate("/home");
+    if (password.length < 6) {
+      setError("Mật khẩu phải có ít nhất 6 ký tự!");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Mật khẩu không khớp!");
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        "https://localhost:7128/api/Auth/Register",
+        { Email: contact, Password: password }
+      );
+
+      if (response.status === 200) {
+        setSuccessMessage("Đăng ký tài khoản thành công!");
+        localStorage.removeItem("user_contact");
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
+      }
+    } catch (error) {
+      console.error("Lỗi đăng ký:", error);
+      const errorMessage =
+        error.response?.data || "Đăng ký thất bại. Vui lòng thử lại!";
+      setError(errorMessage);
+    }
   };
 
   return (
@@ -46,38 +62,12 @@ const InforInput = () => {
       <div className="row justify-content-center align-items-center min-vh-100">
         <div className="col-md-8 p-0">
           <div className="inforinput-container row no-gutters h-100">
-            {/* Cột bên trái: Ảnh máy ảnh */}
-            <div className="col-md-6 camera-banner">
-              <div className="image-wrapper" onClick={handleImageClick}>
-                <img
-                  src={previewImage || cameraImg}
-                  alt="Chọn ảnh thay thế"
-                  className="img-fluid h-100"
-                />
-                <div className="overlay-text">Chọn ảnh thay thế</div>
-              </div>
-              <input
-                type="file"
-                accept="image/*"
-                ref={fileInputRef}
-                onChange={handleImageChange}
-                style={{ display: "none" }}
-              />
+            <div className="col-md-6 banner">
+              <img src={banner} alt="Banner" className="img-fluid h-100" />
             </div>
-            {/* Cột bên phải: Form đăng ký */}
             <div className="col-md-6 form-container d-flex align-items-center justify-content-center">
               <form className="inforinput-form" onSubmit={handleSubmit}>
-                <h2>Đăng Ký</h2>
-                <div className="form-group">
-                  <input
-                    type="text"
-                    id="parentName"
-                    value={parentName}
-                    onChange={(e) => setParentName(e.target.value)}
-                    placeholder="Nhập tên phụ huynh"
-                    required
-                  />
-                </div>
+                <h2>Thiết lập mật khẩu</h2>
                 <div className="form-group">
                   <input
                     type="password"
@@ -98,31 +88,10 @@ const InforInput = () => {
                     required
                   />
                 </div>
-                <div className="form-group">
-                  <select
-                    id="childAge"
-                    value={childAge}
-                    onChange={(e) => setChildAge(e.target.value)}
-                    required
-                  >
-                    <option value="">Chọn tuổi của bé</option>
-                    <option value="0-12">0-12 tháng tuổi</option>
-                    <option value="1-2">1-2 tuổi</option>
-                    <option value="2-3">2-3 tuổi</option>
-                    <option value="3++">3++</option>
-                    <option value="lớn hơn">Lớn hơn</option>
-                  </select>
-                </div>
-                <div className="form-group gender-group">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={isMale}
-                      onChange={(e) => setIsMale(e.target.checked)}
-                    />
-                    &nbsp;Nam (nếu không chọn, mặc định Nữ)
-                  </label>
-                </div>
+                {error && <p className="error-text">{error}</p>}
+                {successMessage && (
+                  <p className="success-text">{successMessage}</p>
+                )}
                 <button type="submit" className="btn register-btn">
                   Đăng ký
                 </button>

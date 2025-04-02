@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios"; // Import axios
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./ValidateMail.scss";
 import banner from "../../../assets/bannerdangnhap.jpg";
@@ -7,14 +7,13 @@ import banner from "../../../assets/bannerdangnhap.jpg";
 const ValidateMail = () => {
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
-  const navigate = useNavigate();
   const [contact, setContact] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Lấy email từ localStorage
     const savedContact = localStorage.getItem("user_contact");
     if (!savedContact) {
-      navigate("/signup"); // Nếu không có email, quay lại trang đăng ký
+      navigate("/signup");
     } else {
       setContact(savedContact);
     }
@@ -24,17 +23,25 @@ const ValidateMail = () => {
     e.preventDefault();
     setError("");
 
-    try {
-      const response = await axios.post("https://localhost:7128/api/Auth/ConfirmOTP", {
-        otp: otp, // API yêu cầu trường `OTP`
-      });
+    if (!/^\d{6}$/.test(otp)) {
+      setError("Mã OTP phải là 6 chữ số!");
+      return;
+    }
 
+    try {
+      const response = await axios.post(
+        "https://localhost:7128/api/Auth/ConfirmOTP",
+        { Email: contact, OTP: otp }
+      );
       if (response.status === 200) {
-        navigate("/inforinput"); // OTP hợp lệ, chuyển trang
+        navigate("/inforinput");
       }
     } catch (error) {
       console.error("Lỗi xác thực OTP:", error);
-      setError("Mã OTP không hợp lệ hoặc đã hết hạn!");
+      // Xử lý lỗi từ server
+      const errorMessage =
+        error.response?.data || "Mã OTP không hợp lệ hoặc đã hết hạn!";
+      setError(errorMessage);
     }
   };
 
@@ -49,7 +56,9 @@ const ValidateMail = () => {
             <div className="col-md-6 signup-form-container d-flex align-items-center justify-content-center">
               <form className="signup-form" onSubmit={handleSubmit}>
                 <h2>Nhập OTP</h2>
-                <p>Mã OTP đã được gửi đến: <strong>{contact}</strong></p>
+                <p>
+                  Mã OTP đã được gửi đến: <strong>{contact}</strong>
+                </p>
                 <div className="form-group">
                   <label htmlFor="otp">Nhập mã OTP (6 chữ số)</label>
                   <input

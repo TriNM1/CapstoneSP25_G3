@@ -34,6 +34,7 @@ public partial class ToySharingVer3Context : DbContext
     public virtual DbSet<RentRequest> RentRequests { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
+    public virtual DbSet<UserOTP> UserOTPs { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

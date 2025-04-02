@@ -21,36 +21,12 @@ $font-family-child: "Comic Sans MS", "Comic Sans", cursive, sans-serif;
       width: 50vw;
     }
 
-    .camera-banner {
+    .banner {
       margin-top: 10px;
       margin-bottom: 10px;
       height: 80vh;
-      position: relative;
 
-      .image-wrapper {
-        width: 100%;
-        height: 100%;
-        cursor: pointer;
-        position: relative;
 
-        img {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-        }
-
-        .overlay-text {
-          position: absolute;
-          bottom: 10px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: rgba(0, 0, 0, 0.5);
-          color: #fff;
-          padding: 0.5rem 1rem;
-          border-radius: 5px;
-          font-size: 1rem;
-        }
-      }
     }
 
     .form-container {
@@ -78,8 +54,7 @@ $font-family-child: "Comic Sans MS", "Comic Sans", cursive, sans-serif;
             font-size: 1rem;
           }
 
-          input,
-          select {
+          input {
             width: 100%;
             padding: 0.75rem;
             border: 1px solid #ddd;
@@ -95,14 +70,17 @@ $font-family-child: "Comic Sans MS", "Comic Sans", cursive, sans-serif;
           }
         }
 
-        .gender-group {
-          label {
-            font-size: 1rem;
-            color: #333;
-            input {
-              margin-right: 0.5rem;
-            }
-          }
+        .error-text {
+          color: red;
+          text-align: center;
+          margin-top: 10px;
+        }
+
+        .success-text {
+          color: green;
+          font-weight: bold;
+          text-align: center;
+          margin-top: 10px;
         }
 
         .btn {
