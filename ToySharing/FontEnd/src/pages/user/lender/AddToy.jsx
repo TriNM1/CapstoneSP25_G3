@@ -46,8 +46,6 @@ const AddToy = () => {
 
   const confirmSubmit = () => {
     setShowConfirmModal(false);
-    // Tích hợp logic gửi yêu cầu tới admin (API, vv) tại đây
-    // Ví dụ hiện thông báo toast thành công (ToastContainer đã được cấu hình ở phần giao diện chung)
     alert("Yêu cầu gửi tới admin thành công!");
     // Reset form
     setPreviewImage(null);

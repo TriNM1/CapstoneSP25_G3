@@ -523,7 +523,7 @@ namespace ToySharingAPI.Controllers
             if (history.Product.UserId != mainUserId)
                 return Forbid("You are not authorized to complete this request.");
 
-            var product = history.Product;
+            var product = await _context.Products.FindAsync(history.ProductId);
             if (product == null)
                 return NotFound("Associated product not found.");
 
@@ -540,14 +540,13 @@ namespace ToySharingAPI.Controllers
             try
             {
                 var borrowerName = request.User != null ? request.User.Name : "Không xác định";
-                var productId = request.ProductId;
 
-                request.Status = 3; // Set status to "Completed"
-                history.Status = 1; // Hoàn thành
+                request.Status = 3; 
+                history.Status = 1; 
                 history.Rating = formData.Rating;
                 history.Message = formData.Message;
                 history.ReturnDate = DateTime.UtcNow;
-                product.Available = 0;
+                product.Available = 0; 
 
                 await _context.SaveChangesAsync();
 
