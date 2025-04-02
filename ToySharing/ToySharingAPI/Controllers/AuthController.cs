@@ -41,14 +41,14 @@ namespace ToySharingAPI.Controllers
 
             var otp = new Random().Next(100000, 999999).ToString();
 
-            var userOtp = new UserOTP
+            var userOtp = new UserOtp
             {
                 Email = request.Email,
-                OTP = otp,
+                Otp = otp,
                 ExpirationTime = DateTime.Now.AddMinutes(5)
             };
 
-            mainContext.UserOTPs.Add(userOtp);
+            mainContext.UserOtps.Add(userOtp);
             await mainContext.SaveChangesAsync();
 
             await emailService.SendEmailAsync(request.Email, "Toy Sharing OTP Code", $"Here is your OTP: {otp}");
@@ -62,13 +62,13 @@ namespace ToySharingAPI.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var userOtp = await mainContext.UserOTPs
-                .FirstOrDefaultAsync(o => o.Email == request.Email && o.OTP == request.OTP);
+            var userOtp = await mainContext.UserOtps
+                .FirstOrDefaultAsync(o => o.Email == request.Email && o.Otp == request.OTP);
 
             if (userOtp == null || userOtp.ExpirationTime < DateTime.Now)
                 return BadRequest("Invalid or expired OTP!");
 
-            mainContext.UserOTPs.Remove(userOtp);
+            mainContext.UserOtps.Remove(userOtp);
             await mainContext.SaveChangesAsync();
 
             return Ok("OTP verified. Proceed to set password.");

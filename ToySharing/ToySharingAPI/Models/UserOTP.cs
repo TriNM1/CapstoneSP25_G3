@@ -1,10 +1,15 @@
-﻿namespace ToySharingAPI.Models
+﻿using System;
+using System.Collections.Generic;
+
+namespace ToySharingAPI.Models;
+
+public partial class UserOtp
 {
-    public class UserOTP
-    {
-        public int Id { get; set; }
-        public string Email { get; set; }
-        public string OTP { get; set; }
-        public DateTime ExpirationTime { get; set; }
-    }
+    public int Id { get; set; }
+
+    public string Email { get; set; } = null!;
+
+    public string Otp { get; set; } = null!;
+
+    public DateTime ExpirationTime { get; set; }
 }
