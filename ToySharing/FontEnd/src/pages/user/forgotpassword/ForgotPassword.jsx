@@ -1,30 +1,35 @@
 import React, { useState } from "react";
 import axios from "axios";
-import "./SignUp.scss";
+import "./ForgotPassword.scss";
 import banner from "../../../assets/bannerdangnhap.jpg";
 import { useNavigate } from "react-router-dom";
 
-const SignUp = () => {
+const ForgotPassword = () => {
   const [contact, setContact] = useState("");
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccessMessage("");
     try {
       const response = await axios.post(
-        "https://localhost:7128/api/Auth/RequestOTP",
+        "https://localhost:7128/api/Auth/ForgotPassword",
         { Email: contact }
       );
       if (response.status === 200) {
-        localStorage.setItem("user_contact", contact);
-        navigate("/validatemail");
+        setSuccessMessage("Mật khẩu mới đã được gửi đến địa chỉ email của bạn, vui lòng kiểm tra!");
+        localStorage.removeItem("user_contact");
+        setTimeout(() => {
+          navigate("/login");
+        }, 4000);
       }
     } catch (error) {
-      console.error("Lỗi gửi OTP:", error);
+      console.error("Lỗi gửi email:", error);
       setError(
-        error.response?.data || "Gửi OTP thất bại. Vui lòng thử lại!"
+        error.response?.data || "Gửi email thất bại. Vui lòng thử lại!"
       );
     }
   };
@@ -39,9 +44,9 @@ const SignUp = () => {
             </div>
             <div className="col-md-6 signup-form-container d-flex align-items-center justify-content-center">
               <form className="signup-form" onSubmit={handleSubmit}>
-                <h2>Đăng Ký</h2>
+                <h2>Quên mật khẩu</h2>
                 <div className="form-group">
-                  <label htmlFor="contact">Email đăng ký</label>
+                  <label htmlFor="contact">Địa chỉ email tài khoản của bạn</label>
                   <input
                     type="email"
                     id="contact"
@@ -52,8 +57,11 @@ const SignUp = () => {
                   />
                 </div>
                 {error && <p className="error-text">{error}</p>}
+                {successMessage && (
+                  <p className="success-text">{successMessage}</p>
+                )}
                 <button type="submit" className="btn verify-btn">
-                  Xác thực
+                  Lấy lại mật khẩu
                 </button>
               </form>
             </div>
@@ -64,4 +72,4 @@ const SignUp = () => {
   );
 };
 
-export default SignUp;
+export default ForgotPassword;

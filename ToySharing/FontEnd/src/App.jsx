@@ -1,6 +1,8 @@
 import "./App.css";
 import Home from "./pages/user/Home";
 import Login from "./pages/user/Login";
+import ForgotPassword from "./pages/user/forgotpassword/ForgotPassword";
+import ChangePassword from "./pages/user/changepassword/ChangePassword";
 import SignUp from "./pages/user/signup/SignUp";
 import ValidateMail from "./pages/user/signup/ValidateMail";
 import InforInput from "./pages/user/signup/InforInput";
@@ -33,6 +35,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/home" element={<Home />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/validatemail" element={<ValidateMail />} />
