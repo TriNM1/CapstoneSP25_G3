@@ -11,6 +11,7 @@ import axios from "axios";
 import "./TransferHistory.scss";
 import toy1 from "../../../assets/toy1.jpg";
 import user from "../../../assets/user.png";
+import Footer from "../../../components/footer";
 
 const TransferHistory = () => {
   const navigate = useNavigate();
@@ -184,6 +185,7 @@ const TransferHistory = () => {
             )}
           </Col>
         </Row>
+        <Footer/>
       </Container>
       <ToastContainer position="top-right" autoClose={3000} />
     </div>

@@ -16,6 +16,7 @@ import "./MyToy.scss";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import toy1 from "../../../assets/toy1.jpg";
+import Footer from "../../../components/footer";
 // Giả sử đây là dữ liệu mẫu ban đầu cho đồ chơi
 const initialToys = [
   {
@@ -347,6 +348,7 @@ const MyToy = () => {
             </div>
           </Col>
         </Row>
+        <Footer/>
       </Container>
 
       {/* Modal chỉnh sửa (Edit Modal) */}

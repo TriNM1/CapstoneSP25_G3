@@ -22,6 +22,7 @@ import banner3 from "../../assets/banner3.jpg";
 import banner4 from "../../assets/banner4.jpg";
 import user from "../../assets/user.png";
 import "./Home.scss";
+import Footer from "../../components/footer";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -213,6 +214,7 @@ const Home = () => {
             Xem thêm
           </Button>
         </div>
+        <Footer />
       </Container>
 
       {/* Modal mượn đồ chơi */}

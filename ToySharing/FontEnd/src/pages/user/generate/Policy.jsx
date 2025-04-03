@@ -3,6 +3,7 @@ import { Container, Row, Col, Button } from "react-bootstrap";
 import Header from "../../../components/Header";
 import "./Policy.scss";
 import illustration from "../../../assets/toy1.jpg"; // Ảnh minh họa, thay đổi theo nhu cầu
+import Footer from "../../../components/footer";
 
 const Policy = ({
   activeLink,
@@ -85,6 +86,7 @@ const Policy = ({
             Xem thêm
           </Button>
         </div>
+        <Footer/>
       </Container>
     </div>
   );

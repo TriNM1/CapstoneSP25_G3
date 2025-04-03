@@ -20,6 +20,7 @@ import SideMenu from "../../../components/SideMenu";
 import toy1 from "../../../assets/toy1.jpg";
 import userAvatar from "../../../assets/user.png";
 import "./UserInfor.scss";
+import Footer from "../../../components/footer";
 import axios from "axios";
 
 const UserInfor = () => {
@@ -550,6 +551,7 @@ const UserInfor = () => {
             )}
           </Col>
         </Row>
+        <Footer/>
       </Container>
 
       {/* Modal Nhập thông tin mượn */}

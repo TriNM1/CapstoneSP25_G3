@@ -17,6 +17,7 @@ import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./ListBorrowRequests.scss";
+import Footer from "../../../components/footer";
 
 const ListBorrowRequests = () => {
   const navigate = useNavigate();
@@ -288,6 +289,7 @@ const ListBorrowRequests = () => {
             )}
           </Col>
         </Row>
+        <Footer/>
       </Container>
 
       <Modal show={showMessageModal} onHide={() => setShowMessageModal(false)} centered>

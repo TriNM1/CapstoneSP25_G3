@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Container, Form, Button, Row, Col, Card } from "react-bootstrap";
 import Header from "../../../components/Header";
 import axios from "axios";
+import Footer from "../../../components/footer";
 
 // eslint-disable-next-line react/prop-types
 const UserDetail = ({ isLoggedIn, setActiveLink, Id }) => {
@@ -125,10 +126,7 @@ const UserDetail = ({ isLoggedIn, setActiveLink, Id }) => {
                     </Button>
                   </>
                 ) : (
-                  <Button
-                    variant="warning"
-                    onClick={() => setEditMode(true)}
-                  >
+                  <Button variant="warning" onClick={() => setEditMode(true)}>
                     Chỉnh sửa
                   </Button>
                 )}
@@ -136,6 +134,7 @@ const UserDetail = ({ isLoggedIn, setActiveLink, Id }) => {
             </Col>
           </Row>
         </Card>
+        <Footer/>
       </Container>
     </>
   );
