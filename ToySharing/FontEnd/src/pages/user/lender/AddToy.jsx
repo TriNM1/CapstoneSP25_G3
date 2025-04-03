@@ -11,7 +11,7 @@ const AddToy = () => {
 
   // Các link cho SideMenu
   const sideMenuItems = [
-    { id: 1, label: "Thêm đồ chơi cho mượn", link: "/addtoy" },
+    { id: 1, label: "Đăng Tải Đồ Chơi Mới", link: "/addtoy" },
     { id: 2, label: "Danh sách đồ chơi của tôi", link: "/mytoy" },
     { id: 3, label: "Đang cho mượn", link: "/lending" },
     { id: 4, label: "Danh sách yêu cầu mượn", link: "/listborrowrequest" },
@@ -79,7 +79,7 @@ const AddToy = () => {
 
           {/* Main Content */}
           <Col xs={12} md={10} className="main-content">
-            <h2 className="page-title">Thêm Đồ Chơi Cho Mượn</h2>
+            <h2 className="page-title">Đăng Tải Đồ Chơi Mới</h2>
             <Form onSubmit={handleSubmit}>
               {/* Upload ảnh */}
               <Form.Group controlId="toyImage" className="mb-3">

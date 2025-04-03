@@ -26,7 +26,7 @@ const InLending = () => {
   const [activeLink, setActiveLink] = useState("lending");
 
   const sideMenuItems = [
-    { id: 1, label: "Thêm đồ chơi cho mượn", link: "/addtoy" },
+    { id: 1, label: "Đăng Tải Đồ Chơi Mới", link: "/addtoy" },
     { id: 2, label: "Danh sách đồ chơi của tôi", link: "/mytoy" },
     { id: 3, label: "Đang cho mượn", link: "/lending" },
     { id: 4, label: "Danh sách yêu cầu mượn", link: "/listborrowrequests" },

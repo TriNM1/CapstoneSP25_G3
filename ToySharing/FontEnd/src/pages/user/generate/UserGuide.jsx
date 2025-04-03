@@ -28,7 +28,7 @@ const UserGuide = () => {
                   hoặc đăng ký để bắt đầu sử dụng các tính năng của website.
                 </li>
                 <li>
-                  <strong>Thêm đồ chơi cho mượn:</strong> Sử dụng chức năng thêm
+                  <strong>Đăng Tải Đồ Chơi Mới:</strong> Sử dụng chức năng thêm
                   đồ chơi để đăng tải sản phẩm của bạn cho người khác mượn.
                 </li>
                 <li>
