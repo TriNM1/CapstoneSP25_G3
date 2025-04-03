@@ -25,6 +25,7 @@ import ManageFeedback from "./pages/admin/ManageFeedback";
 import Statistic from "./pages/admin/Statistic";
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import BorrowHistory from "./pages/user/borrower/BorrowHistory";
 
 function App() {
   
@@ -53,7 +54,7 @@ function App() {
         <Route path="/borrowing" element={<SearchToy />} />
         <Route path="/borrowing/searchtoy" element={<SearchToy />} />
         <Route path="/sendingrequest" element={<SendingRequest />} />
-
+        <Route path="/borrowhistory" element={<BorrowHistory />} />
         <Route path="/message" element={<Message />} />
         <Route path="/user-info/:userId" element={<UserInfor />} />
         <Route path="/userdetail" element={<UserDetail/>} />

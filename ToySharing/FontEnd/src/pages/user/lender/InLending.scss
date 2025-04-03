@@ -1,10 +1,67 @@
 @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto&display=swap');
 
+$primary-color: #ff6f61;
+$success-color: #28a745;
+$danger-color: #dc3545;
+
 .inlending-page {
   background-color: #f7f9fc;
   font-family: 'Roboto', sans-serif;
   color: #333;
   padding-bottom: 40px;
+
+  .side-menu {
+    background: #fff;
+    padding: 1rem;
+    border-right: 1px solid #ddd;
+    height: 100vh;
+    margin-top: 1rem;
+
+    ul {
+      list-style: none;
+      padding: 0;
+
+      li {
+        margin-bottom: 1rem;
+
+        a {
+          text-decoration: none;
+          color: #333;
+          font-size: 1.1rem;
+          transition: color 0.3s;
+
+          &:hover {
+            color: $primary-color;
+          }
+        }
+
+        &.active a {
+          color: $primary-color;
+          font-weight: bold;
+        }
+      }
+    }
+
+    .menu-icon {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      width: 50px;
+      padding: 0.5rem;
+
+      ul {
+        display: none;
+      }
+
+      .menu-icon {
+        display: block;
+        font-size: 1.8rem;
+        text-align: center;
+        color: #333;
+      }
+    }
+  }
 
   .main-content {
     background-color: #fff;
@@ -45,7 +102,7 @@
       .toy-name {
         font-family: 'Fredoka One', cursive;
         font-size: 1.5rem;
-        color: #ff6f61;
+        color: $primary-color;
         margin-bottom: 10px;
       }
 
@@ -54,6 +111,7 @@
       .lending-status {
         font-size: 1rem;
         margin-bottom: 5px;
+        color: #333;
       }
 
       .lending-status {
@@ -61,19 +119,7 @@
           font-weight: bold;
         }
         .in-progress {
-          color: #28a745;
-        }
-      }
-
-      .lending-actions {
-        margin-top: 10px;
-        button {
-          font-size: 1rem;
-          padding: 10px 20px;
-          border-radius: 8px;
-          border: none;
-          cursor: pointer;
-          transition: background-color 0.3s;
+          color: $success-color;
         }
       }
 
@@ -95,12 +141,21 @@
           margin-left: 8px;
           font-size: 1rem;
           color: #333;
-       
+          text-decoration: underline;
+          transition: color 0.3s;
+
+          &:hover {
+            color: $primary-color;
+          }
         }
       }
 
       .lending-buttons {
         margin-top: 15px;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+
         button {
           font-size: 1rem;
           padding: 10px 20px;
@@ -108,23 +163,33 @@
           border: none;
           cursor: pointer;
           transition: background-color 0.3s;
-        }
-        button:nth-child(1) {
-          background-color: #28a745;
-          color: #fff;
-          &:hover {
-            background-color: #218838;
+
+          &:nth-child(1) {
+            background-color: $success-color;
+            color: #fff;
+
+            &:hover {
+              background-color: #218838;
+            }
           }
-        }
-        button:nth-child(2) {
-          background-color: #dc3545;
-          color: #fff;
-          margin-left: 10px;
-          &:hover {
-            background-color: #c82333;
+
+          &:nth-child(2) {
+            background-color: $danger-color;
+            color: #fff;
+
+            &:hover {
+              background-color: #c82333;
+            }
           }
         }
       }
     }
+  }
+
+  .view-more-btn {
+    margin-top: 1rem;
+    font-size: 1rem;
+    padding: 10px 20px;
+    border-radius: 8px;
   }
 }

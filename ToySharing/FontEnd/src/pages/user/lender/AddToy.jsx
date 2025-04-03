@@ -1,41 +1,103 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Button, Form, Modal } from "react-bootstrap";
 import Header from "../../../components/Header";
 import SideMenu from "../../../components/SideMenu";
 import "./AddToy.scss";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+
 const AddToy = () => {
-  // State cho header active link
+  const navigate = useNavigate();
   const [activeLink, setActiveLink] = useState("add-toy");
 
-  // Các link cho SideMenu
   const sideMenuItems = [
     { id: 1, label: "Đăng Tải Đồ Chơi Mới", link: "/addtoy" },
     { id: 2, label: "Danh sách đồ chơi của tôi", link: "/mytoy" },
-    { id: 3, label: "Đang cho mượn", link: "/lending" },
-    { id: 4, label: "Danh sách yêu cầu mượn", link: "/listborrowrequest" },
+    { id: 3, label: "Đang cho mượn", link: "/inlending" },
+    { id: 4, label: "Danh sách yêu cầu mượn", link: "/listborrowrequests" },
     { id: 5, label: "Lịch sử trao đổi", link: "/transferhistory" },
   ];
 
   // State cho form
   const [previewImage, setPreviewImage] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [imageUrl, setImageUrl] = useState(null); // Lưu URL ảnh sau khi upload
   const [toyName, setToyName] = useState("");
   const [category, setCategory] = useState("");
+  const [categories, setCategories] = useState([]); // Danh sách danh mục từ API
   const [condition, setCondition] = useState("");
   const [ageGroup, setAgeGroup] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [size, setSize] = useState("");
   const [borrowNotes, setBorrowNotes] = useState("");
-
-  // State cho modal xác nhận gửi yêu cầu
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  const API_BASE_URL = "https://localhost:7128/api";
+
+  // Lấy danh sách danh mục từ API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          toast.error("Vui lòng đăng nhập để đăng tải đồ chơi!");
+          navigate("/login");
+          return;
+        }
+
+        const response = await axios.get(`${API_BASE_URL}/Products/categories`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        setCategories(response.data);
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách danh mục:", error);
+        toast.error("Không thể tải danh sách danh mục!");
+        setCategories([]);
+      }
+    };
+
+    fetchCategories();
+  }, [navigate]);
 
   // Xử lý chọn ảnh và xem trước
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setPreviewImage(URL.createObjectURL(e.target.files[0]));
+      const file = e.target.files[0];
+      setImageFile(file);
+      setPreviewImage(URL.createObjectURL(file));
+    }
+  };
+
+  // Upload ảnh lên server
+  const uploadImage = async () => {
+    if (!imageFile) {
+      toast.error("Vui lòng chọn một ảnh cho đồ chơi!");
+      return null;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("image", imageFile);
+
+      const response = await axios.post(`${API_BASE_URL}/Products/upload-image`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      return response.data.imageUrl;
+    } catch (error) {
+      console.error("Lỗi khi upload ảnh:", error);
+      toast.error("Không thể upload ảnh!");
+      return null;
     }
   };
 
@@ -44,24 +106,80 @@ const AddToy = () => {
     setShowConfirmModal(true);
   };
 
-  const confirmSubmit = () => {
+  const confirmSubmit = async () => {
     setShowConfirmModal(false);
-    alert("Yêu cầu gửi tới admin thành công!");
-    // Reset form
-    setPreviewImage(null);
-    setToyName("");
-    setCategory("");
-    setCondition("");
-    setAgeGroup("");
-    setPrice("");
-    setDescription("");
-    setSize("");
-    setBorrowNotes("");
+
+    // Validate form fields
+    if (!toyName || !category || !condition || !ageGroup || !price || !description || !size || !borrowNotes) {
+      toast.error("Vui lòng điền đầy đủ thông tin!");
+      return;
+    }
+
+    if (!imageFile) {
+      toast.error("Vui lòng chọn một ảnh cho đồ chơi!");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
+        navigate("/login");
+        return;
+      }
+
+      // Upload ảnh và lấy URL
+      const uploadedImageUrl = await uploadImage();
+      if (!uploadedImageUrl) {
+        return; // Dừng nếu upload ảnh thất bại
+      }
+
+      setImageUrl(uploadedImageUrl);
+
+      // Chuẩn bị dữ liệu sản phẩm
+      const productData = {
+        name: toyName,
+        categoryName: category,
+        productStatus: condition === "new" ? "New" : "Used",
+        suitableAge: parseInt(ageGroup.split("-")[0]),
+        price: parseFloat(price),
+        description: `${description}\nKích cỡ: ${size}\nLưu ý khi mượn: ${borrowNotes}`,
+        available: 0, // Chờ admin phê duyệt
+        imagePaths: [uploadedImageUrl], // Sử dụng URL ảnh đã upload
+      };
+
+      const response = await axios.post(`${API_BASE_URL}/Products`, productData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      toast.success("Yêu cầu gửi tới admin thành công!");
+      // Reset form
+      setPreviewImage(null);
+      setImageFile(null);
+      setImageUrl(null);
+      setToyName("");
+      setCategory("");
+      setCondition("");
+      setAgeGroup("");
+      setPrice("");
+      setDescription("");
+      setSize("");
+      setBorrowNotes("");
+    } catch (error) {
+      console.error("Error creating product:", error);
+      if (error.response) {
+        toast.error(error.response.data.message || "Có lỗi xảy ra khi gửi yêu cầu!");
+      } else {
+        toast.error("Không thể kết nối đến server!");
+      }
+    }
   };
 
   return (
     <div className="add-toy-page home-page">
-      {/* Header dùng chung */}
       <Header
         activeLink={activeLink}
         setActiveLink={setActiveLink}
@@ -70,21 +188,18 @@ const AddToy = () => {
         notificationCount={0}
       />
 
-      <Container className="mt-4">
+      <Container fluid className="mt-4">
         <Row>
-          {/* Side Menu */}
           <Col xs={12} md={2}>
             <SideMenu menuItems={sideMenuItems} activeItem={1} />
           </Col>
 
-          {/* Main Content */}
           <Col xs={12} md={10} className="main-content">
             <h2 className="page-title">Đăng Tải Đồ Chơi Mới</h2>
             <Form onSubmit={handleSubmit}>
-              {/* Upload ảnh */}
               <Form.Group controlId="toyImage" className="mb-3">
                 <Form.Label>Upload ảnh</Form.Label>
-                <Form.Control type="file" onChange={handleImageChange} />
+                <Form.Control type="file" accept="image/*" onChange={handleImageChange} />
                 {previewImage && (
                   <img
                     src={previewImage}
@@ -94,7 +209,6 @@ const AddToy = () => {
                 )}
               </Form.Group>
 
-              {/* Tên đồ chơi */}
               <Form.Group controlId="toyName" className="mb-3">
                 <Form.Label>Tên đồ chơi</Form.Label>
                 <Form.Control
@@ -105,7 +219,6 @@ const AddToy = () => {
                 />
               </Form.Group>
 
-              {/* Danh mục */}
               <Form.Group controlId="category" className="mb-3">
                 <Form.Label>Danh mục</Form.Label>
                 <Form.Control
@@ -114,14 +227,14 @@ const AddToy = () => {
                   onChange={(e) => setCategory(e.target.value)}
                 >
                   <option value="">Chọn danh mục</option>
-                  <option value="xe">Xe</option>
-                  <option value="robot">Robot</option>
-                  <option value="bupbe">Búp bê</option>
-                  <option value="khixep">Khối xếp hình</option>
+                  {categories.map((cat, index) => (
+                    <option key={index} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
                 </Form.Control>
               </Form.Group>
 
-              {/* Tình trạng đồ chơi */}
               <Form.Group controlId="condition" className="mb-3">
                 <Form.Label>Tình trạng đồ chơi</Form.Label>
                 <Form.Control
@@ -135,7 +248,6 @@ const AddToy = () => {
                 </Form.Control>
               </Form.Group>
 
-              {/* Độ tuổi phù hợp */}
               <Form.Group controlId="ageGroup" className="mb-3">
                 <Form.Label>Độ tuổi phù hợp</Form.Label>
                 <Form.Control
@@ -151,18 +263,16 @@ const AddToy = () => {
                 </Form.Control>
               </Form.Group>
 
-              {/* Giá */}
               <Form.Group controlId="price" className="mb-3">
                 <Form.Label>Giá</Form.Label>
                 <Form.Control
-                  type="text"
+                  type="number"
                   placeholder="Nhập giá"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                 />
               </Form.Group>
 
-              {/* Mô tả đồ chơi */}
               <Form.Group controlId="description" className="mb-3">
                 <Form.Label>Mô tả đồ chơi</Form.Label>
                 <Form.Control
@@ -174,7 +284,6 @@ const AddToy = () => {
                 />
               </Form.Group>
 
-              {/* Kích cỡ */}
               <Form.Group controlId="size" className="mb-3">
                 <Form.Label>Kích cỡ</Form.Label>
                 <Form.Control
@@ -185,7 +294,6 @@ const AddToy = () => {
                 />
               </Form.Group>
 
-              {/* Lưu ý khi mượn */}
               <Form.Group controlId="borrowNotes" className="mb-3">
                 <Form.Label>Lưu ý khi mượn</Form.Label>
                 <Form.Control
@@ -205,7 +313,6 @@ const AddToy = () => {
         </Row>
       </Container>
 
-      {/* Modal xác nhận gửi yêu cầu */}
       <Modal
         show={showConfirmModal}
         onHide={() => setShowConfirmModal(false)}

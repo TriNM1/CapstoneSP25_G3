@@ -102,16 +102,11 @@ $danger-color: #dc3545;
       .toy-name {
         font-family: 'Fredoka One', cursive;
         font-size: 1.5rem;
-        color: #ff6f61;
+        color: $primary-color;
         margin-bottom: 10px;
       }
 
-      .toy-price {
-        font-size: 1rem;
-        margin-bottom: 5px;
-        color: #333;
-      }
-
+      .toy-price,
       .request-date,
       .borrow-date,
       .return-date {
@@ -142,6 +137,12 @@ $danger-color: #dc3545;
           button {
             font-size: 1rem;
             color: #333;
+            text-decoration: underline;
+            transition: color 0.3s;
+
+            &:hover {
+              color: $primary-color;
+            }
           }
         }
       }
@@ -170,7 +171,7 @@ $danger-color: #dc3545;
           }
 
           &:nth-child(2) {
-            background-color: #28a745;
+            background-color: $success-color;
             color: #fff;
 
             &:hover {
@@ -179,7 +180,7 @@ $danger-color: #dc3545;
           }
 
           &:nth-child(3) {
-            background-color: #dc3545;
+            background-color: $danger-color;
             color: #fff;
 
             &:hover {
