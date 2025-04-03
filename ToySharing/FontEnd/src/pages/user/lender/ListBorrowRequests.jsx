@@ -10,75 +10,20 @@ import {
 } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { FaBars } from "react-icons/fa";
 import Header from "../../../components/Header";
-import toy1 from "../../../assets/toy1.jpg";
-import user from "../../../assets/user.png";
 import SideMenu from "../../../components/SideMenu";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import "./ListBorrowRequests.scss";
 
 const ListBorrowRequests = () => {
-  const unreadMessages = 3;
-  const notificationCount = 2;
+  const navigate = useNavigate();
   const [activeLink, setActiveLink] = useState("muon-do-choi");
 
-  // Dữ liệu yêu cầu mượn ban đầu (fix cứng 4 mục, thêm requesterId thay vì userId để rõ ràng hơn)
-  const initialRequests = [
-    {
-      id: 1,
-      image: toy1,
-      name: "Xe đua mini",
-      price: "50,000 VND",
-      requestDate: "2023-07-01",
-      borrowDate: "2023-07-05",
-      returnDate: "2023-07-10",
-      requesterId: 1, // Giả lập ID người mượn
-      requesterAvatar: user,
-      message: "Tôi muốn mượn xe đua mini vì nó rất thú vị.",
-    },
-    {
-      id: 2,
-      image: toy1,
-      name: "Robot chơi",
-      price: "70,000 VND",
-      requestDate: "2023-07-02",
-      borrowDate: "2023-07-06",
-      returnDate: "2023-07-11",
-      requesterId: 2,
-      requesterAvatar: user,
-      message: "Robot chơi sẽ giúp tôi học lập trình cơ bản.",
-    },
-    {
-      id: 3,
-      image: toy1,
-      name: "Búp bê Barbie",
-      price: "60,000 VND",
-      requestDate: "2023-07-03",
-      borrowDate: "2023-07-07",
-      returnDate: "2023-07-12",
-      requesterId: 3,
-      requesterAvatar: user,
-      message: "Búp bê Barbie là món đồ chơi ưa thích của tôi từ nhỏ.",
-    },
-    {
-      id: 4,
-      image: toy1,
-      name: "Khối xếp hình",
-      price: "40,000 VND",
-      requestDate: "2023-07-04",
-      borrowDate: "2023-07-08",
-      returnDate: "2023-07-13",
-      requesterId: 4,
-      requesterAvatar: user,
-      message: "Khối xếp hình giúp tôi phát triển tư duy logic.",
-    },
-  ];
-
   // State quản lý danh sách yêu cầu
-  const [requests, setRequests] = useState(initialRequests);
+  const [requests, setRequests] = useState([]);
   const [filterDate, setFilterDate] = useState(null);
   const [visibleItems, setVisibleItems] = useState(4);
 
@@ -95,41 +40,51 @@ const ListBorrowRequests = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileData, setProfileData] = useState(null);
 
+  const API_BASE_URL = "https://localhost:7128/api";
+
   // Gọi API để lấy dữ liệu yêu cầu mượn
   useEffect(() => {
     const fetchRequests = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("https://localhost:7128/api/Requests/pending", {
+        if (!token) {
+          toast.error("Vui lòng đăng nhập để xem danh sách yêu cầu mượn!");
+          navigate("/login");
+          return;
+        }
+
+        const response = await axios.get(`${API_BASE_URL}/Requests/pending`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
+
         const formattedRequests = response.data.map((req) => ({
           id: req.requestId,
-          image: req.image || toy1,
+          image: req.image || "https://via.placeholder.com/200", // Placeholder nếu không có ảnh
           name: req.productName,
           price: `${req.price.toLocaleString("vi-VN")} VND`,
           requestDate: new Date(req.requestDate).toISOString().split("T")[0],
           borrowDate: new Date(req.rentDate).toISOString().split("T")[0],
           returnDate: new Date(req.returnDate).toISOString().split("T")[0],
-          requesterId: req.userId, // Sử dụng userId từ API làm requesterId
-          requesterAvatar: req.borrowerAvatar || user,
+          requesterId: req.userId,
+          requesterAvatar: req.borrowerAvatar || "https://via.placeholder.com/35", // Placeholder cho avatar
           message: req.message,
         }));
-        setRequests([...initialRequests, ...formattedRequests]);
+
+        setRequests(formattedRequests);
       } catch (error) {
-        console.error("Error fetching requests:", error);
+        console.error("Lỗi khi lấy dữ liệu yêu cầu mượn:", error);
         toast.error("Không thể tải dữ liệu từ API!");
-        setRequests(initialRequests);
+        setRequests([]);
       }
     };
 
     fetchRequests();
-  }, []);
+  }, [navigate]);
 
   const handleLoadMore = () => {
-    setVisibleItems(visibleItems + 3);
+    setVisibleItems((prev) => prev + 3);
   };
 
   const formattedFilterDate = filterDate
@@ -156,7 +111,7 @@ const ListBorrowRequests = () => {
   const handleConfirm = async () => {
     try {
       const token = localStorage.getItem("token");
-      const actionUrl = `https://localhost:7128/api/Requests/${selectedRequestId}/status`;
+      const actionUrl = `${API_BASE_URL}/Requests/${selectedRequestId}/status`;
       const newStatus = confirmAction === "accept" ? 1 : 2;
       await axios.put(
         actionUrl,
@@ -177,8 +132,8 @@ const ListBorrowRequests = () => {
           : "Từ chối yêu cầu thành công!"
       );
     } catch (error) {
-      console.error("Error processing request:", error);
-      toast.error("Có lỗi xảy ra khi xử lý yêu cầu! Chỉ xóa cục bộ.");
+      console.error("Lỗi khi xử lý yêu cầu:", error);
+      toast.error("Có lỗi xảy ra khi xử lý yêu cầu!");
       setRequests((prev) =>
         prev.filter((request) => request.id !== selectedRequestId)
       );
@@ -189,39 +144,38 @@ const ListBorrowRequests = () => {
     }
   };
 
-  // Hàm gọi API để lấy thông tin profile người mượn
   const handleViewProfile = async (requesterId) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(`https://localhost:7128/api/User/profile/${requesterId}`, {
+      const response = await axios.get(`${API_BASE_URL}/Users/profile/${requesterId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      setProfileData(response.data.userInfo); // Lấy userInfo từ UserProfileDTO
+      setProfileData(response.data.userInfo);
       setShowProfileModal(true);
     } catch (error) {
-      console.error("Error fetching user profile:", error);
+      console.error("Lỗi khi lấy thông tin người dùng:", error);
       toast.error("Không thể tải thông tin người dùng!");
     }
   };
 
   return (
-    <div className="list-borrow-requests-page">
+    <div className="list-borrow-requests-page home-page">
       <Header
         activeLink={activeLink}
         setActiveLink={setActiveLink}
         isLoggedIn={true}
-        unreadMessages={unreadMessages}
-        notificationCount={notificationCount}
+        unreadMessages={3}
+        notificationCount={2}
       />
 
-      <Container fluid>
+      <Container fluid className="mt-4">
         <Row>
           <Col xs={12} md={2}>
             <SideMenu
               menuItems={[
-                { id: 1, label: "Đăng Tải Đồ Chơi Mới", link: "/addtoy" },
+                { id: 1, label: "Thêm đồ chơi cho mượn", link: "/addtoy" },
                 { id: 2, label: "Danh sách đồ chơi của tôi", link: "/mytoy" },
                 { id: 3, label: "Đang cho mượn", link: "/inlending" },
                 {
@@ -235,103 +189,108 @@ const ListBorrowRequests = () => {
             />
           </Col>
 
-          <Col xs={12} md={9} className="main-content">
-            <div className="date-filter mb-3">
-              <Form.Group controlId="filterDate">
-                <Form.Label>Chọn ngày gửi yêu cầu</Form.Label>
-                <DatePicker
-                  selected={filterDate}
-                  onChange={(date) => setFilterDate(date)}
-                  dateFormat="yyyy-MM-dd"
-                  placeholderText="Chọn ngày"
-                  className="date-picker-input"
-                />
-              </Form.Group>
-            </div>
+          <Col xs={12} md={10} className="main-content">
+            <Form.Group controlId="filterDate" className="mb-3">
+              <Form.Label>Chọn ngày gửi yêu cầu</Form.Label>
+              <DatePicker
+                selected={filterDate}
+                onChange={(date) => setFilterDate(date)}
+                dateFormat="yyyy-MM-dd"
+                placeholderText="Chọn ngày"
+                className="date-picker-input"
+              />
+            </Form.Group>
 
-            <Row>
-              {visibleRequests.map((request) => (
-                <Col key={request.id} xs={12} lg={6} className="mb-4">
-                  <Card className="borrow-request-card">
-                    <Card.Img
-                      variant="top"
-                      src={request.image}
-                      className="toy-image"
-                    />
-                    <Card.Body>
-                      <Card.Title className="toy-name">{request.name}</Card.Title>
-                      <Card.Text className="toy-price">{request.price}</Card.Text>
-                      <Card.Text className="request-date">
-                        <strong>Ngày gửi yêu cầu:</strong> {request.requestDate}
-                      </Card.Text>
-                      <Card.Text className="borrow-date">
-                        <strong>Ngày mượn:</strong> {request.borrowDate}
-                      </Card.Text>
-                      <Card.Text className="return-date">
-                        <strong>Ngày trả:</strong> {request.returnDate}
-                      </Card.Text>
-                      <div className="requester-info d-flex align-items-center mb-2">
-                        <img
-                          src={request.requesterAvatar}
-                          alt="Requester Avatar"
-                          className="requester-avatar"
-                        />
-                        <span className="ms-2">
-                          <Button
-                            variant="link"
-                            className="p-0 text-decoration-none"
-                            onClick={() => handleViewProfile(request.requesterId)}
-                          >
-                            Trang cá nhân người muốn mượn
-                          </Button>
-                        </span>
-                      </div>
-                      <div className="request-actions d-flex justify-content-between">
-                        <Button
-                          variant="info"
-                          size="sm"
-                          onClick={() => handleViewMessage(request.message)}
-                        >
-                          Xem lời nhắn
-                        </Button>
-                        <Button
-                          variant="success"
-                          size="sm"
-                          onClick={() => handleConfirmAction("accept", request.id)}
-                        >
-                          Chấp nhận
-                        </Button>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={() => handleConfirmAction("decline", request.id)}
-                        >
-                          Từ chối
-                        </Button>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-
-            {visibleRequests.length < filteredRequests.length && (
-              <div className="text-center">
-                <Button
-                  variant="outline-primary"
-                  className="view-more-btn"
-                  onClick={handleLoadMore}
-                >
-                  Xem thêm
-                </Button>
+            {requests.length === 0 ? (
+              <div className="text-center mt-5">
+                <h5>Không có yêu cầu mượn nào</h5>
               </div>
+            ) : (
+              <>
+                <Row className="lending-items-section">
+                  {visibleRequests.map((request) => (
+                    <Col key={request.id} xs={12} md={6} className="mb-4">
+                      <Card className="borrow-request-card">
+                        <Card.Img
+                          variant="top"
+                          src={request.image}
+                          className="toy-image"
+                        />
+                        <Card.Body className="text-center">
+                          <Card.Title className="toy-name">{request.name}</Card.Title>
+                          <Card.Text className="toy-price">{request.price}</Card.Text>
+                          <Card.Text className="request-date">
+                            <strong>Ngày gửi yêu cầu:</strong> {request.requestDate}
+                          </Card.Text>
+                          <Card.Text className="borrow-date">
+                            <strong>Ngày mượn:</strong> {request.borrowDate}
+                          </Card.Text>
+                          <Card.Text className="return-date">
+                            <strong>Ngày trả:</strong> {request.returnDate}
+                          </Card.Text>
+                          <div className="lender-info mt-2 d-flex align-items-center justify-content-center">
+                            <img
+                              src={request.requesterAvatar}
+                              alt="Requester Avatar"
+                              className="requester-avatar"
+                            />
+                            <span className="ms-2">
+                              <Button
+                                variant="link"
+                                className="p-0 text-decoration-none"
+                                onClick={() => handleViewProfile(request.requesterId)}
+                              >
+                                Trang cá nhân người muốn mượn
+                              </Button>
+                            </span>
+                          </div>
+                          <div className="request-actions mt-3">
+                            <Button
+                              variant="info"
+                              size="lg"
+                              onClick={() => handleViewMessage(request.message)}
+                            >
+                              Xem lời nhắn
+                            </Button>
+                            <Button
+                              variant="success"
+                              size="lg"
+                              onClick={() => handleConfirmAction("accept", request.id)}
+                            >
+                              Chấp nhận
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="lg"
+                              onClick={() => handleConfirmAction("decline", request.id)}
+                            >
+                              Từ chối
+                            </Button>
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  ))}
+                </Row>
+
+                {visibleRequests.length < filteredRequests.length && (
+                  <div className="text-center">
+                    <Button
+                      variant="outline-primary"
+                      className="view-more-btn"
+                      onClick={handleLoadMore}
+                    >
+                      Xem thêm
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </Col>
         </Row>
       </Container>
 
-      {/* Modal hiển thị lời nhắn */}
-      <Modal show={showMessageModal} onHide={() => setShowMessageModal(false)}>
+      <Modal show={showMessageModal} onHide={() => setShowMessageModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Lời nhắn</Modal.Title>
         </Modal.Header>
@@ -346,8 +305,7 @@ const ListBorrowRequests = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Modal xác nhận hành động */}
-      <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
+      <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Xác nhận</Modal.Title>
         </Modal.Header>
@@ -369,8 +327,7 @@ const ListBorrowRequests = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Modal hiển thị thông tin profile */}
-      <Modal show={showProfileModal} onHide={() => setShowProfileModal(false)}>
+      <Modal show={showProfileModal} onHide={() => setShowProfileModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Thông tin người mượn</Modal.Title>
         </Modal.Header>
@@ -378,7 +335,7 @@ const ListBorrowRequests = () => {
           {profileData ? (
             <div>
               <img
-                src={profileData.avatar || user}
+                src={profileData.avatar || "https://via.placeholder.com/100"}
                 alt="Avatar"
                 className="rounded-circle mb-3"
                 style={{ width: "100px", height: "100px" }}
