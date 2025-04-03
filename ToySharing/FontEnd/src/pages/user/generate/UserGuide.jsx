@@ -2,6 +2,7 @@ import React from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import Header from "../../../components/Header";
 import "./UserGuide.scss";
+import Footer from "../../../components/footer";
 
 const UserGuide = () => {
   return (
@@ -55,6 +56,7 @@ const UserGuide = () => {
             </div>
           </Col>
         </Row>
+        <Footer/>
       </Container>
     </div>
   );

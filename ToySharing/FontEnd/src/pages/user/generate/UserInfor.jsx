@@ -20,6 +20,7 @@ import SideMenu from "../../../components/SideMenu";
 import toy1 from "../../../assets/toy1.jpg";
 import userAvatar from "../../../assets/user.png";
 import "./UserInfor.scss";
+import Footer from "../../../components/footer";
 
 const UserInfor = () => {
   const navigate = useNavigate();
@@ -352,6 +353,7 @@ const UserInfor = () => {
             Xem thêm
           </Button>
         </div>
+        <Footer/>
       </Container>
 
       {/* Modal Nhập thông tin mượn */}

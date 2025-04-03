@@ -8,6 +8,7 @@ import SideMenu from "../../../components/SideMenu";
 import "./TransferHistory.scss";
 import toy1 from "../../../assets/toy1.jpg";
 import user from "../../../assets/user.png";
+import Footer from "../../../components/footer";
 
 const TransferHistory = () => {
   const [activeLink, setActiveLink] = useState("lending");
@@ -188,6 +189,7 @@ const TransferHistory = () => {
             )}
           </Col>
         </Row>
+        <Footer/>
       </Container>
     </div>
   );

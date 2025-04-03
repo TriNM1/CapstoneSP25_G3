@@ -15,6 +15,7 @@ import SideMenu from "../../../components/SideMenu";
 import "./SendingRequest.scss";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Footer from "../../../components/footer";
 
 // Ví dụ dữ liệu mẫu cho các yêu cầu gửi
 const initialRequests = [
@@ -176,6 +177,7 @@ const SendingRequest = () => {
             </div>
           </Col>
         </Row>
+        <Footer/>
       </Container>
 
       {/* Modal xác nhận hủy yêu cầu */}

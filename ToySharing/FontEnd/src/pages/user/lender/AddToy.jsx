@@ -5,6 +5,7 @@ import SideMenu from "../../../components/SideMenu";
 import "./AddToy.scss";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Footer from "../../../components/footer";
 const AddToy = () => {
   // State cho header active link
   const [activeLink, setActiveLink] = useState("add-toy");
@@ -205,6 +206,7 @@ const AddToy = () => {
             </Form>
           </Col>
         </Row>
+        <Footer/>
       </Container>
 
       {/* Modal xác nhận gửi yêu cầu */}

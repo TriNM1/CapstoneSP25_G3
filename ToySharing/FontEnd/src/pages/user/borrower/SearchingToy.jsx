@@ -20,6 +20,7 @@ import SideMenu from "../../../components/SideMenu";
 import toy1 from "../../../assets/toy1.jpg";
 import user from "../../../assets/user.png";
 import "./SearchingToy.scss";
+import Footer from "../../../components/footer";
 
 const SearchingToy = () => {
   // Hook dùng để điều hướng
@@ -355,6 +356,7 @@ const SearchingToy = () => {
             </div>
           </Col>
         </Row>
+        <Footer/>
       </Container>
 
       {/* Modal Nhập thông tin mượn */}

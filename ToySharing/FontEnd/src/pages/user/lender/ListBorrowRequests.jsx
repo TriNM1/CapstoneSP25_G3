@@ -19,6 +19,7 @@ import SideMenu from "../../../components/SideMenu";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./ListBorrowRequests.scss";
+import Footer from "../../../components/footer";
 
 const ListBorrowRequests = () => {
   const unreadMessages = 3;
@@ -280,6 +281,7 @@ const ListBorrowRequests = () => {
             )}
           </Col>
         </Row>
+        <Footer/>
       </Container>
 
       {/* Modal hiển thị lời nhắn */}

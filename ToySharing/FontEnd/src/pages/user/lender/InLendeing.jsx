@@ -18,6 +18,7 @@ import "./InLending.scss";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import toy1 from "../../../assets/toy1.jpg";
+import Footer from "../../../components/footer";
 
 const InLending = () => {
   const navigate = useNavigate();
@@ -233,6 +234,7 @@ const InLending = () => {
             </div>
           </Col>
         </Row>
+        <Footer/>
       </Container>
 
       {/* Modal đánh giá người mượn */}
