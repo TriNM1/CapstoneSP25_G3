@@ -5,7 +5,7 @@ $primary-color: #ff6f61;
 $success-color: #28a745;
 $danger-color: #dc3545;
 
-.sending-request-page {
+.borrow-history-page {
   background-color: #f7f9fc;
   font-family: 'Roboto', sans-serif;
   color: #333;
@@ -35,6 +35,8 @@ $danger-color: #dc3545;
   }
 
   .request-items-section {
+    margin-top: 20px;
+
     .request-card {
       background-color: #fff;
       border: none;
@@ -53,78 +55,63 @@ $danger-color: #dc3545;
         object-fit: cover;
       }
 
-      .toy-name {
-        font-family: 'Fredoka One', cursive;
-        font-size: 1.5rem;
-        color: $primary-color;
-        margin-bottom: 10px;
-      }
+      .card-body {
+        padding: 15px;
 
-      .send-date,
-      .borrow-date,
-      .return-date {
-        font-size: 1rem;
-        margin-bottom: 5px;
-        color: #333;
-      }
-
-      .lender-info {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-top: 10px;
-
-        .lender-avatar {
-          width: 35px;
-          height: 35px;
-          border-radius: 50%;
-          object-fit: cover;
-          border: 1px solid #ddd;
+        .toy-name {
+          font-family: 'Fredoka One', cursive;
+          font-size: 1.5rem;
+          color: $primary-color;
+          margin-bottom: 10px;
         }
 
-        .lender-link {
-          margin-left: 8px;
+        .return-date,
+        .transfer-status,
+        .rating,
+        .message {
           font-size: 1rem;
+          margin-bottom: 5px;
           color: #333;
-          text-decoration: none;
-          transition: color 0.3s;
 
-          &:hover {
-            color: $primary-color;
-            text-decoration: underline;
+          strong {
+            color: #333;
+          }
+
+          .completed {
+            color: $success-color;
+            font-weight: 500;
+          }
+
+          .pending {
+            color: $danger-color;
+            font-weight: 500;
           }
         }
-      }
 
-      .request-actions {
-        margin-top: 15px;
-        display: flex;
-        justify-content: center;
-        gap: 10px;
+        .lender-info {
+          margin-top: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
 
-        button {
-          font-size: 1rem;
-          padding: 10px 20px;
-          border-radius: 8px;
-          border: none;
-          cursor: pointer;
-          transition: background-color 0.3s;
-
-          &:nth-child(1) {
-            background-color: #17a2b8;
-            color: #fff;
-
-            &:hover {
-              background-color: #138496;
-            }
+          .lender-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #ddd;
           }
 
-          &:nth-child(2) {
-            background-color: $danger-color;
-            color: #fff;
+          .lender-link {
+            margin-left: 8px;
+            font-size: 1rem;
+            color: #333;
+            text-decoration: none;
+            transition: color 0.3s;
 
             &:hover {
-              background-color: #c82333;
+              color: $primary-color;
+              text-decoration: underline;
             }
           }
         }

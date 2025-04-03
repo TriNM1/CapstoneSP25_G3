@@ -1,26 +1,78 @@
-@import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@300;400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto&display=swap');
 
-$primary-color: #ff8a80;       // Pastel hồng
-$accent-color: #28a745;        // Màu xanh cho trạng thái hoàn thành
-$pending-color: #888;          // Màu xám cho trạng thái chưa xác định
-$background-color: #f7f9fc;
-$list-bg-color: #fff;
-$font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+$primary-color: #ff6f61;
+$success-color: #28a745;
+$danger-color: #dc3545;
 
 .transfer-history-page {
-  background-color: $background-color;
-  font-family: $font-family;
-  padding: 2rem 0;
+  background-color: #f7f9fc;
+  font-family: 'Roboto', sans-serif;
+  color: #333;
+  padding-bottom: 40px;
+
+  .side-menu {
+    background: #fff;
+    padding: 1rem;
+    border-right: 1px solid #ddd;
+    height: 100vh;
+    margin-top: 1rem;
+
+    ul {
+      list-style: none;
+      padding: 0;
+
+      li {
+        margin-bottom: 1rem;
+
+        a {
+          text-decoration: none;
+          color: #333;
+          font-size: 1.1rem;
+          transition: color 0.3s;
+
+          &:hover {
+            color: $primary-color;
+          }
+        }
+
+        &.active a {
+          color: $primary-color;
+          font-weight: bold;
+        }
+      }
+    }
+
+    .menu-icon {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      width: 50px;
+      padding: 0.5rem;
+
+      ul {
+        display: none;
+      }
+
+      .menu-icon {
+        display: block;
+        font-size: 1.8rem;
+        text-align: center;
+        color: #333;
+      }
+    }
+  }
 
   .main-content {
-    background-color: $list-bg-color;
-    padding: 1rem;
+    background-color: #fff;
     border-radius: 12px;
+    padding: 30px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
   .date-filter {
     margin-bottom: 1.5rem;
+
     label {
       font-weight: bold;
       margin-bottom: 0.5rem;
@@ -28,6 +80,7 @@ $font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
       font-size: 1.1rem;
       color: #333;
     }
+
     .date-picker-input {
       width: 100%;
       padding: 0.5rem;
@@ -35,46 +88,41 @@ $font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
       border: 1px solid #ddd;
       border-radius: 5px;
       color: #333;
-      background: $list-bg-color;
+      background: #fff;
     }
   }
 
   .transfer-items-section {
     .transfer-card {
-      border: 1px solid #ddd;  // Thêm border cho mỗi item
+      background-color: #fff;
+      border: none;
       border-radius: 12px;
       overflow: hidden;
-      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       transition: transform 0.2s;
-      
+      margin-bottom: 20px;
+
       &:hover {
         transform: translateY(-5px);
       }
 
       .toy-image {
-        height: 180px;
+        height: 200px;
         object-fit: cover;
-        border-top-left-radius: 12px;
-        border-top-right-radius: 12px;
       }
 
       .toy-name {
-        font-size: 1.4rem;
-        font-weight: bold;
-        margin-bottom: 0.5rem;
-        color: #333;
-      }
-
-      .toy-price {
-        font-size: 1.2rem;
+        font-family: 'Fredoka One', cursive;
+        font-size: 1.5rem;
         color: $primary-color;
-        margin-bottom: 0.5rem;
+        margin-bottom: 10px;
       }
 
+      .toy-price,
       .transfer-date,
       .transfer-status {
         font-size: 1rem;
-        margin-bottom: 0.5rem;
+        margin-bottom: 5px;
         color: #333;
       }
 
@@ -83,37 +131,36 @@ $font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
           font-weight: bold;
         }
         .completed {
-          color: $accent-color;
-          font-weight: bold;
+          color: $success-color;
         }
         .pending {
-          color: $pending-color;
-          font-weight: bold;
+          color: $danger-color;
         }
       }
 
       .partner-info {
+        margin-top: 10px;
         display: flex;
         align-items: center;
-        margin-top: 10px;
-        
+        justify-content: center;
+
         .partner-avatar {
-          width: 40px;
-          height: 40px;
+          width: 35px;
+          height: 35px;
           border-radius: 50%;
           object-fit: cover;
           border: 1px solid #ddd;
         }
 
         .partner-link {
-          margin-left: 0.5rem;
+          margin-left: 8px;
           font-size: 1rem;
-          color: $primary-color;
-          text-decoration: underline; // Link gạch dưới
+          color: #333;
+          text-decoration: underline;
           transition: color 0.3s;
-          
+
           &:hover {
-            color: $accent-color;
+            color: $primary-color;
           }
         }
       }
@@ -122,7 +169,8 @@ $font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
 
   .view-more-btn {
     margin-top: 1rem;
-    font-size: 1.1rem;
-    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    padding: 10px 20px;
+    border-radius: 8px;
   }
 }

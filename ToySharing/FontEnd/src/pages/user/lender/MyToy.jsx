@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Row,
@@ -11,108 +11,15 @@ import {
 } from "react-bootstrap";
 import Header from "../../../components/Header";
 import SideMenu from "../../../components/SideMenu";
-import FilterPanel from "../../../components/FilterPanel"; // Nếu dùng chung bộ lọc, nếu không có thì bỏ qua
-import "./MyToy.scss";
+import FilterPanel from "../../../components/FilterPanel";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import toy1 from "../../../assets/toy1.jpg";
-import Footer from "../../../components/footer";
-// Giả sử đây là dữ liệu mẫu ban đầu cho đồ chơi
-const initialToys = [
-  {
-    id: 1,
-    image: toy1,
-    name: "Xe đua mini",
-    postedDate: "2023-07-01",
-    borrowCount: 10,
-    status: "Còn trống",
-    // Các trường bổ sung cho việc chỉnh sửa:
-    category: "Xe",
-    condition: "new",
-    ageGroup: "0-3",
-    price: "50,000 VND",
-    description: "Mô tả cho xe đua mini",
-    size: "20x10x10 cm",
-    borrowNotes: "Không mượn quá 3 ngày",
-  },
-  {
-    id: 2,
-    image: toy1,
-    name: "Robot chơi",
-    postedDate: "2023-07-02",
-    borrowCount: 5,
-    status: "Đã cho mượn",
-    category: "Robot",
-    condition: "used",
-    ageGroup: "4-6",
-    price: "70,000 VND",
-    description: "Mô tả cho Robot chơi",
-    size: "30x20x20 cm",
-    borrowNotes: "Kiểm tra trước khi mượn",
-  },
-  {
-    id: 3,
-    image: toy1,
-    name: "Búp bê Barbie",
-    postedDate: "2023-07-03",
-    borrowCount: 8,
-    status: "Còn trống",
-    category: "Búp bê",
-    condition: "new",
-    ageGroup: "7-9",
-    price: "60,000 VND",
-    description: "Mô tả cho Búp bê Barbie",
-    size: "25x15x10 cm",
-    borrowNotes: "",
-  },
-  {
-    id: 4,
-    image: toy1,
-    name: "Khối xếp hình",
-    postedDate: "2023-07-04",
-    borrowCount: 3,
-    status: "Còn trống",
-    category: "Khối xếp hình",
-    condition: "new",
-    ageGroup: "4-6",
-    price: "40,000 VND",
-    description: "Mô tả cho Khối xếp hình",
-    size: "15x15x15 cm",
-    borrowNotes: "",
-  },
-  {
-    id: 5,
-    image: toy1,
-    name: "Xe điều khiển",
-    postedDate: "2023-07-05",
-    borrowCount: 12,
-    status: "Đã cho mượn",
-    category: "Xe",
-    condition: "used",
-    ageGroup: "10+",
-    price: "80,000 VND",
-    description: "Mô tả cho Xe điều khiển",
-    size: "35x25x20 cm",
-    borrowNotes: "",
-  },
-  {
-    id: 6,
-    image: toy1,
-    name: "Đồ chơi xếp hình",
-    postedDate: "2023-07-06",
-    borrowCount: 7,
-    status: "Còn trống",
-    category: "Khối xếp hình",
-    condition: "new",
-    ageGroup: "0-3",
-    price: "30,000 VND",
-    description: "Mô tả cho Đồ chơi xếp hình",
-    size: "20x20x20 cm",
-    borrowNotes: "",
-  },
-];
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import "./MyToy.scss";
 
 const MyToy = () => {
+  const navigate = useNavigate();
   const [activeLink, setActiveLink] = useState("mytoy");
   const sideMenuItems = [
     { id: 1, label: "Đăng Tải Đồ Chơi Mới", link: "/addtoy" },
@@ -122,7 +29,11 @@ const MyToy = () => {
     { id: 5, label: "Lịch sử trao đổi", link: "/transferhistory" },
   ];
 
-  // Bộ lọc dùng chung (nếu cần sử dụng)
+  // State quản lý danh sách đồ chơi
+  const [toys, setToys] = useState([]);
+  const [visibleItems, setVisibleItems] = useState(6); // Hiển thị 6 item ban đầu
+
+  // Bộ lọc dùng chung
   const [showFilter, setShowFilter] = useState(false);
   const [filterValues, setFilterValues] = useState({
     color: "",
@@ -132,21 +43,21 @@ const MyToy = () => {
     brand: "",
     distance: "",
   });
+
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilterValues((prev) => ({ ...prev, [name]: value }));
   };
+
   const handleFilterSubmit = (e) => {
     e.preventDefault();
     console.log("Filter values:", filterValues);
     // Tích hợp logic lọc nếu cần
   };
 
-  const [toys, setToys] = useState(initialToys);
-
   // Modal xác nhận cho nút Xóa
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [confirmAction, setConfirmAction] = useState(""); // chỉ dùng cho delete
+  const [confirmAction, setConfirmAction] = useState("");
   const [selectedToyId, setSelectedToyId] = useState(null);
 
   // Modal chỉnh sửa (Edit Modal)
@@ -164,6 +75,52 @@ const MyToy = () => {
     borrowNotes: "",
   });
 
+  const API_BASE_URL = "https://localhost:7128/api";
+
+  // Lấy danh sách đồ chơi từ API
+  useEffect(() => {
+    const fetchToys = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          toast.error("Vui lòng đăng nhập để xem danh sách đồ chơi!");
+          navigate("/login");
+          return;
+        }
+
+        const response = await axios.get(`${API_BASE_URL}/Products/my-toys`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const formattedToys = response.data.map((toy) => ({
+          id: toy.productId,
+          image: toy.images && toy.images.length > 0 ? toy.images[0].path : "https://via.placeholder.com/200",
+          name: toy.name,
+          postedDate: new Date(toy.postedDate).toISOString().split("T")[0],
+          borrowCount: toy.borrowCount || 0,
+          status: toy.available === 0 ? "Còn trống" : "Đã cho mượn",
+          category: toy.category,
+          condition: toy.condition,
+          ageGroup: toy.ageGroup,
+          price: `${toy.price.toLocaleString("vi-VN")} VND`,
+          description: toy.description,
+          size: toy.size,
+          borrowNotes: toy.borrowNotes,
+        }));
+
+        setToys(formattedToys);
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách đồ chơi:", error);
+        toast.error("Không thể tải danh sách đồ chơi từ API!");
+        setToys([]);
+      }
+    };
+
+    fetchToys();
+  }, [navigate]);
+
   // Khi bấm Sửa, mở modal chỉnh sửa và prepopulate form với dữ liệu của toy
   const handleEdit = (id) => {
     const toyToEdit = toys.find((toy) => toy.id === id);
@@ -175,7 +132,7 @@ const MyToy = () => {
         category: toyToEdit.category || "",
         condition: toyToEdit.condition || "",
         ageGroup: toyToEdit.ageGroup || "",
-        price: toyToEdit.price,
+        price: toyToEdit.price.replace(" VND", ""),
         description: toyToEdit.description || "",
         size: toyToEdit.size || "",
         borrowNotes: toyToEdit.borrowNotes || "",
@@ -200,40 +157,67 @@ const MyToy = () => {
     }
   };
 
-  // Xử lý cập nhật (Update) đồ chơi
-  const handleUpdateToy = () => {
-    setToys((prevToys) =>
-      prevToys.map((toy) =>
-        toy.id === editToyData.id
-          ? {
-              ...toy,
-              image: editToyData.image,
-              name: editToyData.toyName,
-              category: editToyData.category,
-              condition: editToyData.condition,
-              ageGroup: editToyData.ageGroup,
-              price: editToyData.price,
-              description: editToyData.description,
-              size: editToyData.size,
-              borrowNotes: editToyData.borrowNotes,
-            }
-          : toy
-      )
-    );
-    toast.success("Cập nhật đồ chơi thành công!");
-    setShowEditModal(false);
-    setEditToyData({
-      id: null,
-      image: "",
-      toyName: "",
-      category: "",
-      condition: "",
-      ageGroup: "",
-      price: "",
-      description: "",
-      size: "",
-      borrowNotes: "",
-    });
+  // Xử lý cập nhật (Update) đồ chơi qua API
+  const handleUpdateToy = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const updatedToy = {
+        name: editToyData.toyName,
+        category: editToyData.category,
+        condition: editToyData.condition,
+        ageGroup: editToyData.ageGroup,
+        price: parseInt(editToyData.price.replace(/[^0-9]/g, "")), // Chuyển giá về số
+        description: editToyData.description,
+        size: editToyData.size,
+        borrowNotes: editToyData.borrowNotes,
+        images: [editToyData.image], // Giả sử API chấp nhận danh sách URL ảnh
+      };
+
+      await axios.put(`${API_BASE_URL}/Products/${editToyData.id}`, updatedToy, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      // Cập nhật state toys
+      setToys((prevToys) =>
+        prevToys.map((toy) =>
+          toy.id === editToyData.id
+            ? {
+                ...toy,
+                image: editToyData.image,
+                name: editToyData.toyName,
+                category: editToyData.category,
+                condition: editToyData.condition,
+                ageGroup: editToyData.ageGroup,
+                price: `${parseInt(editToyData.price.replace(/[^0-9]/g, "")).toLocaleString("vi-VN")} VND`,
+                description: editToyData.description,
+                size: editToyData.size,
+                borrowNotes: editToyData.borrowNotes,
+              }
+            : toy
+        )
+      );
+
+      toast.success("Cập nhật đồ chơi thành công!");
+      setShowEditModal(false);
+      setEditToyData({
+        id: null,
+        image: "",
+        toyName: "",
+        category: "",
+        condition: "",
+        ageGroup: "",
+        price: "",
+        description: "",
+        size: "",
+        borrowNotes: "",
+      });
+    } catch (error) {
+      console.error("Lỗi khi cập nhật đồ chơi:", error);
+      toast.error("Có lỗi xảy ra khi cập nhật đồ chơi!");
+    }
   };
 
   // Xử lý cho nút Xóa (sử dụng modal xác nhận)
@@ -243,20 +227,33 @@ const MyToy = () => {
     setShowConfirmModal(true);
   };
 
-  const handleConfirm = () => {
-    if (confirmAction === "delete") {
+  const handleConfirm = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`${API_BASE_URL}/Products/${selectedToyId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
       setToys((prev) => prev.filter((toy) => toy.id !== selectedToyId));
       toast.success("Đã xóa đồ chơi thành công!");
+    } catch (error) {
+      console.error("Lỗi khi xóa đồ chơi:", error);
+      toast.error("Có lỗi xảy ra khi xóa đồ chơi!");
+    } finally {
+      setShowConfirmModal(false);
+      setConfirmAction("");
+      setSelectedToyId(null);
     }
-    setShowConfirmModal(false);
-    setConfirmAction("");
-    setSelectedToyId(null);
   };
 
-  // Load thêm item (ví dụ: thêm 3 item nữa)
+  // Load thêm item
   const handleLoadMore = () => {
-    setToys([...toys, ...initialToys.slice(0, 3)]);
+    setVisibleItems((prev) => prev + 3);
   };
+
+  const visibleToys = toys.slice(0, visibleItems);
 
   return (
     <div className="mytoy-page home-page">
@@ -286,69 +283,78 @@ const MyToy = () => {
               onChange={handleFilterChange}
             />
 
-            <Row className="toy-items-section">
-              {toys.map((toy) => (
-                <Col key={toy.id} xs={12} md={4} className="mb-4">
-                  <Card className="toy-card">
-                    <Card.Img
-                      variant="top"
-                      src={toy.image}
-                      className="toy-image"
-                    />
-                    <Card.Body className="text-center">
-                      <Card.Title className="toy-name">{toy.name}</Card.Title>
-                      <Card.Text className="posted-date">
-                        <strong>Ngày đăng:</strong> {toy.postedDate}
-                      </Card.Text>
-                      <Card.Text className="borrow-count">
-                        <strong>Lượt mượn:</strong> {toy.borrowCount}
-                      </Card.Text>
-                      <Card.Text className="toy-status">
-                        <strong>Trạng thái:</strong>{" "}
-                        <span
-                          className={
-                            toy.status === "Còn trống"
-                              ? "available"
-                              : "unavailable"
-                          }
-                        >
-                          {toy.status}
-                        </span>
-                      </Card.Text>
-                      <div className="toy-actions">
-                        <Button
-                          variant="warning"
-                          size="lg"
-                          onClick={() => handleEdit(toy.id)}
-                        >
-                          Sửa
-                        </Button>
-                        <Button
-                          variant="danger"
-                          size="lg"
-                          className="ms-2"
-                          onClick={() => handleDelete(toy.id)}
-                        >
-                          Xóa
-                        </Button>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-            <div className="text-center">
-              <Button
-                variant="outline-primary"
-                className="view-more-btn"
-                onClick={handleLoadMore}
-              >
-                Xem thêm
-              </Button>
-            </div>
+            {toys.length === 0 ? (
+              <div className="text-center mt-5">
+                <h5>Không có đồ chơi nào</h5>
+              </div>
+            ) : (
+              <>
+                <Row className="toy-items-section">
+                  {visibleToys.map((toy) => (
+                    <Col key={toy.id} xs={12} md={4} className="mb-4">
+                      <Card className="toy-card">
+                        <Card.Img
+                          variant="top"
+                          src={toy.image}
+                          className="toy-image"
+                        />
+                        <Card.Body className="text-center">
+                          <Card.Title className="toy-name">{toy.name}</Card.Title>
+                          <Card.Text className="posted-date">
+                            <strong>Ngày đăng:</strong> {toy.postedDate}
+                          </Card.Text>
+                          <Card.Text className="borrow-count">
+                            <strong>Lượt mượn:</strong> {toy.borrowCount}
+                          </Card.Text>
+                          <Card.Text className="toy-status">
+                            <strong>Trạng thái:</strong>{" "}
+                            <span
+                              className={
+                                toy.status === "Còn trống"
+                                  ? "available"
+                                  : "unavailable"
+                              }
+                            >
+                              {toy.status}
+                            </span>
+                          </Card.Text>
+                          <div className="toy-actions">
+                            <Button
+                              variant="warning"
+                              size="lg"
+                              onClick={() => handleEdit(toy.id)}
+                            >
+                              Sửa
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="lg"
+                              className="ms-2"
+                              onClick={() => handleDelete(toy.id)}
+                            >
+                              Xóa
+                            </Button>
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  ))}
+                </Row>
+                {visibleToys.length < toys.length && (
+                  <div className="text-center">
+                    <Button
+                      variant="outline-primary"
+                      className="view-more-btn"
+                      onClick={handleLoadMore}
+                    >
+                      Xem thêm
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
           </Col>
         </Row>
-        <Footer/>
       </Container>
 
       {/* Modal chỉnh sửa (Edit Modal) */}
@@ -368,9 +374,10 @@ const MyToy = () => {
               <Form.Control type="file" onChange={handleEditImageChange} />
               {editToyData.image && (
                 <img
-                  src={toys[0].image}
+                  src={editToyData.image}
                   alt="Preview"
                   className="preview-image mt-2"
+                  style={{ width: "100px", height: "100px", objectFit: "cover" }}
                 />
               )}
             </Form.Group>
@@ -395,10 +402,10 @@ const MyToy = () => {
                 onChange={handleEditChange}
               >
                 <option value="">Chọn danh mục</option>
-                <option value="xe">Xe</option>
-                <option value="robot">Robot</option>
-                <option value="bupbe">Búp bê</option>
-                <option value="khixep">Khối xếp hình</option>
+                <option value="Xe">Xe</option>
+                <option value="Robot">Robot</option>
+                <option value="Búp bê">Búp bê</option>
+                <option value="Khối xếp hình">Khối xếp hình</option>
               </Form.Control>
             </Form.Group>
             {/* Tình trạng */}

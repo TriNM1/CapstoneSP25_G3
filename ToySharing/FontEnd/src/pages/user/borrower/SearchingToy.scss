@@ -1,16 +1,43 @@
-// Import font, biến, hoặc style dùng chung nếu có
-@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto&display=swap');
+
+// Define color variables to match the first example
+$primary-color: #ff6f61;
+$success-color: #28a745;
+$danger-color: #dc3545;
 
 .searching-toy-page {
-  // Dùng chung với home-page
+  background-color: #f7f9fc;
   font-family: 'Roboto', sans-serif;
   color: #333;
+  padding-bottom: 40px;
+
+  .side-menu {
+    background: #fff;
+    padding: 1rem;
+    border-right: 1px solid #ddd;
+    height: 100vh;
+    margin-top: 1rem;
+  }
+
+  .main-content {
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
 
   .filter-toggle {
     button {
       font-size: 1.2rem;
+      border-radius: 8px;
+      transition: background-color 0.3s;
+
       svg {
         margin-right: 0.5rem;
+      }
+
+      &:hover {
+        background-color: #e9ecef;
       }
     }
   }
@@ -18,51 +45,195 @@
   .filter-panel {
     padding: 1rem;
     border: 1px solid #ddd;
-    border-radius: 8px;
+    border-radius: 12px;
     background-color: #f9f9f9;
 
     form {
       .form-label {
         font-weight: bold;
+        color: #333;
+      }
+
+      .form-control {
+        border-radius: 5px;
+        border: 1px solid #ddd;
+        transition: border-color 0.3s;
+
+        &:focus {
+          border-color: $primary-color;
+          box-shadow: 0 0 5px rgba(255, 111, 97, 0.3);
+        }
+      }
+
+      button {
+        background-color: $primary-color;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 20px;
+        color: #fff;
+        transition: background-color 0.3s;
+      
+        &:hover {
+          background-color: #e66457; // Hardcoded darkened color
+        }
       }
     }
   }
 
+  .date-picker-input {
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    color: #333;
+    background: #fff;
+
+    &:focus {
+      outline: none;
+      border-color: $primary-color;
+      box-shadow: 0 0 5px rgba(255, 111, 97, 0.3);
+    }
+  }
+
   .toy-card {
+    background-color: #fff;
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+    margin-bottom: 20px;
+
+    &:hover {
+      transform: translateY(-5px);
+    }
+
     .toy-image {
       height: 200px;
       object-fit: cover;
     }
+
     .toy-name {
-      font-size: 1.25rem;
-      font-weight: bold;
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.5rem;
+      color: $primary-color;
+      margin-bottom: 10px;
     }
+
     .toy-price {
-      color: #ff6f61;
+      font-size: 1rem;
+      color: $primary-color;
+      margin-bottom: 5px;
     }
-    .available {
-      color: green;
+
+    .toy-status {
+      font-size: 1rem;
+      margin-bottom: 5px;
+
+      .available {
+        color: $success-color;
+        font-weight: 500;
+      }
+
+      .unavailable {
+        color: $danger-color;
+        font-weight: 500;
+      }
     }
-    .unavailable {
-      color: red;
-    }
-    .lender-avatar {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-    }
-    #trangcanhanlink {
+
+    .toy-distance {
+      font-size: 1rem;
+      margin-bottom: 5px;
       color: #333;
     }
+
+    .lender-info {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 10px;
+
+      .lender-avatar {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 1px solid #ddd;
+      }
+
+      .lender-link {
+        margin-left: 8px;
+        font-size: 1rem;
+        color: #333;
+        text-decoration: none;
+        transition: color 0.3s;
+
+        &:hover {
+          color: $primary-color;
+          text-decoration: underline;
+        }
+      }
+    }
+
     .toy-actions {
+      margin-top: 15px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+
       button {
-        font-size: 1.6rem;
-        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        padding: 10px 20px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s;
+
+        &:nth-child(1) {
+          background-color: #17a2b8;
+          color: #fff;
+
+          &:hover {
+            background-color: #138496;
+          }
+
+          &:disabled {
+            background-color: #a3c6d1;
+            cursor: not-allowed;
+          }
+        }
+
+        &:nth-child(2) {
+          background-color: $danger-color;
+          color: #fff;
+
+          &:hover {
+            background-color: #c82333;
+          }
+
+          &:disabled {
+            background-color: #e57373;
+            cursor: not-allowed;
+          }
+        }
       }
     }
   }
 
   .view-more-btn {
     margin-top: 20px;
+    font-size: 1rem;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    background-color: #e9ecef;
+    color: #333;
+    cursor: pointer;
+    transition: background-color 0.3s;
+
+    &:hover {
+      background-color: #d3d7db;
+    }
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Row,
@@ -15,24 +15,24 @@ import { FaFilter } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import Header from "../../../components/Header";
 import SideMenu from "../../../components/SideMenu";
-import toy1 from "../../../assets/toy1.jpg";
-import user from "../../../assets/user.png";
 import "./SearchingToy.scss";
 import Footer from "../../../components/footer";
 
+const API_BASE_URL = "https://localhost:7128/api";
+
 const SearchingToy = () => {
-  // Hook dùng để điều hướng
   const navigate = useNavigate();
 
-  // State cho header và active nav link
+  // State for header and active nav link
   const [activeLink, setActiveLink] = useState("searching-toy");
 
-  // State để hiển thị/ẩn bộ lọc
+  // State to show/hide filter
   const [showFilter, setShowFilter] = useState(false);
 
-  // Các state cho bộ lọc
+  // Filter states
   const [color, setColor] = useState("");
   const [condition, setCondition] = useState("");
   const [category, setCategory] = useState("");
@@ -40,86 +40,224 @@ const SearchingToy = () => {
   const [brand, setBrand] = useState("");
   const [distance, setDistance] = useState("");
 
-  // Các link cho side menu
+  // State for toy list, categories, loading, and error
+  const [toyList, setToyList] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // State for owner profiles and distances
+  const [ownerProfiles, setOwnerProfiles] = useState({});
+  const [distances, setDistances] = useState({}); // Store distances for each product
+
+  // State for user's location
+  const [userLocation, setUserLocation] = useState({ latitude: null, longitude: null });
+
+  // Side menu links
   const sideMenuItems = [
     { id: 1, label: "Tìm kiếm đồ chơi", link: "/searchtoy" },
     { id: 2, label: "Danh sách mượn", link: "/sendingrequest" },
-    { id: 3, label: "Lịch sử trao đổi", link: "/transferhistory" },
+    { id: 3, label: "Lịch sử trao đổi", link: "/borrowhistory" },
   ];
 
-  // Dữ liệu mẫu cho các đồ chơi chuyển thành state để có thể cập nhật khi gửi yêu cầu mượn
-  const [toyList, setToyList] = useState([
-    {
-      id: 1,
-      image: toy1,
-      name: "Xe đua mini",
-      price: "50,000 VND",
-      status: "Còn trống",
-      distance: 2.5,
-      lenderAvatar: user,
-    },
-    {
-      id: 2,
-      image: toy1,
-      name: "Robot chơi",
-      price: "70,000 VND",
-      status: "Hết đồ",
-      distance: 1.8,
-      lenderAvatar: user,
-    },
-    {
-      id: 3,
-      image: toy1,
-      name: "Búp bê Barbie",
-      price: "60,000 VND",
-      status: "Còn trống",
-      distance: 3.2,
-      lenderAvatar: user,
-    },
-    {
-      id: 4,
-      image: toy1,
-      name: "Khối xếp hình",
-      price: "40,000 VND",
-      status: "Còn trống",
-      distance: 2.0,
-      lenderAvatar: user,
-    },
-    {
-      id: 5,
-      image: toy1,
-      name: "Xe điều khiển",
-      price: "80,000 VND",
-      status: "Hết đồ",
-      distance: 4.5,
-      lenderAvatar: user,
-    },
-    {
-      id: 6,
-      image: toy1,
-      name: "Đồ chơi xếp hình",
-      price: "30,000 VND",
-      status: "Còn trống",
-      distance: 1.2,
-      lenderAvatar: user,
-    },
-  ]);
-
-  // State cho Modal nhập thông tin mượn
+  // State for borrow modal
   const [showBorrowModal, setShowBorrowModal] = useState(false);
   const [borrowStart, setBorrowStart] = useState(null);
   const [borrowEnd, setBorrowEnd] = useState(null);
   const [note, setNote] = useState("");
-  // Lưu lại id của item được chọn
   const [selectedToyId, setSelectedToyId] = useState(null);
 
-  // Hàm xử lý khi submit bộ lọc
-  const handleFilterSubmit = (e) => {
-    e.preventDefault();
-    console.log({ color, condition, category, ageRange, brand, distance });
+  // Get JWT token from localStorage
+  const getAuthToken = () => {
+    return localStorage.getItem("token"); // Adjust based on how you store the token
   };
 
-  // Mở Modal mượn đồ chơi, lưu lại id của item được chọn
+  // Axios instance with default headers
+  const axiosInstance = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  // Add token to requests
+  axiosInstance.interceptors.request.use(
+    (config) => {
+      const token = getAuthToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
+
+  // Get user's current location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (err) => {
+          toast.error("Không thể lấy vị trí của bạn. Vui lòng cho phép truy cập vị trí.");
+          setUserLocation({ latitude: null, longitude: null });
+        }
+      );
+    } else {
+      toast.error("Trình duyệt của bạn không hỗ trợ định vị.");
+      setUserLocation({ latitude: null, longitude: null });
+    }
+  }, []);
+
+  // Fetch categories for filter dropdown
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axiosInstance.get("/Products/categories");
+        setCategories(response.data);
+      } catch (err) {
+        toast.error("Lỗi khi tải danh mục!");
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  // Fetch toys, owner profiles, and distances
+  useEffect(() => {
+    const fetchToys = async () => {
+      try {
+        setLoading(true);
+        const response = await axiosInstance.get("/Products");
+        const toys = response.data;
+
+        // Fetch owner profiles for each toy
+        const ownerPromises = toys.map(async (toy) => {
+          if (!ownerProfiles[toy.userId]) {
+            const ownerResponse = await axiosInstance.get(
+              `/Products/${toy.productId}/owner`
+            );
+            return { userId: toy.userId, owner: ownerResponse.data };
+          }
+          return null;
+        });
+
+        const owners = await Promise.all(ownerPromises);
+        const newOwnerProfiles = { ...ownerProfiles };
+        owners.forEach((owner) => {
+          if (owner) {
+            newOwnerProfiles[owner.userId] = owner.owner;
+          }
+        });
+        setOwnerProfiles(newOwnerProfiles);
+
+        setToyList(toys);
+        setLoading(false);
+      } catch (err) {
+        setError("Không thể tải danh sách đồ chơi. Vui lòng thử lại sau.");
+        setLoading(false);
+        toast.error("Lỗi khi tải dữ liệu!");
+      }
+    };
+
+    fetchToys();
+  }, []);
+
+  // Fetch distances for each toy when toys or user location changes
+  useEffect(() => {
+    const fetchDistances = async () => {
+      if (!userLocation.latitude || !userLocation.longitude || toyList.length === 0) return;
+
+      const distancePromises = toyList.map(async (toy) => {
+        try {
+          const response = await axiosInstance.get(
+            `/User/distance-to-product/${toy.productId}`,
+            {
+              params: {
+                myLatitude: userLocation.latitude,
+                myLongitude: userLocation.longitude,
+              },
+            }
+          );
+          return { productId: toy.productId, distance: response.data.distanceKilometers };
+        } catch (err) {
+          return { productId: toy.productId, distance: null };
+        }
+      });
+
+      const distanceResults = await Promise.all(distancePromises);
+      const newDistances = {};
+      distanceResults.forEach((result) => {
+        newDistances[result.productId] = result.distance;
+      });
+      setDistances(newDistances);
+    };
+
+    fetchDistances();
+  }, [toyList, userLocation]);
+
+  // Handle filter submission (client-side filtering)
+  const handleFilterSubmit = (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    axiosInstance
+      .get("/Products")
+      .then((response) => {
+        let filteredToys = response.data;
+
+        // Apply filters on the client side
+        if (color) {
+          filteredToys = filteredToys.filter((toy) =>
+            toy.description?.toLowerCase().includes(color.toLowerCase())
+          );
+        }
+        if (condition) {
+          filteredToys = filteredToys.filter(
+            (toy) => toy.productStatus?.toLowerCase() === condition.toLowerCase()
+          );
+        }
+        if (category) {
+          filteredToys = filteredToys.filter(
+            (toy) => toy.categoryName?.toLowerCase() === category.toLowerCase()
+          );
+        }
+        if (ageRange) {
+          const [minAge, maxAge] = ageRange.split("-").map(Number);
+          filteredToys = filteredToys.filter(
+            (toy) =>
+              toy.suitableAge >= minAge &&
+              (maxAge ? toy.suitableAge <= maxAge : true)
+          );
+        }
+        if (brand) {
+          filteredToys = filteredToys.filter((toy) =>
+            toy.description?.toLowerCase().includes(brand.toLowerCase())
+          );
+        }
+        if (distance) {
+          filteredToys = filteredToys.filter((toy) => {
+            const toyDistance = distances[toy.productId];
+            return toyDistance !== null && toyDistance <= Number(distance);
+          });
+        }
+
+        setToyList(filteredToys);
+        setLoading(false);
+        toast.success("Đã áp dụng bộ lọc!");
+      })
+      .catch((err) => {
+        setError("Không thể áp dụng bộ lọc. Vui lòng thử lại.");
+        setLoading(false);
+        toast.error("Lỗi khi áp dụng bộ lọc!");
+      });
+  };
+
+  // Open borrow modal and store selected toy ID
   const handleOpenBorrowModal = (toyId) => {
     setSelectedToyId(toyId);
     setShowBorrowModal(true);
@@ -127,29 +265,23 @@ const SearchingToy = () => {
 
   const handleCloseBorrowModal = () => {
     setShowBorrowModal(false);
-    // Reset lại thông tin nhập nếu cần
     setBorrowStart(null);
     setBorrowEnd(null);
     setNote("");
     setSelectedToyId(null);
   };
 
-  // Xử lý gửi yêu cầu mượn, ẩn item và hiển thị toast success
+  // Handle sending borrow request (simulated for now)
   const handleSendRequest = () => {
-    console.log({ borrowStart, borrowEnd, note, selectedToyId });
-    // Loại bỏ item có id = selectedToyId khỏi danh sách
     setToyList((prevList) =>
-      prevList.filter((toy) => toy.id !== selectedToyId)
+      prevList.filter((toy) => toy.productId !== selectedToyId)
     );
-    // Hiển thị thông báo thành công
     toast.success("Gửi yêu cầu mượn thành công!");
-    // Đóng modal sau khi gửi yêu cầu
     handleCloseBorrowModal();
   };
 
   return (
     <div className="searching-toy-page home-page">
-      {/* Header dùng chung */}
       <Header
         activeLink={activeLink}
         setActiveLink={setActiveLink}
@@ -160,14 +292,11 @@ const SearchingToy = () => {
 
       <Container fluid>
         <Row>
-          {/* Side Menu */}
           <Col xs={12} md={2} className="side-menu">
             <SideMenu menuItems={sideMenuItems} activeItem={1} />
           </Col>
 
-          {/* Main Content */}
           <Col xs={12} md={9} className="main-content">
-            {/* Nút bật/tắt bộ lọc */}
             <div className="filter-toggle mb-3">
               <Button
                 variant="outline-secondary"
@@ -177,7 +306,6 @@ const SearchingToy = () => {
               </Button>
             </div>
 
-            {/* Bộ lọc ẩn (Collapse) */}
             <Collapse in={showFilter}>
               <div className="filter-panel mb-4">
                 <Form onSubmit={handleFilterSubmit}>
@@ -221,10 +349,11 @@ const SearchingToy = () => {
                           onChange={(e) => setCategory(e.target.value)}
                         >
                           <option value="">Chọn danh mục</option>
-                          <option value="xe">Xe</option>
-                          <option value="robot">Robot</option>
-                          <option value="bupbe">Búp bê</option>
-                          <option value="khixep">Khối xếp hình</option>
+                          {categories.map((cat, index) => (
+                            <option key={index} value={cat.toLowerCase()}>
+                              {cat}
+                            </option>
+                          ))}
                         </Form.Control>
                       </Form.Group>
                     </Col>
@@ -285,70 +414,93 @@ const SearchingToy = () => {
               </div>
             </Collapse>
 
-            {/* Hiển thị danh sách đồ chơi */}
-            <Row>
-              {toyList.map((toy) => (
-                <Col key={toy.id} xs={12} md={6} className="mb-4">
-                  <Card className="toy-card">
-                    <Card.Img
-                      variant="top"
-                      src={toy.image}
-                      className="toy-image"
-                    />
-                    <Card.Body>
-                      <Card.Title className="toy-name">{toy.name}</Card.Title>
-                      <Card.Text className="toy-price">{toy.price}</Card.Text>
-                      <Card.Text className="toy-status">
-                        <strong>Trạng thái: </strong>
-                        <span
-                          className={
-                            toy.status === "Còn trống"
-                              ? "available"
-                              : "unavailable"
-                          }
-                        >
-                          {toy.status}
-                        </span>
-                      </Card.Text>
-                      <Card.Text className="toy-distance">
-                        <strong>Khoảng cách: </strong>
-                        {toy.distance} km
-                      </Card.Text>
-                      <div className="lender-info d-flex align-items-center mb-2">
-                        <img
-                          src={toy.lenderAvatar}
-                          alt="Lender Avatar"
-                          className="lender-avatar"
-                        />
-                        <a
-                          className="ms-2"
-                          href="/userinfor"
-                          id="trangcanhanlink"
-                        >
-                          Trang cá nhân người cho mượn
-                        </a>
-                      </div>
-                      <div className="toy-actions d-flex justify-content-between">
-                        <Button
-                          variant="primary"
-                          size="lg"
-                          onClick={() => handleOpenBorrowModal(toy.id)}
-                        >
-                          Mượn
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="lg"
-                          onClick={() => navigate("/message")}
-                        >
-                          Nhắn tin
-                        </Button>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
+            {loading ? (
+              <div className="text-center">
+                <p>Đang tải dữ liệu...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center text-danger">
+                <p>{error}</p>
+              </div>
+            ) : toyList.length === 0 ? (
+              <div className="text-center">
+                <p>Không tìm thấy đồ chơi nào.</p>
+              </div>
+            ) : (
+              <Row>
+                {toyList.map((toy) => (
+                  <Col key={toy.productId} xs={12} md={6} className="mb-4">
+                    <Card className="toy-card">
+                      <Card.Img
+                        variant="top"
+                        src={
+                          toy.imagePaths && toy.imagePaths.length > 0
+                            ? `${API_BASE_URL}${toy.imagePaths[0]}`
+                            : "https://via.placeholder.com/200"
+                        }
+                        className="toy-image"
+                      />
+                      <Card.Body>
+                        <Card.Title className="toy-name">{toy.name}</Card.Title>
+                        <Card.Text className="toy-price">
+                          {toy.price.toLocaleString("vi-VN")} VND
+                        </Card.Text>
+                        <Card.Text className="toy-status">
+                          <strong>Trạng thái: </strong>
+                          <span
+                            className={
+                              toy.available === 0 ? "available" : "unavailable"
+                            }
+                          >
+                            {toy.available === 0 ? "Còn trống" : "Hết đồ"}
+                          </span>
+                        </Card.Text>
+                        <Card.Text className="toy-distance">
+                          <strong>Khoảng cách: </strong>
+                          {distances[toy.productId] !== undefined
+                            ? distances[toy.productId] !== null
+                              ? `${distances[toy.productId].toFixed(1)} km`
+                              : "Không xác định"
+                            : "Đang tính..."}
+                        </Card.Text>
+                        <div className="lender-info d-flex align-items-center justify-content-center mb-2">
+                          <img
+                            src={
+                              ownerProfiles[toy.userId]?.avatar ||
+                              "https://via.placeholder.com/35"
+                            }
+                            alt="Lender Avatar"
+                            className="lender-avatar"
+                          />
+                          <a
+                            className="lender-link ms-2"
+                            href={`/userinfor/${toy.userId}`}
+                            id="trangcanhanlink"
+                          >
+                            Trang cá nhân người cho mượn
+                          </a>
+                        </div>
+                        <div className="toy-actions d-flex justify-content-center gap-2">
+                          <Button
+                            variant="primary"
+                            onClick={() => handleOpenBorrowModal(toy.productId)}
+                            disabled={toy.available !== 0}
+                          >
+                            Mượn
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            onClick={() => navigate("/message")}
+                          >
+                            Nhắn tin
+                          </Button>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+            )}
             <div className="text-center">
               <Button variant="outline-primary" className="view-more-btn">
                 Xem thêm
@@ -359,7 +511,6 @@ const SearchingToy = () => {
         <Footer/>
       </Container>
 
-      {/* Modal Nhập thông tin mượn */}
       <Modal show={showBorrowModal} onHide={handleCloseBorrowModal} centered>
         <Modal.Header closeButton>
           <Modal.Title>Nhập thông tin mượn</Modal.Title>
@@ -372,7 +523,7 @@ const SearchingToy = () => {
                 selected={borrowStart}
                 onChange={(date) => setBorrowStart(date)}
                 dateFormat="yyyy-MM-dd"
-                className="form-control"
+                className="form-control date-picker-input"
                 placeholderText="Chọn ngày bắt đầu"
               />
             </Form.Group>
@@ -382,7 +533,7 @@ const SearchingToy = () => {
                 selected={borrowEnd}
                 onChange={(date) => setBorrowEnd(date)}
                 dateFormat="yyyy-MM-dd"
-                className="form-control"
+                className="form-control date-picker-input"
                 placeholderText="Chọn ngày kết thúc"
               />
             </Form.Group>
@@ -408,7 +559,6 @@ const SearchingToy = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Toast Container hiển thị thông báo thành công */}
       <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );

@@ -18,10 +18,10 @@ namespace ToySharingAPI.Controllers
         {
             _context = context;
         }
+
         // Hàm hỗ trợ lấy mainUserId từ JWT token
         private async Task<int> GetAuthenticatedUserId()
         {
-            // Kiểm tra xem User có được xác thực không
             if (!User.Identity.IsAuthenticated)
                 throw new UnauthorizedAccessException("Người dùng chưa đăng nhập.");
 
@@ -38,6 +38,18 @@ namespace ToySharingAPI.Controllers
 
             return mainUser.Id;
         }
+
+        // Thêm endpoint để lấy danh sách danh mục
+        [HttpGet("categories")]
+        public async Task<ActionResult<IEnumerable<string>>> GetCategories()
+        {
+            var categories = await _context.Categories
+                .Select(c => c.CategoryName)
+                .ToListAsync();
+
+            return Ok(categories);
+        }
+
         [HttpPut("{id}/visibility-status")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ToggleProductVisibility(int id)
@@ -48,7 +60,6 @@ namespace ToySharingAPI.Controllers
                 return NotFound("Product not found.");
             }
 
-            // Toggle available status
             product.Available = (product.Available == 0) ? 2 : 0;
             _context.Entry(product).State = EntityState.Modified;
             await _context.SaveChangesAsync();
@@ -56,7 +67,6 @@ namespace ToySharingAPI.Controllers
             return Ok(new { message = "Product visibility updated.", product });
         }
 
-        // View all products
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ProductDTO>>> GetAllProducts()
         {
@@ -69,17 +79,18 @@ namespace ToySharingAPI.Controllers
                     UserId = p.UserId,
                     Name = p.Name,
                     CategoryName = p.Category != null ? p.Category.CategoryName : null,
-                    Available = p.Available ?? 0, // Mặc định 0 nếu null
+                    Available = p.Available ?? 0,
                     Description = p.Description,
                     ProductStatus = p.ProductStatus,
                     Price = p.Price,
                     SuitableAge = p.SuitableAge,
-                    CreatedAt = p.CreatedAt ?? DateTime.UtcNow, // Mặc định UTCNow nếu null
+                    CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
                     ImagePaths = p.Images.Select(i => i.Path).ToList()
                 })
                 .ToListAsync();
             return Ok(products);
         }
+
         [HttpGet("user/{userId}")]
         public async Task<ActionResult<IEnumerable<ProductDTO>>> GetProductsByUserId(int userId)
         {
@@ -105,7 +116,7 @@ namespace ToySharingAPI.Controllers
 
             return Ok(products);
         }
-        // View product information
+
         [HttpGet("{id}")]
         public async Task<ActionResult<ProductDTO>> GetProductById(int id)
         {
@@ -131,8 +142,6 @@ namespace ToySharingAPI.Controllers
             return Ok(product);
         }
 
-
-        // View product detail
         [HttpGet("detail/{productId}")]
         public async Task<ActionResult<object>> GetProductDetail(int productId)
         {
@@ -162,7 +171,6 @@ namespace ToySharingAPI.Controllers
             return Ok(product);
         }
 
-        // View user information (owner) với Rating
         [HttpGet("{id}/owner")]
         public async Task<ActionResult<UserDTO>> GetOwnerProfileByProductId(int id)
         {
@@ -201,7 +209,6 @@ namespace ToySharingAPI.Controllers
             return Ok(owner);
         }
 
-        // Input product (Thêm sản phẩm với ảnh)
         [HttpPost]
         public async Task<ActionResult<ProductDTO>> CreateProduct([FromBody] ProductDTO productDto)
         {
@@ -240,7 +247,6 @@ namespace ToySharingAPI.Controllers
                 UpdatedAt = DateTime.UtcNow
             };
 
-            // Xử lý Category
             if (!string.IsNullOrWhiteSpace(productDto.CategoryName))
             {
                 var category = await _context.Categories
@@ -257,10 +263,9 @@ namespace ToySharingAPI.Controllers
                 product.CategoryId = category.CategoryId;
             }
 
-            // Xử lý ImagePaths
             if (productDto.ImagePaths != null && productDto.ImagePaths.Any())
             {
-                if (productDto.ImagePaths.Count > 10) // Giới hạn số lượng ảnh
+                if (productDto.ImagePaths.Count > 10)
                 {
                     return BadRequest("Maximum 10 images are allowed.");
                 }
@@ -270,7 +275,7 @@ namespace ToySharingAPI.Controllers
                     {
                         return BadRequest("Image path cannot be empty.");
                     }
-                    if (path.Length > 255) // Giới hạn độ dài đường dẫn
+                    if (path.Length > 255)
                     {
                         return BadRequest("Image path cannot exceed 255 characters.");
                     }
@@ -297,7 +302,6 @@ namespace ToySharingAPI.Controllers
             }
         }
 
-        // Manage product
         [HttpPut("{id}")]
         public async Task<ActionResult<ProductDTO>> UpdateProduct(int id, [FromBody] ProductDTO productDto)
         {
@@ -322,7 +326,6 @@ namespace ToySharingAPI.Controllers
                 return Forbid("You are not authorized to update this product.");
             }
 
-            // Kiểm tra các trường bắt buộc
             if (string.IsNullOrWhiteSpace(productDto.Name))
             {
                 return BadRequest("Product name is required and cannot be empty or whitespace.");
@@ -332,13 +335,11 @@ namespace ToySharingAPI.Controllers
                 return BadRequest("Suitable age must be between 0 and 100.");
             }
 
-            // Kiểm tra độ dài chuỗi
             if (!string.IsNullOrEmpty(productDto.Description) && productDto.Description.Length > 500)
             {
                 return BadRequest("Description cannot exceed 500 characters.");
             }
 
-            // Kiểm tra trạng thái Available
             if (productDto.Available != product.Available)
             {
                 var activeRequest = await _context.RentRequests
@@ -349,7 +350,6 @@ namespace ToySharingAPI.Controllers
                 }
             }
 
-            // Cập nhật thông tin sản phẩm
             product.Name = productDto.Name.Trim();
             if (!string.IsNullOrWhiteSpace(productDto.CategoryName))
             {
@@ -373,10 +373,9 @@ namespace ToySharingAPI.Controllers
             product.SuitableAge = productDto.SuitableAge;
             product.UpdatedAt = DateTime.UtcNow;
 
-            // Xử lý ImagePaths
             if (productDto.ImagePaths != null)
             {
-                if (productDto.ImagePaths.Count > 10) // Giới hạn số lượng ảnh
+                if (productDto.ImagePaths.Count > 10)
                 {
                     return BadRequest("Maximum 10 images are allowed.");
                 }
@@ -410,7 +409,6 @@ namespace ToySharingAPI.Controllers
             }
         }
 
-        // View user's toys
         [HttpGet("my-toys")]
         public async Task<ActionResult<IEnumerable<ProductDTO>>> GetMyToys()
         {
@@ -440,7 +438,6 @@ namespace ToySharingAPI.Controllers
             return Ok(products);
         }
 
-        // View user's borrowing toys
         [HttpGet("my-toys/borrowing")]
         public async Task<ActionResult<IEnumerable<ProductDTO>>> GetMyBorrowingToys()
         {
@@ -470,7 +467,6 @@ namespace ToySharingAPI.Controllers
             return Ok(products);
         }
 
-        // View all borrowed toys by other users
         [HttpGet("borrowed")]
         public async Task<ActionResult<IEnumerable<ProductDTO>>> GetBorrowedToys()
         {
@@ -500,14 +496,12 @@ namespace ToySharingAPI.Controllers
             return Ok(products);
         }
 
-        // Search product (giữ nguyên tạm thời)
         [HttpGet("search")]
         public async Task<ActionResult<IEnumerable<ProductDTO>>> SearchProducts()
         {
             return await GetAllProducts();
         }
 
-        // List Toy Recommendations
         [HttpGet("recommendations")]
         public async Task<ActionResult<IEnumerable<ProductDTO>>> ListToyRecommendations()
         {
@@ -537,6 +531,43 @@ namespace ToySharingAPI.Controllers
                 .ToListAsync();
 
             return Ok(recommendations);
+        }
+        [HttpPost("upload-image")]
+        [Authorize]
+        public async Task<IActionResult> UploadImage(IFormFile image)
+        {
+            if (image == null || image.Length == 0)
+            {
+                return BadRequest("No image uploaded.");
+            }
+
+            // Kiểm tra loại file
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+            var extension = Path.GetExtension(image.FileName).ToLower();
+            if (!allowedExtensions.Contains(extension))
+            {
+                return BadRequest("Only JPG, JPEG, PNG, and GIF files are allowed.");
+            }
+
+            // Kiểm tra kích thước file (giới hạn 5MB)
+            if (image.Length > 5 * 1024 * 1024)
+            {
+                return BadRequest("Image size must be less than 5MB.");
+            }
+
+            // Tạo tên file duy nhất
+            var fileName = $"{Guid.NewGuid()}{extension}";
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images", fileName);
+
+            // Lưu file vào thư mục wwwroot/images
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await image.CopyToAsync(stream);
+            }
+
+            // Trả về URL của ảnh
+            var imageUrl = $"/images/{fileName}";
+            return Ok(new { imageUrl });
         }
     }
 }
