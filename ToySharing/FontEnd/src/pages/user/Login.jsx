@@ -27,16 +27,20 @@ const Login = () => {
       const data = await response.json();
       console.log("📥 Phản hồi từ API:", data);
       if (response.ok) {
+        console.log("Token nhận được:", data.token);
+        const token = data.jwtToken;
+        if (!token) {
+          setError("Không nhận được token từ server!");
+          return;
+        }  
+
         // Lưu token vào localStorage hoặc sessionStorage
         if (remember) {
-          localStorage.setItem("token", data.token);
-          console.log(data);
+          localStorage.setItem("token", token);
         } else {
-          sessionStorage.setItem("token", data.token);
-          console.log(data);
+          sessionStorage.setItem("token", token);
         }
-
-        console.log("✅ Đăng nhập thành công! Chuyển hướng đến /home");
+        console.log("✅ Đăng nhập thành công! Chuyển hướng đến /home", token);
         navigate("/home");
       } else {
         setError(data.message || "Đăng nhập thất bại! Vui lòng kiểm tra lại email hoặc mật khẩu.");

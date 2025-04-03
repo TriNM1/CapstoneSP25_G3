@@ -1,6 +1,8 @@
 import "./App.css";
 import Home from "./pages/user/Home";
 import Login from "./pages/user/Login";
+import ForgotPassword from "./pages/user/forgotpassword/ForgotPassword";
+import ChangePassword from "./pages/user/changepassword/ChangePassword";
 import SignUp from "./pages/user/signup/SignUp";
 import ValidateMail from "./pages/user/signup/ValidateMail";
 import InforInput from "./pages/user/signup/InforInput";
@@ -11,7 +13,7 @@ import UserInfor from "./pages/user/generate/UserInfor";
 import UserDetail from "./pages/user/generate/UserDetail"; 
 import AddToy from "./pages/user/lender/AddToy";
 import MyToy from "./pages/user/lender/MyToy";
-import InLending from "./pages/user/lender/InLendeing";
+import InLending from "./pages/user/lender/InLending";
 import TransferHistory from "./pages/user/lender/TransferHistory";
 import Policy from "./pages/user/generate/Policy";
 import UserGuide from "./pages/user/generate/UserGuide";
@@ -33,6 +35,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/home" element={<Home />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/validatemail" element={<ValidateMail />} />
@@ -55,7 +59,7 @@ function App() {
         <Route path="/sendingrequest" element={<SendingRequest />} />
 
         <Route path="/message" element={<Message />} />
-        <Route path="/userinfor" element={<UserInfor />} />
+        <Route path="/user-info/:userId" element={<UserInfor />} />
         <Route path="/userdetail" element={<UserDetail/>} />
         <Route path="/addtoy" element={<AddToy />} />
         <Route path="/mytoy" element={<MyToy />} />

@@ -161,8 +161,11 @@ namespace ToySharingAPI.Controllers
         [HttpPost("ForgotPassword")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDTO forgotPasswordDTO)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var user = await userManager.FindByEmailAsync(forgotPasswordDTO.Email);
-            if (user == null) return BadRequest("Email not exist!");
+            if (user == null) return BadRequest("There is no account registered with this email address.");
 
             var newPassword = Guid.NewGuid().ToString().Substring(0, 8);
             await userManager.RemovePasswordAsync(user);
@@ -177,11 +180,13 @@ namespace ToySharingAPI.Controllers
         [Authorize]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDTO changePasswordDTO)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
             var user = await userManager.FindByEmailAsync(changePasswordDTO.Email);
-            if (user == null) return BadRequest("Email does not exist!");
+            if (user == null) return BadRequest("Không đúng địa chỉ email!");
 
             var result = await userManager.ChangePasswordAsync(user, changePasswordDTO.OldPassword, changePasswordDTO.NewPassword);
-            if (!result.Succeeded) return BadRequest("Password change failed!");
+            if (!result.Succeeded) return BadRequest("Mật khẩu cũ không đúng!");
 
             return Ok("Password changed successfully.");
         }

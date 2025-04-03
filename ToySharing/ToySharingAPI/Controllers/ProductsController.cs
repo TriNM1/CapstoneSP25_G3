@@ -80,7 +80,31 @@ namespace ToySharingAPI.Controllers
                 .ToListAsync();
             return Ok(products);
         }
+        [HttpGet("user/{userId}")]
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetProductsByUserId(int userId)
+        {
+            var products = await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Images)
+                .Where(p => p.UserId == userId)
+                .Select(p => new ProductDTO
+                {
+                    ProductId = p.ProductId,
+                    UserId = p.UserId,
+                    Name = p.Name,
+                    CategoryName = p.Category != null ? p.Category.CategoryName : null,
+                    Available = p.Available ?? 0,
+                    Description = p.Description,
+                    ProductStatus = p.ProductStatus,
+                    Price = p.Price,
+                    SuitableAge = p.SuitableAge,
+                    CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
+                    ImagePaths = p.Images.Select(i => i.Path).ToList()
+                })
+                .ToListAsync();
 
+            return Ok(products);
+        }
         // View product information
         [HttpGet("{id}")]
         public async Task<ActionResult<ProductDTO>> GetProductById(int id)

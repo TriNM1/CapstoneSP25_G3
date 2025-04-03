@@ -1,5 +1,58 @@
-# Bỏ qua thư mục node_modules
-node_modules/
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Bỏ qua file .env
-.env 
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+
+# Visual Studio
+.vs/
+.vs2019/
+.vs2017/
+.vscode/
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Dd]Release/
+[Dd]ReleasePublic/
+x64/
+x86/
+[Aa]rm/
+[Aa]rm64/
+[Aa]rms/
+
+# Thư mục obj
+obj/
+bin/
+
+# User-specific files
+*.user
+*.userosscache
+*.suo
+*.userprefs
+
+# Thêm các file cache khác của Visual Studio nếu có
+.vsconfig
+
+# Các file cache và temporary files khác
+*.cache
