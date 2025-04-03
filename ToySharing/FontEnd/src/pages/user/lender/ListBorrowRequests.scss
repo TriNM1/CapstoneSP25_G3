@@ -1,51 +1,59 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto&display=swap');
 
-
-$list-bg-color: #fff;
-$primary-color: #ff8a80;       // Màu hồng pastel
-$secondary-color: #ffd180;     // Màu vàng nhạt pastel
-$accent-color: #ff6f61;        // Màu cam nhẹ/hồng cam
-$font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+$primary-color: #ff6f61;
+$success-color: #28a745;
+$danger-color: #dc3545;
 
 .list-borrow-requests-page {
-  font-family: $font-family;
-
-  padding-bottom: 2rem;
+  background-color: #f7f9fc;
+  font-family: 'Roboto', sans-serif;
+  color: #333;
+  padding-bottom: 40px;
 
   .side-menu {
-    background: $list-bg-color;
+    background: #fff;
     padding: 1rem;
     border-right: 1px solid #ddd;
-    height: 100vh; // Chiều cao full viewport
+    height: 100vh;
     margin-top: 1rem;
+
     ul {
       list-style: none;
       padding: 0;
+
       li {
         margin-bottom: 1rem;
+
         a {
           text-decoration: none;
           color: #333;
           font-size: 1.1rem;
           transition: color 0.3s;
+
           &:hover {
-            color: $accent-color;
+            color: $primary-color;
           }
         }
+
         &.active a {
-          color: $accent-color;
+          color: $primary-color;
           font-weight: bold;
         }
       }
     }
+
     .menu-icon {
       display: none;
     }
+
     @media (max-width: 768px) {
       width: 50px;
       padding: 0.5rem;
+
       ul {
         display: none;
       }
+
       .menu-icon {
         display: block;
         font-size: 1.8rem;
@@ -56,82 +64,137 @@ $font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
   }
 
   .main-content {
-    padding: 1rem;
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
-  .date-filter {
-    margin-bottom: 1.5rem;
-    label {
-      font-weight: bold;
-      margin-bottom: 0.5rem;
-      display: block;
-      font-size: 1.1rem;
-      color: #333;
-    }
-    .date-picker-input {
-      width: 100%;
-      padding: 0.5rem;
-      font-size: 1rem;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      color: #333;
-      background: $list-bg-color;
-    }
-  }
-
-  .borrow-request-card {
-    background: $list-bg-color;
+  .date-picker-input {
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 1rem;
     border: 1px solid #ddd;
-    border-radius: 10px;
-    .toy-image {
-      height: 180px;
-      object-fit: cover;
-      border-top-left-radius: 10px;
-      border-top-right-radius: 10px;
-    }
-    .toy-name {
-      font-size: 1.3rem;
-      font-weight: bold;
-      margin-bottom: 0.5rem;
-      color: #333;
-    }
-    .toy-price {
-      color: $accent-color;
-      margin-bottom: 0.5rem;
-      font-size: 1.1rem;
-    }
-    .request-date,
-    .borrow-date,
-    .return-date {
-      font-size: 1rem;
-      margin-bottom: 0.3rem;
-      color: #555;
-    }
-    .requester-info {
-      img.requester-avatar {
-        width: 35px;
-        height: 35px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 1px solid #ddd;
+    border-radius: 5px;
+    color: #333;
+    background: #fff;
+  }
+
+  .lending-items-section {
+    .borrow-request-card {
+      background-color: #fff;
+      border: none;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s;
+      margin-bottom: 20px;
+
+      &:hover {
+        transform: translateY(-5px);
       }
-      span {
+
+      .toy-image {
+        height: 200px;
+        object-fit: cover;
+      }
+
+      .toy-name {
+        font-family: 'Fredoka One', cursive;
+        font-size: 1.5rem;
+        color: #ff6f61;
+        margin-bottom: 10px;
+      }
+
+      .toy-price {
         font-size: 1rem;
+        margin-bottom: 5px;
         color: #333;
       }
-    }
-    .request-actions {
-      button {
-        font-size: 0.9rem;
-        padding: 0.3rem 0.6rem;
-        margin: 0.2rem;
+
+      .request-date,
+      .borrow-date,
+      .return-date {
+        font-size: 1rem;
+        margin-bottom: 5px;
+        color: #333;
+      }
+
+      .lender-info {
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .requester-avatar {
+          width: 35px;
+          height: 35px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 1px solid #ddd;
+        }
+
+        span {
+          margin-left: 8px;
+          font-size: 1rem;
+          color: #333;
+
+          button {
+            font-size: 1rem;
+            color: #333;
+          }
+        }
+      }
+
+      .request-actions {
+        margin-top: 15px;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+
+        button {
+          font-size: 1rem;
+          padding: 10px 20px;
+          border-radius: 8px;
+          border: none;
+          cursor: pointer;
+          transition: background-color 0.3s;
+
+          &:nth-child(1) {
+            background-color: #17a2b8;
+            color: #fff;
+
+            &:hover {
+              background-color: #138496;
+            }
+          }
+
+          &:nth-child(2) {
+            background-color: #28a745;
+            color: #fff;
+
+            &:hover {
+              background-color: #218838;
+            }
+          }
+
+          &:nth-child(3) {
+            background-color: #dc3545;
+            color: #fff;
+
+            &:hover {
+              background-color: #c82333;
+            }
+          }
+        }
       }
     }
   }
 
   .view-more-btn {
     margin-top: 1rem;
-    font-size: 1.1rem;
-    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    padding: 10px 20px;
+    border-radius: 8px;
   }
 }
