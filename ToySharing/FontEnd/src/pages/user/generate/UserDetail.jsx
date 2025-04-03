@@ -125,10 +125,7 @@ const UserDetail = ({ isLoggedIn, setActiveLink, Id }) => {
                     </Button>
                   </>
                 ) : (
-                  <Button
-                    variant="warning"
-                    onClick={() => setEditMode(true)}
-                  >
+                  <Button variant="warning" onClick={() => setEditMode(true)}>
                     Chỉnh sửa
                   </Button>
                 )}

@@ -30,9 +30,12 @@ const Login = () => {
         // Lưu token vào localStorage hoặc sessionStorage
         if (remember) {
           localStorage.setItem("token", data.token);
+          console.log(data);
         } else {
           sessionStorage.setItem("token", data.token);
+          console.log(data);
         }
+
         console.log("✅ Đăng nhập thành công! Chuyển hướng đến /home");
         navigate("/home");
       } else {
