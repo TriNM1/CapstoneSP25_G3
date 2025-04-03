@@ -13,7 +13,7 @@ import UserInfor from "./pages/user/generate/UserInfor";
 import UserDetail from "./pages/user/generate/UserDetail"; 
 import AddToy from "./pages/user/lender/AddToy";
 import MyToy from "./pages/user/lender/MyToy";
-import InLending from "./pages/user/lender/InLendeing";
+import InLending from "./pages/user/lender/InLending";
 import TransferHistory from "./pages/user/lender/TransferHistory";
 import Policy from "./pages/user/generate/Policy";
 import UserGuide from "./pages/user/generate/UserGuide";
@@ -59,7 +59,7 @@ function App() {
         <Route path="/sendingrequest" element={<SendingRequest />} />
 
         <Route path="/message" element={<Message />} />
-        <Route path="/userinfor" element={<UserInfor />} />
+        <Route path="/user-info/:userId" element={<UserInfor />} />
         <Route path="/userdetail" element={<UserDetail/>} />
         <Route path="/addtoy" element={<AddToy />} />
         <Route path="/mytoy" element={<MyToy />} />

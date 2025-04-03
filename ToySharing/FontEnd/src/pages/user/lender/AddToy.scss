@@ -1,69 +1,129 @@
 @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto&display=swap');
 
-.add-toy-page {
-  background-color: #f7f9fc;
-  font-family: 'Roboto', sans-serif;
-  color: #444;
-  padding-bottom: 40px;
+$primary-color: #ff6f61; // Match InLending's coral color
+$success-color: #28a745; // Match InLending's green for success
+$danger-color: #dc3545;  // Match InLending's red for danger
 
-  .page-title {
-    font-family: 'Fredoka One', cursive;
-    font-size: 2rem;
-    color: #ff6f61;
-    text-align: center;
-    margin-bottom: 20px;
+.add-toy-page {
+  background-color: #f7f9fc; // Match InLending's page background
+  font-family: 'Roboto', sans-serif; // Match InLending's font
+  color: #333;
+  padding-bottom: 40px; // Match InLending's padding-bottom
+
+  .side-menu {
+    background: #fff; // Match InLending's side menu background (assumed)
+    padding: 1rem;
+    border-right: 1px solid #ddd;
+    height: 100vh;
+    margin-top: 1rem;
+
+    ul {
+      list-style: none;
+      padding: 0;
+
+      li {
+        margin-bottom: 1rem;
+
+        a {
+          text-decoration: none;
+          color: #333;
+          font-size: 1.1rem;
+          transition: color 0.3s;
+
+          &:hover {
+            color: $primary-color; // Match InLending's accent color
+          }
+        }
+
+        &.active a {
+          color: $primary-color;
+          font-weight: bold;
+        }
+      }
+    }
+
+    .menu-icon {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      width: 50px;
+      padding: 0.5rem;
+
+      ul {
+        display: none;
+      }
+
+      .menu-icon {
+        display: block;
+        font-size: 1.8rem;
+        text-align: center;
+        color: #333;
+      }
+    }
   }
 
   .main-content {
-    background-color: #fff;
-    border-radius: 12px;
-    padding: 30px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background-color: #fff; // Match InLending's main content background
+    border-radius: 12px; // Match InLending's border-radius
+    padding: 30px; // Match InLending's padding
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); // Match InLending's shadow
   }
 
-  // Label: sát bên trái, in đậm, cỡ chữ to hơn
-  label {
-    display: block;
-    text-align: left;
-    font-weight: bold;
-    font-size: 1.1rem;
-    margin-bottom: 5px;
+  .page-title {
+    font-family: 'Fredoka One', cursive; // Match InLending's font for titles
+    font-size: 2rem;
+    color: #ff6f61; // Match InLending's accent color
+    margin-bottom: 20px;
   }
 
-  // Style cho form input và preview ảnh
-  .form-control {
-    font-size: 1rem;
-    padding: 8px;
-    border-radius: 6px;
-    border: 1px solid #ddd;
+  .form-group {
+    label {
+      font-size: 1rem;
+      font-weight: bold;
+      color: #333;
+    }
 
-    &::placeholder {
-      opacity: 0.3;
+    .form-control {
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      color: #333;
+      background: #fff;
+
+      &:focus {
+        border-color: $primary-color;
+        box-shadow: 0 0 5px rgba(255, 111, 97, 0.3);
+      }
+    }
+
+    textarea.form-control {
+      resize: vertical;
     }
   }
 
   .preview-image {
-    width: 100%;
-    max-width: 300px;
-    margin-top: 10px;
+    max-width: 200px;
+    max-height: 200px;
+    object-fit: cover;
     border-radius: 8px;
-    border: 2px solid #ff6f61;
+    border: 1px solid #ddd;
+    margin-top: 10px;
   }
 
   .submit-btn {
-    font-size: 1.1rem;
+    font-size: 1rem;
     padding: 10px 20px;
     border-radius: 8px;
-    background-color: #ff6f61;
     border: none;
+    background-color: #007bff; // Bootstrap's primary color
     color: #fff;
-    cursor: pointer;
     transition: background-color 0.3s;
-    display: block;
-    margin: 20px auto 0;
 
     &:hover {
-      background-color: #ff8a80;
+      background-color: #0056b3; // Darker shade for hover
     }
   }
 }

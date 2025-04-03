@@ -90,19 +90,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             RoleClaimType = ClaimTypes.Role,
             NameClaimType = ClaimTypes.NameIdentifier
         };
-
-        options.Events = new JwtBearerEvents
-        {
-            OnTokenValidated = async context =>
-            {
-                var tokenRepo = context.HttpContext.RequestServices.GetRequiredService<ITokenRepository>();
-                var token = context.HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                if (tokenRepo.IsTokenRevoked(token))
-                {
-                    context.Fail("This token has been revoked.");
-                }
-            }
-        };
     });
 builder.Services.AddHttpClient();
 builder.Services.AddDistributedMemoryCache();
@@ -111,67 +98,31 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromMinutes(5);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
-    options.Cookie.SameSite = SameSiteMode.None; 
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 });
 
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 builder.Services.AddSignalR();
-
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
-        builder =>
-        {
-            builder.WithOrigins("http://localhost:5173")
-                   .AllowAnyMethod()
-                   .AllowAnyHeader()
-                   .AllowCredentials();
-        });
+    options.AddPolicy("AllowAll", builder =>
+    {
+        builder.WithOrigins("http://localhost:5173")
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
 });
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-
-    var adminEmail = builder.Configuration["AdminSettings:Email"];
-    var adminPassword = builder.Configuration["AdminSettings:Password"];
-    var adminRole = "Admin";
-
-    if (!await roleManager.RoleExistsAsync(adminRole))
-    {
-        await roleManager.CreateAsync(new IdentityRole(adminRole));
-    }
-
-    var adminUser = await userManager.FindByEmailAsync(adminEmail);
-    if (adminUser == null)
-    {
-        adminUser = new IdentityUser
-        {
-            UserName = adminEmail,
-            Email = adminEmail,
-            EmailConfirmed = true
-        };
-
-        var result = await userManager.CreateAsync(adminUser, adminPassword);
-        if (result.Succeeded)
-        {
-            await userManager.AddToRoleAsync(adminUser, adminRole);
-        }
-    }
-}
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-app.UseCors("AllowAll");
+// Trong Program.cs hoặc Startup.cs
+app.UseCors("AllowLocalhost");
 app.UseSession();
 
 app.UseHttpsRedirection();

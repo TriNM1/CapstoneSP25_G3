@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Row,
@@ -10,7 +10,6 @@ import {
 } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { Link } from "react-router-dom";
 import { FaBars } from "react-icons/fa";
 import Header from "../../../components/Header";
 import toy1 from "../../../assets/toy1.jpg";
@@ -18,6 +17,7 @@ import user from "../../../assets/user.png";
 import SideMenu from "../../../components/SideMenu";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
 import "./ListBorrowRequests.scss";
 
 const ListBorrowRequests = () => {
@@ -25,7 +25,7 @@ const ListBorrowRequests = () => {
   const notificationCount = 2;
   const [activeLink, setActiveLink] = useState("muon-do-choi");
 
-  // Dữ liệu yêu cầu mượn (bao gồm thuộc tính message)
+  // Dữ liệu yêu cầu mượn ban đầu (fix cứng 4 mục, thêm requesterId thay vì userId để rõ ràng hơn)
   const initialRequests = [
     {
       id: 1,
@@ -35,6 +35,7 @@ const ListBorrowRequests = () => {
       requestDate: "2023-07-01",
       borrowDate: "2023-07-05",
       returnDate: "2023-07-10",
+      requesterId: 1, // Giả lập ID người mượn
       requesterAvatar: user,
       message: "Tôi muốn mượn xe đua mini vì nó rất thú vị.",
     },
@@ -46,6 +47,7 @@ const ListBorrowRequests = () => {
       requestDate: "2023-07-02",
       borrowDate: "2023-07-06",
       returnDate: "2023-07-11",
+      requesterId: 2,
       requesterAvatar: user,
       message: "Robot chơi sẽ giúp tôi học lập trình cơ bản.",
     },
@@ -57,6 +59,7 @@ const ListBorrowRequests = () => {
       requestDate: "2023-07-03",
       borrowDate: "2023-07-07",
       returnDate: "2023-07-12",
+      requesterId: 3,
       requesterAvatar: user,
       message: "Búp bê Barbie là món đồ chơi ưa thích của tôi từ nhỏ.",
     },
@@ -68,52 +71,67 @@ const ListBorrowRequests = () => {
       requestDate: "2023-07-04",
       borrowDate: "2023-07-08",
       returnDate: "2023-07-13",
+      requesterId: 4,
       requesterAvatar: user,
       message: "Khối xếp hình giúp tôi phát triển tư duy logic.",
-    },
-    {
-      id: 5,
-      image: toy1,
-      name: "Xe điều khiển",
-      price: "80,000 VND",
-      requestDate: "2023-07-05",
-      borrowDate: "2023-07-09",
-      returnDate: "2023-07-14",
-      requesterAvatar: user,
-      message: "Xe điều khiển sẽ làm tôi hào hứng chơi với bạn bè.",
-    },
-    {
-      id: 6,
-      image: toy1,
-      name: "Đồ chơi xếp hình",
-      price: "30,000 VND",
-      requestDate: "2023-07-06",
-      borrowDate: "2023-07-10",
-      returnDate: "2023-07-15",
-      requesterAvatar: user,
-      message: "Đồ chơi xếp hình giúp tôi rèn luyện khả năng sáng tạo.",
     },
   ];
 
   // State quản lý danh sách yêu cầu
   const [requests, setRequests] = useState(initialRequests);
   const [filterDate, setFilterDate] = useState(null);
-  const [visibleItems, setVisibleItems] = useState(6);
+  const [visibleItems, setVisibleItems] = useState(4);
 
   // State cho Modal hiển thị lời nhắn
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
 
-  // State cho Modal xác nhận hành động (chấp nhận / từ chối)
+  // State cho Modal xác nhận hành động
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [confirmAction, setConfirmAction] = useState(""); // "accept" hoặc "decline"
+  const [confirmAction, setConfirmAction] = useState("");
   const [selectedRequestId, setSelectedRequestId] = useState(null);
+
+  // State cho Modal hiển thị profile
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileData, setProfileData] = useState(null);
+
+  // Gọi API để lấy dữ liệu yêu cầu mượn
+  useEffect(() => {
+    const fetchRequests = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get("https://localhost:7128/api/Requests/pending", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const formattedRequests = response.data.map((req) => ({
+          id: req.requestId,
+          image: req.image || toy1,
+          name: req.productName,
+          price: `${req.price.toLocaleString("vi-VN")} VND`,
+          requestDate: new Date(req.requestDate).toISOString().split("T")[0],
+          borrowDate: new Date(req.rentDate).toISOString().split("T")[0],
+          returnDate: new Date(req.returnDate).toISOString().split("T")[0],
+          requesterId: req.userId, // Sử dụng userId từ API làm requesterId
+          requesterAvatar: req.borrowerAvatar || user,
+          message: req.message,
+        }));
+        setRequests([...initialRequests, ...formattedRequests]);
+      } catch (error) {
+        console.error("Error fetching requests:", error);
+        toast.error("Không thể tải dữ liệu từ API!");
+        setRequests(initialRequests);
+      }
+    };
+
+    fetchRequests();
+  }, []);
 
   const handleLoadMore = () => {
     setVisibleItems(visibleItems + 3);
   };
 
-  // Định dạng ngày nếu có chọn (yyyy-MM-dd)
   const formattedFilterDate = filterDate
     ? filterDate.toISOString().split("T")[0]
     : "";
@@ -124,34 +142,68 @@ const ListBorrowRequests = () => {
 
   const visibleRequests = filteredRequests.slice(0, visibleItems);
 
-  // Hiển thị modal lời nhắn
   const handleViewMessage = (message) => {
     setModalMessage(message);
     setShowMessageModal(true);
   };
 
-  // Xử lý xác nhận hành động chấp nhận hoặc từ chối
   const handleConfirmAction = (action, id) => {
     setConfirmAction(action);
     setSelectedRequestId(id);
     setShowConfirmModal(true);
   };
 
-  const handleConfirm = () => {
-    if (confirmAction === "accept") {
+  const handleConfirm = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const actionUrl = `https://localhost:7128/api/Requests/${selectedRequestId}/status`;
+      const newStatus = confirmAction === "accept" ? 1 : 2;
+      await axios.put(
+        actionUrl,
+        { newStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
       setRequests((prev) =>
         prev.filter((request) => request.id !== selectedRequestId)
       );
-      toast.success("Chấp nhận yêu cầu thành công!");
-    } else if (confirmAction === "decline") {
+      toast.success(
+        confirmAction === "accept"
+          ? "Chấp nhận yêu cầu thành công!"
+          : "Từ chối yêu cầu thành công!"
+      );
+    } catch (error) {
+      console.error("Error processing request:", error);
+      toast.error("Có lỗi xảy ra khi xử lý yêu cầu! Chỉ xóa cục bộ.");
       setRequests((prev) =>
         prev.filter((request) => request.id !== selectedRequestId)
       );
-      toast.success("Từ chối yêu cầu thành công!");
+    } finally {
+      setShowConfirmModal(false);
+      setConfirmAction("");
+      setSelectedRequestId(null);
     }
-    setShowConfirmModal(false);
-    setConfirmAction("");
-    setSelectedRequestId(null);
+  };
+
+  // Hàm gọi API để lấy thông tin profile người mượn
+  const handleViewProfile = async (requesterId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(`https://localhost:7128/api/User/profile/${requesterId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setProfileData(response.data.userInfo); // Lấy userInfo từ UserProfileDTO
+      setShowProfileModal(true);
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      toast.error("Không thể tải thông tin người dùng!");
+    }
   };
 
   return (
@@ -160,17 +212,16 @@ const ListBorrowRequests = () => {
         activeLink={activeLink}
         setActiveLink={setActiveLink}
         isLoggedIn={true}
-        unreadMessages={3}
+        unreadMessages={unreadMessages}
         notificationCount={notificationCount}
       />
 
       <Container fluid>
         <Row>
-          {/* Side Menu dùng component chung */}
           <Col xs={12} md={2}>
             <SideMenu
               menuItems={[
-                { id: 1, label: "Thêm đồ chơi cho mượn", link: "/addtoy" },
+                { id: 1, label: "Đăng Tải Đồ Chơi Mới", link: "/addtoy" },
                 { id: 2, label: "Danh sách đồ chơi của tôi", link: "/mytoy" },
                 { id: 3, label: "Đang cho mượn", link: "/inlending" },
                 {
@@ -184,7 +235,6 @@ const ListBorrowRequests = () => {
             />
           </Col>
 
-          {/* Main Content */}
           <Col xs={12} md={9} className="main-content">
             <div className="date-filter mb-3">
               <Form.Group controlId="filterDate">
@@ -209,12 +259,8 @@ const ListBorrowRequests = () => {
                       className="toy-image"
                     />
                     <Card.Body>
-                      <Card.Title className="toy-name">
-                        {request.name}
-                      </Card.Title>
-                      <Card.Text className="toy-price">
-                        {request.price}
-                      </Card.Text>
+                      <Card.Title className="toy-name">{request.name}</Card.Title>
+                      <Card.Text className="toy-price">{request.price}</Card.Text>
                       <Card.Text className="request-date">
                         <strong>Ngày gửi yêu cầu:</strong> {request.requestDate}
                       </Card.Text>
@@ -231,7 +277,13 @@ const ListBorrowRequests = () => {
                           className="requester-avatar"
                         />
                         <span className="ms-2">
-                          <a href="/userinfo">Trang cá nhân người muốn mượn</a>
+                          <Button
+                            variant="link"
+                            className="p-0 text-decoration-none"
+                            onClick={() => handleViewProfile(request.requesterId)}
+                          >
+                            Trang cá nhân người muốn mượn
+                          </Button>
                         </span>
                       </div>
                       <div className="request-actions d-flex justify-content-between">
@@ -245,18 +297,14 @@ const ListBorrowRequests = () => {
                         <Button
                           variant="success"
                           size="sm"
-                          onClick={() =>
-                            handleConfirmAction("accept", request.id)
-                          }
+                          onClick={() => handleConfirmAction("accept", request.id)}
                         >
                           Chấp nhận
                         </Button>
                         <Button
                           variant="danger"
                           size="sm"
-                          onClick={() =>
-                            handleConfirmAction("decline", request.id)
-                          }
+                          onClick={() => handleConfirmAction("decline", request.id)}
                         >
                           Từ chối
                         </Button>
@@ -298,7 +346,7 @@ const ListBorrowRequests = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Modal xác nhận hành động chấp nhận / từ chối */}
+      {/* Modal xác nhận hành động */}
       <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Xác nhận</Modal.Title>
@@ -317,6 +365,39 @@ const ListBorrowRequests = () => {
           </Button>
           <Button variant="primary" onClick={handleConfirm}>
             Xác nhận
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal hiển thị thông tin profile */}
+      <Modal show={showProfileModal} onHide={() => setShowProfileModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Thông tin người mượn</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {profileData ? (
+            <div>
+              <img
+                src={profileData.avatar || user}
+                alt="Avatar"
+                className="rounded-circle mb-3"
+                style={{ width: "100px", height: "100px" }}
+              />
+              <p><strong>Tên:</strong> {profileData.name}</p>
+              <p><strong>Tuổi:</strong> {profileData.age}</p>
+              <p><strong>Địa chỉ:</strong> {profileData.address}</p>
+              <p><strong>Đánh giá:</strong> {profileData.rating.toFixed(2)}</p>
+            </div>
+          ) : (
+            <p>Đang tải thông tin...</p>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowProfileModal(false)}
+          >
+            Đóng
           </Button>
         </Modal.Footer>
       </Modal>
