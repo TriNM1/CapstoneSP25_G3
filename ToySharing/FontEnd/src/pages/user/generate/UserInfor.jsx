@@ -24,7 +24,7 @@ import axios from "axios";
 
 const UserInfor = () => {
   const navigate = useNavigate();
-  const { userId } = useParams(); // Lấy userId từ URL params (chỉ khai báo một lần)
+  const { userId } = useParams(); // Lấy userId từ URL params
 
   // State cho header active link
   const [activeLink, setActiveLink] = useState("user-info");
@@ -42,10 +42,10 @@ const UserInfor = () => {
 
   // State cho danh sách đồ chơi
   const [toyList, setToyList] = useState([]);
-  const [filteredToyList, setFilteredToyList] = useState([]); // Danh sách đồ chơi đã lọc
+  const [filteredToyList, setFilteredToyList] = useState([]); // Danh sách đồ chơi sau khi lọc
   const [noToysMessage, setNoToysMessage] = useState("");
 
-  // State cho trạng thái tải
+  // State cho loading
   const [loading, setLoading] = useState(true);
 
   // State cho bộ lọc
@@ -66,7 +66,7 @@ const UserInfor = () => {
 
   const API_BASE_URL = "https://localhost:7128/api";
 
-  // Lấy thông tin người dùng và danh sách đồ chơi khi component được mount
+  // Fetch thông tin người dùng và danh sách đồ chơi
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
@@ -104,22 +104,24 @@ const UserInfor = () => {
     const fetchUserToys = async () => {
       try {
         const token = localStorage.getItem("token");
-        // Gọi API để lấy danh sách đồ chơi của người dùng có userId
         const response = await axios.get(`${API_BASE_URL}/Products/user/${userId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        const products = response.data.filter(
-          (product) => product.userId === parseInt(userId)
-        ); // Lọc đồ chơi theo userId
+        const products = response.data;
 
-        if (products.length === 0) {
+        // Lọc danh sách đồ chơi theo userId
+        const userToys = products.filter(
+          (product) => product.userId === parseInt(userId)
+        );
+
+        if (userToys.length === 0) {
           setNoToysMessage("Người dùng này chưa đăng đồ chơi nào.");
           setToyList([]);
           setFilteredToyList([]);
         } else {
-          const mappedToys = products.map((product) => ({
+          const mappedToys = userToys.map((product) => ({
             id: product.productId,
             image:
               product.imagePaths && product.imagePaths.length > 0
@@ -133,7 +135,7 @@ const UserInfor = () => {
             suitableAge: product.suitableAge || 0,
           }));
           setToyList(mappedToys);
-          setFilteredToyList(mappedToys); // Ban đầu, danh sách đã lọc giống danh sách gốc
+          setFilteredToyList(mappedToys);
         }
       } catch (error) {
         console.error("Lỗi khi lấy danh sách đồ chơi:", error);
@@ -149,26 +151,23 @@ const UserInfor = () => {
     fetchUserToys();
   }, [userId, navigate]);
 
-  // Hàm áp dụng bộ lọc
+  // Xử lý bộ lọc
   const handleFilterSubmit = (e) => {
     e.preventDefault();
     let filtered = [...toyList];
 
-    // Lọc theo danh mục
     if (category) {
       filtered = filtered.filter(
         (toy) => toy.category.toLowerCase() === category.toLowerCase()
       );
     }
 
-    // Lọc theo tình trạng
     if (condition) {
       filtered = filtered.filter(
         (toy) => toy.condition.toLowerCase() === condition.toLowerCase()
       );
     }
 
-    // Lọc theo độ tuổi
     if (ageRange) {
       const [minAge, maxAge] = ageRange.split("-").map(Number);
       filtered = filtered.filter((toy) => {
@@ -180,25 +179,16 @@ const UserInfor = () => {
       });
     }
 
-    // Lọc theo khoảng cách (nếu có)
     if (distanceFilter) {
-      const maxDistance = parseInt(distanceFilter);
+      const maxDistance = parseFloat(distanceFilter);
       if (userInfo.distance != null) {
-        filtered = filtered.filter(() => userInfo.distance <= maxDistance);
+        filtered = userInfo.distance <= maxDistance ? filtered : [];
       }
     }
 
-    // Lọc theo màu sắc và thương hiệu (nếu API hỗ trợ, hiện tại chưa có dữ liệu)
-    if (color) {
-      // Cần thêm logic nếu API trả về thông tin màu sắc
-      console.log("Lọc theo màu sắc:", color);
-    }
-    if (brand) {
-      // Cần thêm logic nếu API trả về thông tin thương hiệu
-      console.log("Lọc theo thương hiệu:", brand);
-    }
-
+    // Các bộ lọc khác (color, brand) chưa được triển khai trong API, có thể bỏ qua hoặc thêm logic giả lập
     setFilteredToyList(filtered);
+
     if (filtered.length === 0) {
       setNoToysMessage("Không tìm thấy đồ chơi phù hợp với bộ lọc.");
     } else {
@@ -208,7 +198,9 @@ const UserInfor = () => {
 
   const handleOpenBorrowModal = (toyId) => {
     setSelectedToyId(toyId);
-    setShowBorrowModal(true);
+   
+
+ setShowBorrowModal(true);
   };
 
   const handleCloseBorrowModal = () => {
