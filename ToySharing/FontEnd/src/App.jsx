@@ -1,6 +1,7 @@
 import "./App.css";
 import Home from "./pages/user/Home";
 import Login from "./pages/user/Login";
+import Logout from "./components/Logout";
 import ForgotPassword from "./pages/user/forgotpassword/ForgotPassword";
 import ChangePassword from "./pages/user/changepassword/ChangePassword";
 import SignUp from "./pages/user/signup/SignUp";
@@ -36,6 +37,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/logout" element={<Logout />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/home" element={<Home />} />

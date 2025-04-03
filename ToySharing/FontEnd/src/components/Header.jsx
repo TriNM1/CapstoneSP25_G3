@@ -15,7 +15,6 @@ const Header = ({
   unreadMessages,
   notificationCount,
 }) => {
-  // Danh sách thông báo mẫu
   const notifications = [
     { id: 1, text: "Bạn có tin nhắn mới từ Alice" },
     { id: 2, text: "Xe đua mini của bạn đã được mượn" },
@@ -78,31 +77,21 @@ const Header = ({
             </Nav.Link>
           </Nav>
           <Nav className="ms-auto align-items-center">
-            {isLoggedIn && (
+            {isLoggedIn ? (
               <>
                 <Nav.Link as={Link} to="/message" className="position-relative">
                   <FaEnvelope size={20} />
                   {unreadMessages > 0 && (
-                    <Badge
-                      bg="danger"
-                      className="position-absolute top-0 start-100 translate-middle"
-                    >
+                    <Badge bg="danger" className="position-absolute top-0 start-100 translate-middle">
                       {unreadMessages}
                     </Badge>
                   )}
                 </Nav.Link>
                 <Dropdown align="end" className="notification-dropdown me-2">
-                  <Dropdown.Toggle
-                    variant="link"
-                    id="dropdown-notifications"
-                    className="p-0"
-                  >
+                  <Dropdown.Toggle variant="link" id="dropdown-notifications" className="p-0">
                     <FaBell size={20} className="notification-icon" />
                     {notificationCount > 0 && (
-                      <Badge
-                        bg="danger"
-                        className="position-absolute top-0 start-100 translate-middle"
-                      >
+                      <Badge bg="danger" className="position-absolute top-0 start-100 translate-middle">
                         {notificationCount}
                       </Badge>
                     )}
@@ -110,51 +99,31 @@ const Header = ({
                   <Dropdown.Menu className="notification-menu">
                     {notifications.length > 0 ? (
                       notifications.map((notif) => (
-                        <Dropdown.Item key={notif.id}>
-                          {notif.text}
-                        </Dropdown.Item>
+                        <Dropdown.Item key={notif.id}>{notif.text}</Dropdown.Item>
                       ))
                     ) : (
                       <Dropdown.Item>Không có thông báo</Dropdown.Item>
                     )}
                   </Dropdown.Menu>
                 </Dropdown>
+                <Dropdown align="end">
+                  <Dropdown.Toggle variant="link" id="dropdown-user" className="p-0">
+                    <img src={user} alt="Avatar" className="user-avatar" />
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>
+                    <Dropdown.Item as={Link} to="/userdetail" onClick={() => setActiveLink("profile")}>
+                      Thông tin cá nhân
+                    </Dropdown.Item>
+                    <Dropdown.Item as={Link} to="/logout" onClick={() => setActiveLink("logout")}>
+                      Đăng xuất
+                    </Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
               </>
-            )}
-            {!isLoggedIn ? (
-              <Nav.Link
-                as={Link}
-                to="/login"
-                onClick={() => setActiveLink("login")}
-              >
+            ) : (
+              <Nav.Link as={Link} to="/login" onClick={() => setActiveLink("login")}>
                 Đăng nhập
               </Nav.Link>
-            ) : (
-              <Dropdown align="end">
-                <Dropdown.Toggle
-                  variant="link"
-                  id="dropdown-user"
-                  className="p-0"
-                >
-                  <img src={user} alt="Avatar" className="user-avatar" />
-                </Dropdown.Toggle>
-                <Dropdown.Menu>
-                  <Dropdown.Item
-                    as={Link}
-                    to="/userdetail"
-                    onClick={() => setActiveLink("profile")}
-                  >
-                    Thông tin cá nhân
-                  </Dropdown.Item>
-                  <Dropdown.Item
-                    as={Link}
-                    to="/logout"
-                    onClick={() => setActiveLink("logout")}
-                  >
-                    Đăng xuất
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
             )}
           </Nav>
         </Navbar.Collapse>
