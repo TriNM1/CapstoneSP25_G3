@@ -23,7 +23,6 @@ const AddToy = () => {
   // State cho form
   const [previewImage, setPreviewImage] = useState(null);
   const [imageFile, setImageFile] = useState(null);
-  const [imageUrl, setImageUrl] = useState(null); // Lưu URL ảnh sau khi upload
   const [toyName, setToyName] = useState("");
   const [category, setCategory] = useState("");
   const [categories, setCategories] = useState([]); // Danh sách danh mục từ API
@@ -74,33 +73,6 @@ const AddToy = () => {
     }
   };
 
-  // Upload ảnh lên server
-  const uploadImage = async () => {
-    if (!imageFile) {
-      toast.error("Vui lòng chọn một ảnh cho đồ chơi!");
-      return null;
-    }
-
-    try {
-      const token = localStorage.getItem("token");
-      const formData = new FormData();
-      formData.append("image", imageFile);
-
-      const response = await axios.post(`${API_BASE_URL}/Products/upload-image`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      return response.data.imageUrl;
-    } catch (error) {
-      console.error("Lỗi khi upload ảnh:", error);
-      toast.error("Không thể upload ảnh!");
-      return null;
-    }
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
     setShowConfirmModal(true);
@@ -128,13 +100,8 @@ const AddToy = () => {
         return;
       }
 
-      // Upload ảnh và lấy URL
-      const uploadedImageUrl = await uploadImage();
-      if (!uploadedImageUrl) {
-        return; // Dừng nếu upload ảnh thất bại
-      }
-
-      setImageUrl(uploadedImageUrl);
+      // Tạm thời sử dụng một URL ảnh cứng thay vì upload
+      const uploadedImageUrl = "https://via.placeholder.com/200"; // Thay bằng URL ảnh bất kỳ nếu cần
 
       // Chuẩn bị dữ liệu sản phẩm
       const productData = {
@@ -145,7 +112,7 @@ const AddToy = () => {
         price: parseFloat(price),
         description: `${description}\nKích cỡ: ${size}\nLưu ý khi mượn: ${borrowNotes}`,
         available: 0, // Chờ admin phê duyệt
-        imagePaths: [uploadedImageUrl], // Sử dụng URL ảnh đã upload
+        imagePaths: [uploadedImageUrl], // Sử dụng URL ảnh tạm thời
       };
 
       const response = await axios.post(`${API_BASE_URL}/Products`, productData, {
@@ -159,7 +126,6 @@ const AddToy = () => {
       // Reset form
       setPreviewImage(null);
       setImageFile(null);
-      setImageUrl(null);
       setToyName("");
       setCategory("");
       setCondition("");
