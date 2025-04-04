@@ -36,7 +36,8 @@ const Home = () => {
 
   useEffect(() => {
     // Kiểm tra token trong localStorage hoặc sessionStorage để xác định trạng thái đăng nhập
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const token =
+      localStorage.getItem("token") || sessionStorage.getItem("token");
     setIsLoggedIn(!!token);
   }, []);
 
@@ -136,147 +137,163 @@ const Home = () => {
 
   return (
     <div className="home-wrapper">
-      <SideBanner image={banner_test} position="left-banner" />
-      <div className="home-page">
-      {/* Truyền prop isLoggedIn xuống Header */}
-      <Header
-        activeLink={activeLink}
-        setActiveLink={setActiveLink}
-        isLoggedIn={isLoggedIn}
-        unreadMessages={unreadMessages}
-        notificationCount={notificationCount}
-      />
-
-      {/* Banner */}
-      <div className="banner-section">
-        <Carousel indicators={false} controls={true} interval={3000}>
-          {banners.map((banner, index) => (
-            <Carousel.Item key={index}>
-              <img
-                className="d-block w-100 banner-image"
-                src={banner}
-                alt={`Slide ${index + 1}`}
-              />
-            </Carousel.Item>
-          ))}
-        </Carousel>
+      <div className="side-banner left-banner">
+        <img src={banner_test} alt="Left Banner" />
       </div>
+      <div className="home-page">
+        {/* Truyền prop isLoggedIn xuống Header */}
+        <Header
+          activeLink={activeLink}
+          setActiveLink={setActiveLink}
+          isLoggedIn={isLoggedIn}
+          unreadMessages={unreadMessages}
+          notificationCount={notificationCount}
+        />
 
-      {/* Danh sách đồ chơi */}
-      <Container className="mt-4">
-        <h2 className="section-title">Đồ chơi đề xuất</h2>
-        <Row>
-          {toyList.map((toy) => (
-            <Col key={toy.id} xs={12} md={4} className="mb-4">
-              <Card
-                className="toy-card"
-                onClick={() => handleNavigateToDetail(toy.id)}
-                style={{ cursor: "pointer" }}
-              >
-                <Card.Img variant="top" src={toy.image} className="toy-image" />
-                <Card.Body>
-                  <Card.Title className="toy-name">{toy.name}</Card.Title>
-                  <Card.Text className="toy-price">{toy.price}</Card.Text>
-                  <Card.Text className="toy-status">
-                    <strong>Trạng thái: </strong>
-                    <span
-                      className={
-                        toy.status === "Còn trống" ? "available" : "unavailable"
-                      }
-                    >
-                      {toy.status}
-                    </span>
-                  </Card.Text>
-                  <Card.Text className="toy-distance">
-                    <strong>Khoảng cách: </strong>
-                    {toy.distance} km
-                  </Card.Text>
-                  <div className="lender-info d-flex align-items-center mb-2">
-                    <img
-                      src={toy.lenderAvatar}
-                      alt="Lender Avatar"
-                      className="lender-avatar"
-                    />
-                    <a className="ms-2" href="/userdetail" id="trangcanhanlink">
-                      Trang cá nhân người cho mượn
-                    </a>
-                  </div>
-                  <div className="toy-actions d-flex justify-content-between">
-                    <Button variant="primary" size="lg" onClick={() => handleOpenBorrowModal(toy.id)}>
-                      Mượn
-                    </Button>
-                    <Button variant="secondary" size="lg">
-                      Nhắn tin
-                    </Button>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-        <div className="text-center">
-          <Button variant="outline-primary" className="view-more-btn">
-            Xem thêm
-          </Button>
+        {/* Banner */}
+        <div className="banner-section">
+          <Carousel indicators={false} controls={true} interval={3000}>
+            {banners.map((banner, index) => (
+              <Carousel.Item key={index}>
+                <img
+                  className="d-block w-100 banner-image"
+                  src={banner}
+                  alt={`Slide ${index + 1}`}
+                />
+              </Carousel.Item>
+            ))}
+          </Carousel>
         </div>
-        <Footer />
-      </Container>
 
-      {/* Modal mượn đồ chơi */}
-      <Modal show={showBorrowModal} onHide={handleCloseBorrowModal} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Nhập thông tin mượn</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group controlId="borrowStartDate" className="mb-3">
-              <Form.Label>Ngày bắt đầu mượn</Form.Label>
-              <DatePicker
-                selected={borrowStart}
-                onChange={(date) => setBorrowStart(date)}
-                dateFormat="yyyy-MM-dd"
-                className="form-control"
-                placeholderText="Chọn ngày bắt đầu"
-              />
-            </Form.Group>
-            <Form.Group controlId="borrowEndDate" className="mb-3">
-              <Form.Label>Ngày kết thúc mượn</Form.Label>
-              <DatePicker
-                selected={borrowEnd}
-                onChange={(date) => setBorrowEnd(date)}
-                dateFormat="yyyy-MM-dd"
-                className="form-control"
-                placeholderText="Chọn ngày kết thúc"
-              />
-            </Form.Group>
-            <Form.Group controlId="borrowNote">
-              <Form.Label>Ghi chú</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Nhập ghi chú"
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseBorrowModal}>
-            Quay lại
-          </Button>
-          <Button variant="primary" onClick={handleSendRequest}>
-            Gửi yêu cầu
-          </Button>
-        </Modal.Footer>
-      </Modal>
+        {/* Danh sách đồ chơi */}
+        <Container className="mt-4">
+          <h2 className="section-title">Đồ chơi đề xuất</h2>
+          <Row>
+            {toyList.map((toy) => (
+              <Col key={toy.id} xs={12} md={4} className="mb-4">
+                <Card
+                  className="toy-card"
+                  onClick={() => handleNavigateToDetail(toy.id)}
+                  style={{ cursor: "pointer" }}
+                >
+                  <Card.Img
+                    variant="top"
+                    src={toy.image}
+                    className="toy-image"
+                  />
+                  <Card.Body>
+                    <Card.Title className="toy-name">{toy.name}</Card.Title>
+                    <Card.Text className="toy-price">{toy.price}</Card.Text>
+                    <Card.Text className="toy-status">
+                      <strong>Trạng thái: </strong>
+                      <span
+                        className={
+                          toy.status === "Còn trống"
+                            ? "available"
+                            : "unavailable"
+                        }
+                      >
+                        {toy.status}
+                      </span>
+                    </Card.Text>
+                    <Card.Text className="toy-distance">
+                      <strong>Khoảng cách: </strong>
+                      {toy.distance} km
+                    </Card.Text>
+                    <div className="lender-info d-flex align-items-center mb-2">
+                      <img
+                        src={toy.lenderAvatar}
+                        alt="Lender Avatar"
+                        className="lender-avatar"
+                      />
+                      <a
+                        className="ms-2"
+                        href="/userdetail"
+                        id="trangcanhanlink"
+                      >
+                        Trang cá nhân người cho mượn
+                      </a>
+                    </div>
+                    <div className="toy-actions d-flex justify-content-between">
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        onClick={() => handleOpenBorrowModal(toy.id)}
+                      >
+                        Mượn
+                      </Button>
+                      <Button variant="secondary" size="lg">
+                        Nhắn tin
+                      </Button>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+          <div className="text-center">
+            <Button variant="outline-primary" className="view-more-btn">
+              Xem thêm
+            </Button>
+          </div>
+          <Footer />
+        </Container>
 
-      <ToastContainer position="top-right" autoClose={3000} />
+        {/* Modal mượn đồ chơi */}
+        <Modal show={showBorrowModal} onHide={handleCloseBorrowModal} centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Nhập thông tin mượn</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form>
+              <Form.Group controlId="borrowStartDate" className="mb-3">
+                <Form.Label>Ngày bắt đầu mượn</Form.Label>
+                <DatePicker
+                  selected={borrowStart}
+                  onChange={(date) => setBorrowStart(date)}
+                  dateFormat="yyyy-MM-dd"
+                  className="form-control"
+                  placeholderText="Chọn ngày bắt đầu"
+                />
+              </Form.Group>
+              <Form.Group controlId="borrowEndDate" className="mb-3">
+                <Form.Label>Ngày kết thúc mượn</Form.Label>
+                <DatePicker
+                  selected={borrowEnd}
+                  onChange={(date) => setBorrowEnd(date)}
+                  dateFormat="yyyy-MM-dd"
+                  className="form-control"
+                  placeholderText="Chọn ngày kết thúc"
+                />
+              </Form.Group>
+              <Form.Group controlId="borrowNote">
+                <Form.Label>Ghi chú</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Nhập ghi chú"
+                />
+              </Form.Group>
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleCloseBorrowModal}>
+              Quay lại
+            </Button>
+            <Button variant="primary" onClick={handleSendRequest}>
+              Gửi yêu cầu
+            </Button>
+          </Modal.Footer>
+        </Modal>
+
+        <ToastContainer position="top-right" autoClose={3000} />
+      </div>
+      <div className="side-banner right-banner">
+        <img src={banner_test2} alt="Right Banner" />
+      </div>
     </div>
-    <SideBanner image={banner_test2} position="right-banner" />
-
-    </div>
-    
   );
 };
 
