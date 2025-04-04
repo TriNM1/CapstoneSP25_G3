@@ -30,7 +30,6 @@ const AddToy = () => {
   const [ageGroup, setAgeGroup] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
-  const [size, setSize] = useState("");
   const [borrowNotes, setBorrowNotes] = useState("");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
@@ -84,7 +83,7 @@ const AddToy = () => {
     setShowConfirmModal(false);
 
     // Validate form fields
-    if (!toyName || !category || !condition || !ageGroup || !price || !description || !size || !borrowNotes) {
+    if (!toyName || !category || !condition || !ageGroup || !price || !description || !borrowNotes) {
       toast.error("Vui lòng điền đầy đủ thông tin!");
       return;
     }
@@ -95,7 +94,9 @@ const AddToy = () => {
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const localToken = localStorage.getItem("token");
+        const sessionToken = sessionStorage.getItem("token");
+        const token = sessionToken || localToken;
       if (!token) {
         toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
         navigate("/login");
@@ -113,8 +114,8 @@ const AddToy = () => {
         suitableAge: parseInt(ageGroup.split("-")[0]),
         price: parseFloat(price),
         description: `${description}\nKích cỡ: ${size}\nLưu ý khi mượn: ${borrowNotes}`,
-        available: 0, // Chờ admin phê duyệt
-        imagePaths: [uploadedImageUrl], // Sử dụng URL ảnh tạm thời
+        available: 0, 
+        imagePaths: [uploadedImageUrl], 
       };
 
       const response = await axios.post(`${API_BASE_URL}/Products`, productData, {
@@ -124,7 +125,7 @@ const AddToy = () => {
         },
       });
 
-      toast.success("Yêu cầu gửi tới admin thành công!");
+      toast.success("Đăng tải đồ chơi thành công!");
       // Reset form
       setPreviewImage(null);
       setImageFile(null);
@@ -134,7 +135,6 @@ const AddToy = () => {
       setAgeGroup("");
       setPrice("");
       setDescription("");
-      setSize("");
       setBorrowNotes("");
     } catch (error) {
       console.error("Error creating product:", error);
@@ -252,16 +252,6 @@ const AddToy = () => {
                 />
               </Form.Group>
 
-              <Form.Group controlId="size" className="mb-3">
-                <Form.Label>Kích cỡ</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Nhập kích cỡ"
-                  value={size}
-                  onChange={(e) => setSize(e.target.value)}
-                />
-              </Form.Group>
-
               <Form.Group controlId="borrowNotes" className="mb-3">
                 <Form.Label>Lưu ý khi mượn</Form.Label>
                 <Form.Control
@@ -274,7 +264,7 @@ const AddToy = () => {
               </Form.Group>
 
               <Button variant="primary" type="submit" className="submit-btn">
-                Gửi yêu cầu tới admin
+                Đăng đồ chơi
               </Button>
             </Form>
           </Col>

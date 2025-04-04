@@ -181,11 +181,7 @@ const ListBorrowRequests = () => {
                 { id: 1, label: "Đăng tải đồ chơi mới", link: "/addtoy" },
                 { id: 2, label: "Danh sách đồ chơi của tôi", link: "/mytoy" },
                 { id: 3, label: "Đang cho mượn", link: "/inlending" },
-                {
-                  id: 4,
-                  label: "Danh sách muốn mượn",
-                  link: "/listborrowrequests",
-                },
+                { id: 4, label: "Danh sách yêu cầu mượn", link: "/listborrowrequests" },
                 { id: 5, label: "Lịch sử trao đổi", link: "/transferhistory" },
               ]}
               activeItem={4}
