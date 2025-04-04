@@ -133,9 +133,16 @@ namespace ToySharingAPI.Controllers
                     {
                         // Create Token
                         var jwtToken = tokenRepository.CreateJWTToken(user, roles.ToList());
+                        var mainUser = await mainContext.Users
+                        .FirstOrDefaultAsync(u => u.AuthUserId == Guid.Parse(user.Id));
+                        if (mainUser == null)
+                        {
+                            return BadRequest("Không tìm thấy người dùng trong database chính.");
+                        }
                         var response = new LoginResponseDTO
                         {
-                            JwtToken = jwtToken
+                            JwtToken = jwtToken,
+                            UserId = mainUser.Id
                         };
                         return Ok(response);
                     }

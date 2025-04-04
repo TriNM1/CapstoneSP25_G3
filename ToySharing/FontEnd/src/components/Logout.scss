@@ -1,0 +1,18 @@
+.logout-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; 
+    background-color: #f7f9fc; 
+  }
+  
+  .loading-wrapper {
+    display: flex;
+    align-items: center;
+    font-size: 1.2rem;
+    color: #333;
+  
+    .ms-2 {
+      margin-left: 0.5rem; 
+    }
+  }

@@ -1,157 +1,173 @@
 .message-page {
+  display: flex;
+  height: 100vh;
+  background: #f0f2f5;
+
+  .sidebar {
+    width: 300px;
+    background: #fff;
+    border-right: 1px solid #ddd;
     display: flex;
-    height: 100vh;
-    background: #f0f2f5;
-  
-    // Sidebar giữ kích thước cố định hoặc có thể thay đổi theo ý muốn
-    .sidebar {
-      width: 300px;
-      background: #fff;
-      border-right: 1px solid #ddd;
-      display: flex;
-      flex-direction: column;
-  
-      .sidebar-header {
-        padding: 1rem;
-        border-bottom: 1px solid #ddd;
-        h2 {
-          margin: 0;
-          font-size: 1.5rem;
-          font-family: 'Fredoka One', cursive;
-          color: #ff6f61;
-        }
-      }
-  
-      .conversation-list {
-        flex: 1;
-        overflow-y: auto;
-        .conversation-item {
-          display: flex;
-          align-items: center;
-          padding: 10px;
-          border-bottom: 1px solid #eee;
-          cursor: pointer;
-          transition: background 0.3s;
-          &:hover {
-            background: #f7f7f7;
-          }
-          &.active {
-            background: #f7f7f7;
-          }
-          .conversation-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            margin-right: 10px;
-          }
-          .conversation-info {
-            h4 {
-              margin: 0;
-              font-size: 1rem;
-              color: #333;
-            }
-            p {
-              margin: 0;
-              font-size: 0.9rem;
-              color: #999;
-            }
-          }
-        }
+    flex-direction: column;
+
+    .sidebar-header {
+      padding: 1rem;
+      border-bottom: 1px solid #ddd;
+      h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-family: "Fredoka One", cursive;
+        color: #ff6f61;
       }
     }
-  
-    // Khung chat với chiều rộng 60vw
-    .chat-window {
-      width: 60vw;
-      display: flex;
-      flex-direction: column;
-      background: #e5ddd5;
-  
-      .chat-header {
+
+    .conversation-list {
+      flex: 1;
+      overflow-y: auto;
+      .conversation-item {
         display: flex;
-        align-items: center;
-        padding: 1rem;
-        background: #fff;
-        border-bottom: 1px solid #ddd;
-        .chat-avatar {
+        align-items: center; /* Giữ căn giữa theo chiều dọc */
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+        transition: background 0.3s;
+        &:hover {
+          background: #f7f7f7;
+        }
+        &.active {
+          background: #f7f7f7;
+        }
+        .conversation-avatar {
           width: 50px;
           height: 50px;
           border-radius: 50%;
           margin-right: 10px;
         }
-        h3 {
-          margin: 0;
-          font-size: 1.2rem;
-          color: #333;
-        }
-      }
-  
-      .chat-messages {
-        flex: 1;
-        padding: 1rem;
-        overflow-y: auto;
-  
-        .chat-message {
-          max-width: 60%;
-          margin-bottom: 1rem;
+        .conversation-info {
+          flex: 1; /* Đảm bảo phần thông tin chiếm toàn bộ không gian còn lại */
           display: flex;
           flex-direction: column;
-          &.sent {
-            align-self: flex-end;
-            .message-content {
-              background: #dcf8c6;
-            }
-          }
-          &.received {
-            align-self: flex-start;
-            .message-content {
-              background: #fff;
-            }
-          }
-          .message-content {
-            padding: 10px 15px;
-            border-radius: 20px;
-            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
-            font-size: 0.95rem;
+          justify-content: center; /* Căn giữa theo chiều dọc nếu cần */
+          text-align: left; /* Căn trái nội dung */
+          h4 {
+            margin: 0;
+            font-size: 1rem;
             color: #333;
+            text-align: left; /* Căn trái tên */
           }
-          .message-time {
+          p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #999;
+            text-align: left; /* Căn trái tin nhắn cuối */
+          }
+          span {
             font-size: 0.75rem;
             color: #999;
-            margin-top: 3px;
-            align-self: flex-end;
-          }
-        }
-      }
-  
-      .chat-input {
-        display: flex;
-        padding: 1rem;
-        background: #fff;
-        border-top: 1px solid #ddd;
-  
-        input {
-          flex: 1;
-          padding: 10px;
-          border: 1px solid #ddd;
-          border-radius: 20px;
-          outline: none;
-        }
-  
-        button {
-          margin-left: 10px;
-          padding: 10px 20px;
-          background: #ff6f61;
-          color: #fff;
-          border: none;
-          border-radius: 20px;
-          cursor: pointer;
-          transition: background 0.3s;
-          &:hover {
-            background: #ff4f41;
+            text-align: left; /* Căn trái thời gian */
           }
         }
       }
     }
   }
-  
+
+  .chat-window {
+    width: 60vw;
+    display: flex;
+    flex-direction: column;
+    background: #e5ddd5;
+
+    .chat-header {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      .chat-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        margin-right: 10px;
+      }
+      h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        color: #333;
+      }
+    }
+
+    .chat-messages {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
+
+      .chat-message {
+        max-width: 60%;
+        margin-bottom: 1rem;
+        display: flex;
+        flex-direction: column;
+
+        &.sent {
+          align-self: flex-end;
+          .message-content {
+            background: #dcf8c6;
+            color: #333;
+          }
+        }
+
+        &.received {
+          align-self: flex-start;
+          .message-content {
+            background: #fff;
+            color: #333;
+          }
+        }
+
+        .message-content {
+          padding: 10px 15px;
+          border-radius: 20px;
+          box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+          font-size: 0.95rem;
+        }
+
+        .message-time {
+          font-size: 0.75rem;
+          color: #999;
+          margin-top: 3px;
+          align-self: flex-end;
+        }
+      }
+    }
+
+    .chat-input {
+      display: flex;
+      padding: 1rem;
+      background: #fff;
+      border-top: 1px solid #ddd;
+
+      input {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        outline: none;
+      }
+
+      button {
+        margin-left: 10px;
+        padding: 10px 20px;
+        background: #ff6f61;
+        color: #fff;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: background 0.3s;
+        &:hover {
+          background: #ff4f41;
+        }
+      }
+    }
+  }
+}
