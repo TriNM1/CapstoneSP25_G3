@@ -32,7 +32,9 @@ const TransferHistory = () => {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const localToken = localStorage.getItem("token");
+        const sessionToken = sessionStorage.getItem("token");
+        const token = sessionToken || localToken;
         if (!token) {
           toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
           return;
@@ -185,7 +187,7 @@ const TransferHistory = () => {
             )}
           </Col>
         </Row>
-        <Footer/>
+        <Footer />
       </Container>
       <ToastContainer position="top-right" autoClose={3000} />
     </div>

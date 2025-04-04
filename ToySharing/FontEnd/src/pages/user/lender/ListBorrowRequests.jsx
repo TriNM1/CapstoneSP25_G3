@@ -47,7 +47,9 @@ const ListBorrowRequests = () => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const localToken = localStorage.getItem("token");
+        const sessionToken = sessionStorage.getItem("token");
+        const token = sessionToken || localToken;
         if (!token) {
           toast.error("Vui lòng đăng nhập để xem danh sách yêu cầu mượn!");
           navigate("/login");
@@ -111,7 +113,7 @@ const ListBorrowRequests = () => {
 
   const handleConfirm = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token") || localStorage.getItem("token");
       const actionUrl = `${API_BASE_URL}/Requests/${selectedRequestId}/status`;
       const newStatus = confirmAction === "accept" ? 1 : 2;
       await axios.put(
@@ -147,7 +149,7 @@ const ListBorrowRequests = () => {
 
   const handleViewProfile = async (requesterId) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token") || localStorage.getItem("token");
       const response = await axios.get(`${API_BASE_URL}/Users/profile/${requesterId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -289,7 +291,7 @@ const ListBorrowRequests = () => {
             )}
           </Col>
         </Row>
-        <Footer/>
+        <Footer />
       </Container>
 
       <Modal show={showMessageModal} onHide={() => setShowMessageModal(false)} centered>

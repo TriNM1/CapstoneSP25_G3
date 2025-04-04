@@ -40,7 +40,9 @@ const AddToy = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const localToken = localStorage.getItem("token");
+        const sessionToken = sessionStorage.getItem("token");
+        const token = sessionToken || localToken;
         if (!token) {
           toast.error("Vui lòng đăng nhập để đăng tải đồ chơi!");
           navigate("/login");
