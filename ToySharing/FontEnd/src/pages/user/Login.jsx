@@ -3,6 +3,7 @@ import "./Login.scss";
 import icon from "../../assets/google-icon.png";
 import banner from "../../assets/bannerdangnhap.jpg";
 import { useNavigate } from "react-router-dom";
+import Footer from "../../components/footer";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -125,7 +126,9 @@ const Login = () => {
           </div>
         </div>
       </div>
+      <Footer/>
     </div>
+
   );
 };
 

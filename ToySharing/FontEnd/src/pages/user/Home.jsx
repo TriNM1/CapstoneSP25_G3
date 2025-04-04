@@ -20,9 +20,12 @@ import banner1 from "../../assets/banner1.jpg";
 import banner2 from "../../assets/banner2.jpg";
 import banner3 from "../../assets/banner3.jpg";
 import banner4 from "../../assets/banner4.jpg";
+import banner_test from "../../assets/banner_test.jpg";
+import banner_test2 from "../../assets/banner_test2.jpg";
 import user from "../../assets/user.png";
 import "./Home.scss";
 import Footer from "../../components/footer";
+import SideBanner from "../../components/SideBanner";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -132,7 +135,9 @@ const Home = () => {
   };
 
   return (
-    <div className="home-page">
+    <div className="home-wrapper">
+      <SideBanner image={banner_test} position="left-banner" />
+      <div className="home-page">
       {/* Truyền prop isLoggedIn xuống Header */}
       <Header
         activeLink={activeLink}
@@ -268,6 +273,10 @@ const Home = () => {
 
       <ToastContainer position="top-right" autoClose={3000} />
     </div>
+    <SideBanner image={banner_test2} position="right-banner" />
+
+    </div>
+    
   );
 };
 
