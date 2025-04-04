@@ -175,7 +175,7 @@ const ListBorrowRequests = () => {
           <Col xs={12} md={2}>
             <SideMenu
               menuItems={[
-                { id: 1, label: "Thêm đồ chơi cho mượn", link: "/addtoy" },
+                { id: 1, label: "Đăng tải đồ chơi mới", link: "/addtoy" },
                 { id: 2, label: "Danh sách đồ chơi của tôi", link: "/mytoy" },
                 { id: 3, label: "Đang cho mượn", link: "/inlending" },
                 {
