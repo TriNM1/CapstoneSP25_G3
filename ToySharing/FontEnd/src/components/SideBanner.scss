@@ -1,0 +1,17 @@
+.side-banner {
+    min-height: 100vh;
+    background-size: cover;
+    background-repeat: repeat;
+    
+    .banner-image {
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .side-banner {
+      display: none;
+    }
+  }

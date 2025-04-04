@@ -22,10 +22,9 @@ const Footer = () => {
         {/* Footer Links */}
         <Row className="text-dark text-md-start">
           <Col md={4}>
-            <h6 className="fw-bold">COMPANY NAME</h6>
+            <h6 className="fw-bold">Toy Sharing</h6>
             <p>
-              Here you can use rows and columns to organize your footer content.
-              Lorem ipsum dolor sit amet, consectetur adipisicing elit.
+            We create a community where people can share their children's discarded toys.
             </p>
           </Col>
           <Col md={1}></Col>
@@ -48,10 +47,10 @@ const Footer = () => {
             <h6 className="fw-bold">CONTACT</h6>
             <ul className="list-unstyled">
               <li>
-                <FaHome /> New York, NY 10012, US
+                <FaHome /> Hà Nội
               </li>
               <li>
-                <FaEnvelope /> info@example.com
+                <FaEnvelope /> Toy.Sharing@gmail.com
               </li>
               <li>
                 <FaPhone /> + 01 234 567 88
