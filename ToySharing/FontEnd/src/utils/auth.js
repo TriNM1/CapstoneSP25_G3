@@ -1,33 +1,33 @@
-import jwtDecode from "jwt-decode";
+import axios from "axios";
 
-// Hàm lấy token từ localStorage hoặc sessionStorage
-export const getToken = () => {
-  return localStorage.getItem("token") || sessionStorage.getItem("token");
-};
+const API_BASE_URL = "https://localhost:7128/api";
 
-// Hàm giải mã token để lấy userId
-export const getUserId = () => {
-  const token = getToken();
-  if (token) {
-    try {
-      const decoded = jwtDecode(token);
-      return decoded.userId; // ID này phải do backend cung cấp trong token
-    } catch (error) {
-      console.error("Lỗi giải mã token:", error);
-      return null;
-    }
+// Hàm đăng xuất
+export const logout = async () => {
+  const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+  if (!token) {
+    localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
+    window.location.href = "/login";
+    return;
   }
-  return null;
-};
 
-// Hàm kiểm tra người dùng có đăng nhập hay không
-export const isAuthenticated = () => {
-  return !!getToken();
-};
-
-// Hàm đăng xuất người dùng
-export const logout = () => {
-  localStorage.removeItem("token");
-  sessionStorage.removeItem("token");
-  window.location.href = "/login"; // Điều hướng về trang đăng nhập
+  try {
+    await axios.post(
+      `${API_BASE_URL}/Auth/Logout`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    console.log("API logout gọi thành công");
+  } catch (error) {
+    console.error("Lỗi khi gọi API logout:", error);
+  } finally {
+    localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
+    // window.location.href = "/login"; // Chuyển hướng về trang đăng nhập
+  }
 };

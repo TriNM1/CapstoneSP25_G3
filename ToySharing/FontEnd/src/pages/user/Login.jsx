@@ -28,20 +28,25 @@ const Login = () => {
       const data = await response.json();
       console.log("📥 Phản hồi từ API:", data);
       if (response.ok) {
-        console.log("Token nhận được:", data.token);
-        const token = data.jwtToken;
-        if (!token) {
-          setError("Không nhận được token từ server!");
+        const { jwtToken, userId } = data;
+        if (!jwtToken || !userId) {
+          setError("Không nhận được token hoặc userId từ server!");
           return;
-        }  
-
-        // Lưu token vào localStorage hoặc sessionStorage
-        if (remember) {
-          localStorage.setItem("token", token);
-        } else {
-          sessionStorage.setItem("token", token);
         }
-        console.log("✅ Đăng nhập thành công! Chuyển hướng đến /home", token);
+
+        if (remember) {
+          localStorage.setItem("token", jwtToken);
+          localStorage.setItem("userId", userId);
+          console.log("Token lưu vào localStorage:", localStorage.getItem("token"));
+          console.log("UserId lưu vào localStorage:", localStorage.getItem("userId"));
+        } else {
+          sessionStorage.setItem("token", jwtToken);
+          sessionStorage.setItem("userId", userId);
+          console.log("Token lưu vào sessionStorage:", sessionStorage.getItem("token"));
+          console.log("UserId lưu vào sessionStorage:", sessionStorage.getItem("userId"));
+        }
+
+        console.log("✅ Đăng nhập thành công! Token:", jwtToken, "UserId:", userId);
         navigate("/home");
       } else {
         setError(data.message || "Đăng nhập thất bại! Vui lòng kiểm tra lại email hoặc mật khẩu.");
