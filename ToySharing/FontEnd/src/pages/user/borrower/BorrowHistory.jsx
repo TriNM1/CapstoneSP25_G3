@@ -36,7 +36,9 @@ const BorrowHistory = () => {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const localToken = localStorage.getItem("token");
+        const sessionToken = sessionStorage.getItem("token");
+        const token = sessionToken || localToken;
         if (!token) {
           toast.error("Vui lòng đăng nhập để xem lịch sử trao đổi!");
           navigate("/login");
@@ -63,13 +65,13 @@ const BorrowHistory = () => {
   // Lọc lịch sử theo ngày trả (returnDate)
   const filteredHistories = selectedDate
     ? histories.filter((history) => {
-        const returnDate = new Date(history.returnDate);
-        return (
-          returnDate.getDate() === selectedDate.getDate() &&
-          returnDate.getMonth() === selectedDate.getMonth() &&
-          returnDate.getFullYear() === selectedDate.getFullYear()
-        );
-      })
+      const returnDate = new Date(history.returnDate);
+      return (
+        returnDate.getDate() === selectedDate.getDate() &&
+        returnDate.getMonth() === selectedDate.getMonth() &&
+        returnDate.getFullYear() === selectedDate.getFullYear()
+      );
+    })
     : histories;
 
   // Xử lý "Xem thêm" (giả lập phân trang)

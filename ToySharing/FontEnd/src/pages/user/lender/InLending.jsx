@@ -53,7 +53,9 @@ const InLending = () => {
   useEffect(() => {
     const fetchCurrentUserId = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const localToken = localStorage.getItem("token");
+        const sessionToken = sessionStorage.getItem("token");
+        const token = sessionToken || localToken;
         if (!token) {
           console.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
           return;
@@ -164,7 +166,9 @@ const InLending = () => {
 
   const handleSendReport = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const localToken = localStorage.getItem("token");
+      const sessionToken = sessionStorage.getItem("token");
+      const token = sessionToken || localToken;
       if (!token) {
         toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
         return;

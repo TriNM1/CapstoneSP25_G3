@@ -81,7 +81,9 @@ const MyToy = () => {
   useEffect(() => {
     const fetchToys = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const localToken = localStorage.getItem("token");
+        const sessionToken = sessionStorage.getItem("token");
+        const token = sessionToken || localToken;
         if (!token) {
           toast.error("Vui lòng đăng nhập để xem danh sách đồ chơi!");
           navigate("/login");
@@ -185,17 +187,17 @@ const MyToy = () => {
         prevToys.map((toy) =>
           toy.id === editToyData.id
             ? {
-                ...toy,
-                image: editToyData.image,
-                name: editToyData.toyName,
-                category: editToyData.category,
-                condition: editToyData.condition,
-                ageGroup: editToyData.ageGroup,
-                price: `${parseInt(editToyData.price.replace(/[^0-9]/g, "")).toLocaleString("vi-VN")} VND`,
-                description: editToyData.description,
-                size: editToyData.size,
-                borrowNotes: editToyData.borrowNotes,
-              }
+              ...toy,
+              image: editToyData.image,
+              name: editToyData.toyName,
+              category: editToyData.category,
+              condition: editToyData.condition,
+              ageGroup: editToyData.ageGroup,
+              price: `${parseInt(editToyData.price.replace(/[^0-9]/g, "")).toLocaleString("vi-VN")} VND`,
+              description: editToyData.description,
+              size: editToyData.size,
+              borrowNotes: editToyData.borrowNotes,
+            }
             : toy
         )
       );

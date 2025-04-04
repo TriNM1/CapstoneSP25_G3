@@ -40,7 +40,9 @@ const SendingRequest = () => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const localToken = localStorage.getItem("token");
+        const sessionToken = sessionStorage.getItem("token");
+        const token = sessionToken || localToken;
         if (!token) {
           toast.error("Vui lòng đăng nhập để xem danh sách yêu cầu!");
           navigate("/login");
@@ -67,13 +69,13 @@ const SendingRequest = () => {
   // Lọc yêu cầu theo ngày (nếu có)
   const filteredRequests = selectedDate
     ? requests.filter((request) => {
-        const requestDate = new Date(request.requestDate);
-        return (
-          requestDate.getDate() === selectedDate.getDate() &&
-          requestDate.getMonth() === selectedDate.getMonth() &&
-          requestDate.getFullYear() === selectedDate.getFullYear()
-        );
-      })
+      const requestDate = new Date(request.requestDate);
+      return (
+        requestDate.getDate() === selectedDate.getDate() &&
+        requestDate.getMonth() === selectedDate.getMonth() &&
+        requestDate.getFullYear() === selectedDate.getFullYear()
+      );
+    })
     : requests;
 
   // Khi bấm nút Hủy trên một yêu cầu

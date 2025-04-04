@@ -23,7 +23,6 @@ const AddToy = () => {
   // State cho form
   const [previewImage, setPreviewImage] = useState(null);
   const [imageFile, setImageFile] = useState(null);
-  const [imageUrl, setImageUrl] = useState(null); // Lưu URL ảnh sau khi upload
   const [toyName, setToyName] = useState("");
   const [category, setCategory] = useState("");
   const [categories, setCategories] = useState([]); // Danh sách danh mục từ API
@@ -31,7 +30,6 @@ const AddToy = () => {
   const [ageGroup, setAgeGroup] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
-  const [size, setSize] = useState("");
   const [borrowNotes, setBorrowNotes] = useState("");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
@@ -41,7 +39,9 @@ const AddToy = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const localToken = localStorage.getItem("token");
+        const sessionToken = sessionStorage.getItem("token");
+        const token = sessionToken || localToken;
         if (!token) {
           toast.error("Vui lòng đăng nhập để đăng tải đồ chơi!");
           navigate("/login");
@@ -74,33 +74,6 @@ const AddToy = () => {
     }
   };
 
-  // Upload ảnh lên server
-  const uploadImage = async () => {
-    if (!imageFile) {
-      toast.error("Vui lòng chọn một ảnh cho đồ chơi!");
-      return null;
-    }
-
-    try {
-      const token = localStorage.getItem("token");
-      const formData = new FormData();
-      formData.append("image", imageFile);
-
-      const response = await axios.post(`${API_BASE_URL}/Products/upload-image`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      return response.data.imageUrl;
-    } catch (error) {
-      console.error("Lỗi khi upload ảnh:", error);
-      toast.error("Không thể upload ảnh!");
-      return null;
-    }
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
     setShowConfirmModal(true);
@@ -110,7 +83,7 @@ const AddToy = () => {
     setShowConfirmModal(false);
 
     // Validate form fields
-    if (!toyName || !category || !condition || !ageGroup || !price || !description || !size || !borrowNotes) {
+    if (!toyName || !category || !condition || !ageGroup || !price || !description || !borrowNotes) {
       toast.error("Vui lòng điền đầy đủ thông tin!");
       return;
     }
@@ -121,20 +94,17 @@ const AddToy = () => {
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const localToken = localStorage.getItem("token");
+        const sessionToken = sessionStorage.getItem("token");
+        const token = sessionToken || localToken;
       if (!token) {
         toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
         navigate("/login");
         return;
       }
 
-      // Upload ảnh và lấy URL
-      const uploadedImageUrl = await uploadImage();
-      if (!uploadedImageUrl) {
-        return; // Dừng nếu upload ảnh thất bại
-      }
-
-      setImageUrl(uploadedImageUrl);
+      // Tạm thời sử dụng một URL ảnh cứng thay vì upload
+      const uploadedImageUrl = "https://via.placeholder.com/200"; // Thay bằng URL ảnh bất kỳ nếu cần
 
       // Chuẩn bị dữ liệu sản phẩm
       const productData = {
@@ -144,8 +114,8 @@ const AddToy = () => {
         suitableAge: parseInt(ageGroup.split("-")[0]),
         price: parseFloat(price),
         description: `${description}\nKích cỡ: ${size}\nLưu ý khi mượn: ${borrowNotes}`,
-        available: 0, // Chờ admin phê duyệt
-        imagePaths: [uploadedImageUrl], // Sử dụng URL ảnh đã upload
+        available: 0, 
+        imagePaths: [uploadedImageUrl], 
       };
 
       const response = await axios.post(`${API_BASE_URL}/Products`, productData, {
@@ -155,18 +125,16 @@ const AddToy = () => {
         },
       });
 
-      toast.success("Yêu cầu gửi tới admin thành công!");
+      toast.success("Đăng tải đồ chơi thành công!");
       // Reset form
       setPreviewImage(null);
       setImageFile(null);
-      setImageUrl(null);
       setToyName("");
       setCategory("");
       setCondition("");
       setAgeGroup("");
       setPrice("");
       setDescription("");
-      setSize("");
       setBorrowNotes("");
     } catch (error) {
       console.error("Error creating product:", error);
@@ -284,16 +252,6 @@ const AddToy = () => {
                 />
               </Form.Group>
 
-              <Form.Group controlId="size" className="mb-3">
-                <Form.Label>Kích cỡ</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Nhập kích cỡ"
-                  value={size}
-                  onChange={(e) => setSize(e.target.value)}
-                />
-              </Form.Group>
-
               <Form.Group controlId="borrowNotes" className="mb-3">
                 <Form.Label>Lưu ý khi mượn</Form.Label>
                 <Form.Control
@@ -306,7 +264,7 @@ const AddToy = () => {
               </Form.Group>
 
               <Button variant="primary" type="submit" className="submit-btn">
-                Gửi yêu cầu tới admin
+                Đăng đồ chơi
               </Button>
             </Form>
           </Col>
