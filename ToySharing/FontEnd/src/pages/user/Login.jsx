@@ -35,11 +35,13 @@ const Login = () => {
         }
 
         if (remember) {
+          localStorage.clear();
           localStorage.setItem("token", jwtToken);
           localStorage.setItem("userId", userId);
           console.log("Token lưu vào localStorage:", localStorage.getItem("token"));
           console.log("UserId lưu vào localStorage:", localStorage.getItem("userId"));
         } else {
+          localStorage.clear();
           sessionStorage.setItem("token", jwtToken);
           sessionStorage.setItem("userId", userId);
           console.log("Token lưu vào sessionStorage:", sessionStorage.getItem("token"));
