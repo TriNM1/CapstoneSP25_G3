@@ -330,9 +330,9 @@ namespace ToySharingAPI.Controllers
             {
                 return BadRequest("Product name is required and cannot be empty or whitespace.");
             }
-            if (productDto.SuitableAge < 0 || productDto.SuitableAge > 100)
+            if (productDto.SuitableAge < 0 || productDto.SuitableAge > 50)
             {
-                return BadRequest("Suitable age must be between 0 and 100.");
+                return BadRequest("Suitable age must be between 0 and 50.");
             }
 
             if (!string.IsNullOrEmpty(productDto.Description) && productDto.Description.Length > 500)
@@ -409,15 +409,16 @@ namespace ToySharingAPI.Controllers
             }
         }
 
+        // Cập nhật endpoint my-toys để thêm borrowCount
         [HttpGet("my-toys")]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<ProductDTO>>> GetMyToys()
         {
             var mainUserId = await GetAuthenticatedUserId();
-            if (mainUserId == -1)
-                return Unauthorized("Không thể xác thực người dùng.");
             var products = await _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Images)
+                .Include(p => p.RentRequests)
                 .Where(p => p.UserId == mainUserId)
                 .Select(p => new ProductDTO
                 {
@@ -431,7 +432,8 @@ namespace ToySharingAPI.Controllers
                     Price = p.Price,
                     SuitableAge = p.SuitableAge,
                     CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
-                    ImagePaths = p.Images.Select(i => i.Path).ToList()
+                    ImagePaths = p.Images.Select(i => i.Path).ToList(),
+                    BorrowCount = p.RentRequests.Count(r => r.Status == 1) 
                 })
                 .ToListAsync();
 
@@ -531,6 +533,34 @@ namespace ToySharingAPI.Controllers
                 .ToListAsync();
 
             return Ok(recommendations);
+        }
+        // Thêm endpoint DELETE
+        [HttpDelete("{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteProduct(int id)
+        {
+            try
+            {
+                var mainUserId = await GetAuthenticatedUserId();
+                var product = await _context.Products
+                    .Include(p => p.RentRequests)
+                    .FirstOrDefaultAsync(p => p.ProductId == id);
+
+                if (product == null)
+                    return NotFound("Product not found.");
+                if (product.UserId != mainUserId)
+                    return Forbid("You are not authorized to delete this product.");
+                if (product.RentRequests.Any(r => r.Status == 1))
+                    return BadRequest("Cannot delete product while it is being rented.");
+
+                _context.Products.Remove(product);
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Product deleted successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error deleting product: {ex.Message}");
+            }
         }
         [HttpPost("upload-image")]
         [Authorize]

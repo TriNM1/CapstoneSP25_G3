@@ -13,5 +13,6 @@
         public int SuitableAge { get; set; } 
         public DateTime CreatedAt { get; set; } 
         public List<string> ImagePaths { get; set; } = new List<string>();
+        public int BorrowCount { get; set; }
     }
 }
