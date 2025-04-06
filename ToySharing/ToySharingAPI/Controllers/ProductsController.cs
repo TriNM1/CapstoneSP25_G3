@@ -84,7 +84,7 @@ namespace ToySharingAPI.Controllers
                     ProductStatus = p.ProductStatus,
                     Price = p.Price,
                     SuitableAge = p.SuitableAge,
-                    CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
+                    CreatedAt = p.CreatedAt ?? DateTime.Now,
                     ImagePaths = p.Images.Select(i => i.Path).ToList()
                 })
                 .ToListAsync();
@@ -109,7 +109,7 @@ namespace ToySharingAPI.Controllers
                     ProductStatus = p.ProductStatus,
                     Price = p.Price,
                     SuitableAge = p.SuitableAge,
-                    CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
+                    CreatedAt = p.CreatedAt ?? DateTime.Now,
                     ImagePaths = p.Images.Select(i => i.Path).ToList()
                 })
                 .ToListAsync();
@@ -135,7 +135,7 @@ namespace ToySharingAPI.Controllers
                     ProductStatus = p.ProductStatus,
                     Price = p.Price,
                     SuitableAge = p.SuitableAge,
-                    CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
+                    CreatedAt = p.CreatedAt ?? DateTime.Now,
                     ImagePaths = p.Images.Select(i => i.Path).ToList()
                 })
                 .FirstOrDefaultAsync();
@@ -243,8 +243,8 @@ namespace ToySharingAPI.Controllers
                 ProductStatus = productDto.ProductStatus,
                 Price = productDto.Price,
                 SuitableAge = productDto.SuitableAge,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
             };
 
             if (!string.IsNullOrWhiteSpace(productDto.CategoryName))
@@ -283,7 +283,7 @@ namespace ToySharingAPI.Controllers
                 product.Images = productDto.ImagePaths.Select(path => new Image
                 {
                     Path = path.Trim(),
-                    CreateTime = DateTime.UtcNow
+                    CreateTime = DateTime.Now
                 }).ToList();
             }
 
@@ -371,7 +371,7 @@ namespace ToySharingAPI.Controllers
             product.ProductStatus = productDto.ProductStatus;
             product.Price = productDto.Price;
             product.SuitableAge = productDto.SuitableAge;
-            product.UpdatedAt = DateTime.UtcNow;
+            product.UpdatedAt = DateTime.Now;
 
             if (productDto.ImagePaths != null)
             {
@@ -394,7 +394,7 @@ namespace ToySharingAPI.Controllers
                 product.Images = productDto.ImagePaths.Select(path => new Image
                 {
                     Path = path.Trim(),
-                    CreateTime = DateTime.UtcNow
+                    CreateTime = DateTime.Now
                 }).ToList();
             }
 
@@ -431,7 +431,7 @@ namespace ToySharingAPI.Controllers
                     ProductStatus = p.ProductStatus,
                     Price = p.Price,
                     SuitableAge = p.SuitableAge,
-                    CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
+                    CreatedAt = p.CreatedAt ?? DateTime.Now,
                     ImagePaths = p.Images.Select(i => i.Path).ToList(),
                     BorrowCount = p.RentRequests.Count(r => r.Status == 1) 
                 })
@@ -461,7 +461,7 @@ namespace ToySharingAPI.Controllers
                     ProductStatus = p.ProductStatus,
                     Price = p.Price,
                     SuitableAge = p.SuitableAge,
-                    CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
+                    CreatedAt = p.CreatedAt ?? DateTime.Now,
                     ImagePaths = p.Images.Select(i => i.Path).ToList()
                 })
                 .ToListAsync();
@@ -490,7 +490,7 @@ namespace ToySharingAPI.Controllers
                     ProductStatus = p.ProductStatus,
                     Price = p.Price,
                     SuitableAge = p.SuitableAge,
-                    CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
+                    CreatedAt = p.CreatedAt ?? DateTime.Now,
                     ImagePaths = p.Images.Select(i => i.Path).ToList()
                 })
                 .ToListAsync();
@@ -503,7 +503,6 @@ namespace ToySharingAPI.Controllers
         {
             return await GetAllProducts();
         }
-
         [HttpGet("recommendations")]
         public async Task<ActionResult<IEnumerable<ProductDTO>>> ListToyRecommendations()
         {
@@ -514,8 +513,6 @@ namespace ToySharingAPI.Controllers
                 .Include(p => p.Category)
                 .Include(p => p.Images)
                 .Where(p => (p.Available ?? 0) == 0 && p.UserId != mainUserId)
-                .OrderBy(p => Guid.NewGuid())
-                .Take(5)
                 .Select(p => new ProductDTO
                 {
                     ProductId = p.ProductId,
@@ -527,7 +524,7 @@ namespace ToySharingAPI.Controllers
                     ProductStatus = p.ProductStatus,
                     Price = p.Price,
                     SuitableAge = p.SuitableAge,
-                    CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
+                    CreatedAt = p.CreatedAt ?? DateTime.Now,
                     ImagePaths = p.Images.Select(i => i.Path).ToList()
                 })
                 .ToListAsync();

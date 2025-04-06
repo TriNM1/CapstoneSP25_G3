@@ -52,7 +52,7 @@ const TransferHistory = () => {
           name: item.productName,
           price: item.price ? `${item.price.toLocaleString()} VND` : "Không xác định",
           transferDate: item.returnDate ? new Date(item.returnDate).toISOString().split("T")[0] : "Không xác định",
-          status: item.requestStatus,
+          status: item.requestStatus, // "completed" hoặc "canceled"
           partnerAvatar: item.borrowerAvatar || user,
           partnerLink: `/user/${item.borrowerId}`,
           isMock: false,
@@ -121,6 +121,7 @@ const TransferHistory = () => {
             {visibleTransfers.length === 0 ? (
               <div className="text-center mt-5">
                 <h5>Không có lịch sử trao đổi nào.</h5>
+                <p>Chưa có giao dịch nào được hoàn thành hoặc bị hủy.</p>
               </div>
             ) : (
               <>
