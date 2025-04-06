@@ -87,7 +87,7 @@ const MyToy = () => {
           name: toy.name,
           postedDate: new Date(toy.createdAt).toISOString().split("T")[0],
           borrowCount: toy.borrowCount || 0,
-          status: toy.available === 0 ? "Còn trống" : "Đã cho mượn",
+          status: toy.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
           categoryName: toy.categoryName,
           productStatus: toy.productStatus,
           suitableAge: toy.suitableAge,
@@ -187,7 +187,6 @@ const MyToy = () => {
   };
 
   const handleUpdateToy = async () => {
-    // Validation
     if (!editToyData.name) {
       toast.error("Tên đồ chơi không được để trống!");
       return;
@@ -199,21 +198,19 @@ const MyToy = () => {
     }
     const price = parseFloat(editToyData.price.replace(/[^0-9.]/g, ""));
     if (isNaN(price) || price < 0) {
-      toast.error("Phí mượn đồ chơi phải là một số không âm!"); // Sửa thành "Giá" nếu cần
+      toast.error("Phí mượn đồ chơi phải là một số không âm!");
       return;
     }
-  
+
     try {
       const token = getAuthToken();
       if (!token) {
         toast.error("Vui lòng đăng nhập để cập nhật đồ chơi!");
         return;
       }
-  
-      // Lấy dữ liệu hiện tại của đồ chơi
+
       const toyToEdit = toys.find((toy) => toy.id === editToyData.id);
-  
-      // So sánh và chỉ gửi các trường đã thay đổi
+
       const updatedFields = {};
       if (editToyData.name !== toyToEdit.name) updatedFields.name = editToyData.name;
       if (editToyData.categoryName !== toyToEdit.categoryName) updatedFields.categoryName = editToyData.categoryName || null;
@@ -221,28 +218,24 @@ const MyToy = () => {
       if (suitableAge !== toyToEdit.suitableAge) updatedFields.suitableAge = suitableAge;
       if (price !== parseFloat(toyToEdit.price.replace(/[^0-9.]/g, ""))) updatedFields.price = price;
       if (editToyData.description !== toyToEdit.description) updatedFields.description = editToyData.description || null;
-  
-      // Chỉ gửi imagePaths nếu người dùng upload ảnh mới và nó khác với ảnh ban đầu
+
       if (editToyData.imagePaths.length > 0 && editToyData.imagePaths[0] !== toyToEdit.image) {
         updatedFields.imagePaths = editToyData.imagePaths;
       }
-  
-      // Nếu không có thay đổi, không gửi request
+
       if (Object.keys(updatedFields).length === 0) {
         toast.info("Không có thay đổi nào để cập nhật!");
         setShowEditModal(false);
         return;
       }
-  
-      // Gửi request với các trường đã thay đổi
+
       await axios.put(`${API_BASE_URL}/Products/${editToyData.id}`, updatedFields, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-  
-      // Cập nhật state toys với dữ liệu mới
+
       setToys((prevToys) =>
         prevToys.map((toy) =>
           toy.id === editToyData.id
@@ -259,7 +252,7 @@ const MyToy = () => {
             : toy
         )
       );
-  
+
       toast.success("Cập nhật đồ chơi thành công!");
       setShowEditModal(false);
     } catch (error) {
@@ -294,7 +287,12 @@ const MyToy = () => {
       toast.success("Đã xóa đồ chơi thành công!");
     } catch (error) {
       console.error("Lỗi khi xóa đồ chơi:", error);
-      toast.error("Có lỗi xảy ra khi xóa đồ chơi!");
+      if (error.response) {
+        const errorMessage = error.response.data.message || "Có lỗi xảy ra khi xóa đồ chơi!";
+        toast.error(errorMessage);
+      } else {
+        toast.error("Không thể kết nối đến server!");
+      }
     } finally {
       setShowConfirmModal(false);
       setConfirmAction("");
@@ -347,10 +345,10 @@ const MyToy = () => {
               <>
                 <Row className="toy-items-section">
                   {visibleToys.map((toy) => (
-                    <Col key={toy.id} xs={12} md={4} className="mb-4">
+                    <Col key={toy.id} xs={12} md={6} className="mb-4">
                       <Card className="toy-card">
                         <Card.Img variant="top" src={toy.image} className="toy-image" />
-                        <Card.Body className="text-center">
+                        <Card.Body className="card-body">
                           <Card.Title className="toy-name">{toy.name}</Card.Title>
                           <Card.Text className="posted-date">
                             <strong>Ngày đăng:</strong> {toy.postedDate}
@@ -360,20 +358,22 @@ const MyToy = () => {
                           </Card.Text>
                           <Card.Text className="toy-status">
                             <strong>Trạng thái:</strong>{" "}
-                            <span className={toy.status === "Còn trống" ? "available" : "unavailable"}>
+                            <span className={toy.status === "Sẵn sàng cho mượn" ? "available" : "unavailable"}>
                               {toy.status}
                             </span>
                           </Card.Text>
-                          <div className="toy-actions">
-                            <Button variant="info" size="lg" onClick={() => handleViewDetail(toy.id)}>
+                          <div className="card-actions">
+                            <Button className="btn-view" onClick={() => handleViewDetail(toy.id)}>
                               Xem
                             </Button>
-                            <Button variant="warning" size="lg" className="ms-2" onClick={() => handleEdit(toy.id)}>
+                            <Button className="btn-edit" onClick={() => handleEdit(toy.id)}>
                               Sửa
                             </Button>
-                            <Button variant="danger" size="lg" className="ms-2" onClick={() => handleDelete(toy.id)}>
-                              Xóa
-                            </Button>
+                            {toy.status === "Sẵn sàng cho mượn" && (
+                              <Button className="btn-delete" onClick={() => handleDelete(toy.id)}>
+                                Xóa
+                              </Button>
+                            )}
                           </div>
                         </Card.Body>
                       </Card>

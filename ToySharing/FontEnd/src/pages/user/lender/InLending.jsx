@@ -68,7 +68,6 @@ const InLending = () => {
         setCurrentUserId(response.data.id);
       } catch (error) {
         console.error("Error fetching current user ID:", error);
-        // Suppress the toast message
       }
     };
 
@@ -117,9 +116,6 @@ const InLending = () => {
   };
 
   const handleSendRating = async () => {
-    console.log("Rating trước khi gửi:", rating);
-    console.log("ReviewText trước khi gửi:", reviewText);
-
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -139,15 +135,10 @@ const InLending = () => {
           },
         }
       );
-      console.log("Response từ API complete:", response.data);
       setLendings((prev) => prev.filter((item) => item.id !== selectedLendingId));
       toast.success("Đã hoàn thành yêu cầu thành công!");
     } catch (error) {
       console.error("Error completing request:", error);
-      if (error.response) {
-        console.error("Response error data:", error.response.data);
-        console.error("Response status:", error.response.status);
-      }
       toast.error("Có lỗi xảy ra khi hoàn thành yêu cầu! Chỉ xóa cục bộ.");
       setLendings((prev) => prev.filter((item) => item.id !== selectedLendingId));
     } finally {
@@ -252,13 +243,9 @@ const InLending = () => {
                 <Row className="lending-items-section">
                   {visibleLendings.map((item) => (
                     <Col key={item.id} xs={12} md={6} className="mb-4">
-                      <Card className="lending-card">
-                        <Card.Img
-                          variant="top"
-                          src={item.image}
-                          className="toy-image"
-                        />
-                        <Card.Body className="text-center">
+                      <Card className="toy-card">
+                        <Card.Img variant="top" src={item.image} className="toy-image" />
+                        <Card.Body className="card-body">
                           <Card.Title className="toy-name">{item.name}</Card.Title>
                           <Card.Text className="borrow-date">
                             <strong>Ngày mượn:</strong> {item.borrowDate}
@@ -270,13 +257,9 @@ const InLending = () => {
                             <strong>Trạng thái:</strong>{" "}
                             <span className="in-progress">Đang cho mượn</span>
                           </Card.Text>
-                          <div className="lender-info mt-2 d-flex align-items-center justify-content-center">
-                            <img
-                              src={item.lenderAvatar}
-                              alt="Avatar"
-                              className="lender-avatar"
-                            />
-                            <span className="ms-2">
+                          <div className="lender-info">
+                            <img src={item.lenderAvatar} alt="Avatar" className="lender-avatar" />
+                            <span>
                               <Button
                                 variant="link"
                                 className="p-0 text-decoration-none"
@@ -286,29 +269,14 @@ const InLending = () => {
                               </Button>
                             </span>
                           </div>
-                          <div className="lending-actions mt-3">
-                            <Button
-                              variant="primary"
-                              size="lg"
-                              onClick={() => handleMessage(item.lenderId)}
-                            >
+                          <div className="card-actions">
+                            <Button className="btn-message" onClick={() => handleMessage(item.lenderId)}>
                               Nhắn tin
                             </Button>
-                          </div>
-                          <div className="lending-buttons mt-3">
-                            <Button
-                              variant="success"
-                              size="lg"
-                              onClick={() => handleReturn(item.id)}
-                            >
+                            <Button className="btn-return" onClick={() => handleReturn(item.id)}>
                               Đã trả
                             </Button>
-                            <Button
-                              variant="danger"
-                              size="lg"
-                              className="ms-2"
-                              onClick={() => handleReport(item.id)}
-                            >
+                            <Button className="btn-cancel" onClick={() => handleReport(item.id)}>
                               Hủy yêu cầu
                             </Button>
                           </div>
@@ -319,11 +287,7 @@ const InLending = () => {
                 </Row>
                 {visibleLendings.length < filteredLendings.length && (
                   <div className="text-center">
-                    <Button
-                      variant="outline-primary"
-                      className="view-more-btn"
-                      onClick={handleLoadMore}
-                    >
+                    <Button variant="outline-primary" className="view-more-btn" onClick={handleLoadMore}>
                       Xem thêm
                     </Button>
                   </div>
@@ -334,11 +298,7 @@ const InLending = () => {
         </Row>
       </Container>
 
-      <Modal
-        show={showRatingModal}
-        onHide={() => setShowRatingModal(false)}
-        centered
-      >
+      <Modal show={showRatingModal} onHide={() => setShowRatingModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Đánh giá người mượn (Tùy chọn)</Modal.Title>
         </Modal.Header>
@@ -350,16 +310,12 @@ const InLending = () => {
                 {[1, 2, 3, 4, 5].map((star) => (
                   <span
                     key={star}
-                    onClick={() => {
-                      setRating(star);
-                      console.log("Đã chọn rating:", star);
-                    }}
+                    onClick={() => setRating(star)}
                     onMouseEnter={() => setHoverRating(star)}
                     onMouseLeave={() => setHoverRating(0)}
                     style={{
                       cursor: "pointer",
-                      color:
-                        star <= (hoverRating || (rating || 0)) ? "#ffc107" : "#ddd",
+                      color: star <= (hoverRating || (rating || 0)) ? "#ffc107" : "#ddd",
                       fontSize: "1.5rem",
                       marginRight: "5px",
                     }}
@@ -376,10 +332,7 @@ const InLending = () => {
                 rows={3}
                 placeholder="Nhập đánh giá của bạn"
                 value={reviewText}
-                onChange={(e) => {
-                  setReviewText(e.target.value);
-                  console.log("ReviewText đã nhập:", e.target.value);
-                }}
+                onChange={(e) => setReviewText(e.target.value)}
               />
             </Form.Group>
           </Form>
@@ -394,11 +347,7 @@ const InLending = () => {
         </Modal.Footer>
       </Modal>
 
-      <Modal
-        show={showReportModal}
-        onHide={() => setShowReportModal(false)}
-        centered
-      >
+      <Modal show={showReportModal} onHide={() => setShowReportModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Hủy yêu cầu cho mượn</Modal.Title>
         </Modal.Header>

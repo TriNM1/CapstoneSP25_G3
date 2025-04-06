@@ -534,32 +534,49 @@ namespace ToySharingAPI.Controllers
 
             return Ok(recommendations);
         }
-        // Thêm endpoint DELETE
         [HttpDelete("{id}")]
         [Authorize]
         public async Task<IActionResult> DeleteProduct(int id)
         {
             try
             {
+                // Lấy ID người dùng từ token
                 var mainUserId = await GetAuthenticatedUserId();
+
+                // Tìm sản phẩm và bao gồm danh sách RentRequests
                 var product = await _context.Products
                     .Include(p => p.RentRequests)
                     .FirstOrDefaultAsync(p => p.ProductId == id);
 
+                // Kiểm tra sản phẩm có tồn tại không
                 if (product == null)
-                    return NotFound("Product not found.");
-                if (product.UserId != mainUserId)
-                    return Forbid("You are not authorized to delete this product.");
-                if (product.RentRequests.Any(r => r.Status == 1))
-                    return BadRequest("Cannot delete product while it is being rented.");
+                {
+                    return NotFound(new { message = "Sản phẩm không tồn tại." });
+                }
 
+                // Kiểm tra quyền sở hữu
+                if (product.UserId != mainUserId)
+                {
+                    return Forbid("Bạn không có quyền xóa sản phẩm này vì bạn không phải là chủ sở hữu.");
+                }
+
+                // Kiểm tra xem sản phẩm có đang được cho mượn không
+                if (product.RentRequests.Any(r => r.Status == 1))
+                {
+                    return BadRequest(new { message = "Không thể xóa sản phẩm vì sản phẩm đang được cho mượn." });
+                }
+
+                // Xóa sản phẩm
                 _context.Products.Remove(product);
                 await _context.SaveChangesAsync();
-                return Ok(new { message = "Product deleted successfully." });
+
+                return Ok(new { message = "Xóa sản phẩm thành công." });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Error deleting product: {ex.Message}");
+                // Ghi log lỗi chi tiết hơn (có thể dùng ILogger nếu có)
+                Console.WriteLine($"Error deleting product {id}: {ex.Message}, StackTrace: {ex.StackTrace}");
+                return StatusCode(500, new { message = "Đã xảy ra lỗi khi xóa sản phẩm. Vui lòng thử lại sau." });
             }
         }
         [HttpPost("upload-image")]

@@ -1,0 +1,181 @@
+// ToyCard.scss
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto&display=swap');
+
+// Màu gốc
+$primary-color: #ff6f61;
+$success-color: #28a745;
+$danger-color: #dc3545;
+$info-color: #17a2b8;
+$warning-color: #ffc107;
+
+// Màu tối hơn 10% tương ứng
+$primary-dark: #e65c50;
+$success-dark: #23963c;
+$danger-dark: #c42e3d;
+$info-dark: #148fa3;
+$warning-dark: #e6ad06;
+
+.toy-card {
+  background-color: #fff;
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+  margin-bottom: 20px;
+
+  &:hover {
+    transform: translateY(-5px);
+  }
+
+  .toy-image {
+    height: 200px;
+    object-fit: cover;
+  }
+
+  .card-body {
+    text-align: center;
+    padding: 15px;
+  }
+
+  .toy-name {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.5rem;
+    color: $primary-color;
+    margin-bottom: 10px;
+  }
+
+  .toy-price,
+  .posted-date,
+  .borrow-date,
+  .return-date,
+  .request-date,
+  .transfer-date,
+  .borrow-count,
+  .toy-status,
+  .lending-status,
+  .transfer-status {
+    font-size: 1rem;
+    margin-bottom: 5px;
+    color: #333;
+
+    strong {
+      font-weight: bold;
+    }
+
+    .available,
+    .in-progress,
+    .completed {
+      color: $success-color;
+    }
+
+    .unavailable,
+    .canceled {
+      color: $danger-color;
+    }
+  }
+
+  .lender-info,
+  .partner-info {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .lender-avatar,
+    .requester-avatar,
+    .partner-avatar {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid #ddd;
+    }
+
+    span,
+    .partner-link {
+      margin-left: 8px;
+      font-size: 1rem;
+      color: #333;
+
+      button,
+      &.partner-link {
+        font-size: 1rem;
+        color: #333;
+        text-decoration: underline;
+        transition: color 0.3s;
+
+        &:hover {
+          color: $primary-color;
+        }
+      }
+    }
+  }
+
+  .card-actions {
+    margin-top: 15px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+
+    button {
+      font-size: 1rem;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s;
+
+      &.btn-view {
+        background-color: $info-color;
+        color: #fff;
+        &:hover {
+          background-color: $info-dark; // Thay thế darken
+        }
+      }
+
+      &.btn-edit {
+        background-color: $warning-color;
+        color: #fff;
+        &:hover {
+          background-color: $warning-dark; // Thay thế darken
+        }
+      }
+
+      &.btn-delete,
+      &.btn-decline,
+      &.btn-cancel {
+        background-color: $danger-color;
+        color: #fff;
+        &:hover {
+          background-color: $danger-dark; // Thay thế darken
+        }
+      }
+
+      &.btn-accept,
+      &.btn-return {
+        background-color: $success-color;
+        color: #fff;
+        &:hover {
+          background-color: $success-dark; // Thay thế darken
+        }
+      }
+
+      &.btn-message {
+        background-color: $primary-color;
+        color: #fff;
+        &:hover {
+          background-color: $primary-dark; // Thay thế darken
+        }
+      }
+    }
+  }
+}
+
+.view-more-btn {
+  margin-top: 1rem;
+  font-size: 1rem;
+  padding: 10px 20px;
+  border-radius: 8px;
+}

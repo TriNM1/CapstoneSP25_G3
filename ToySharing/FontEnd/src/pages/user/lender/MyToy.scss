@@ -1,8 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto&display=swap');
+@import '../../../styles/ToyCard.scss'; // Import file chung
 
 $primary-color: #ff6f61;
-$success-color: #28a745;
-$danger-color: #dc3545;
 
 .mytoy-page {
   background-color: #f7f9fc;
@@ -101,95 +100,6 @@ $danger-color: #dc3545;
         opacity: 0.3;
       }
     }
-  }
-
-  .toy-items-section {
-    .toy-card {
-      background-color: #fff;
-      border: none;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      transition: transform 0.2s;
-      margin-bottom: 20px;
-
-      &:hover {
-        transform: translateY(-5px);
-      }
-
-      .toy-image {
-        height: 200px;
-        object-fit: cover;
-      }
-
-      .toy-name {
-        font-family: 'Fredoka One', cursive;
-        font-size: 1.5rem;
-        color: $primary-color;
-        margin-bottom: 10px;
-      }
-
-      .posted-date,
-      .borrow-count,
-      .toy-status {
-        font-size: 1rem;
-        margin-bottom: 5px;
-        color: #333;
-      }
-
-      .toy-status {
-        strong {
-          font-weight: bold;
-        }
-        .available {
-          color: $success-color;
-        }
-        .unavailable {
-          color: $danger-color;
-        }
-      }
-
-      .toy-actions {
-        margin-top: 15px;
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-
-        button {
-          font-size: 1rem;
-          padding: 10px 20px;
-          border-radius: 8px;
-          border: none;
-          cursor: pointer;
-          transition: background-color 0.3s;
-
-          &:nth-child(1) {
-            background-color: #ffc107;
-            color: #fff;
-
-            &:hover {
-              background-color: #e0a800;
-            }
-          }
-
-          &:nth-child(2) {
-            background-color: $danger-color;
-            color: #fff;
-
-            &:hover {
-              background-color: #c82333;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  .view-more-btn {
-    margin-top: 1rem;
-    font-size: 1rem;
-    padding: 10px 20px;
-    border-radius: 8px;
   }
 
   .preview-image {
