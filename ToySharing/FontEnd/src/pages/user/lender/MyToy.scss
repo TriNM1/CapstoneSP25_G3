@@ -1,6 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto&display=swap');
-@import '../../../styles/ToyCard.scss'; // Import file chung
-
+@use '../../../styles/ToyCard' as toyCard;
 $primary-color: #ff6f61;
 
 .mytoy-page {
