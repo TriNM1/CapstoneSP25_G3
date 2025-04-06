@@ -7,27 +7,29 @@
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+  position: relative;
 }
 
 // Adjust side banners to take fixed width
 .side-banner {
-  width: 160px;
-  height: 100%;
-  position: sticky;
+  width: 150px;
+  height: 120vh;
+  border-radius: 10px;
+  position: fixed;
   top: 0;
-  
-  .banner-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
+  z-index: 50000;
+
   &.left-banner {
-    margin-right: 80px;
+    left: 1px;
   }
-  
+
   &.right-banner {
-    margin-left: 80px;
+    right: 1px;
+  }
+
+  img {
+    border-radius: 0px;
+    width: 100%;
   }
 }
 

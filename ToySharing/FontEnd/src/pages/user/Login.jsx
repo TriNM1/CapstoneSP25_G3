@@ -47,7 +47,6 @@ const Login = () => {
           console.log("Token lưu vào sessionStorage:", sessionStorage.getItem("token"));
           console.log("UserId lưu vào sessionStorage:", sessionStorage.getItem("userId"));
         }
-
         console.log("✅ Đăng nhập thành công! Token:", jwtToken, "UserId:", userId);
         navigate("/home");
       } else {
@@ -128,7 +127,7 @@ const Login = () => {
           </div>
         </div>
       </div>
-      <Footer/>
+      <Footer />
     </div>
 
   );

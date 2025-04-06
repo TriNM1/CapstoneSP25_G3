@@ -330,9 +330,9 @@ namespace ToySharingAPI.Controllers
             {
                 return BadRequest("Product name is required and cannot be empty or whitespace.");
             }
-            if (productDto.SuitableAge < 0 || productDto.SuitableAge > 100)
+            if (productDto.SuitableAge < 0 || productDto.SuitableAge > 50)
             {
-                return BadRequest("Suitable age must be between 0 and 100.");
+                return BadRequest("Suitable age must be between 0 and 50.");
             }
 
             if (!string.IsNullOrEmpty(productDto.Description) && productDto.Description.Length > 500)
@@ -409,15 +409,16 @@ namespace ToySharingAPI.Controllers
             }
         }
 
+        // Cập nhật endpoint my-toys để thêm borrowCount
         [HttpGet("my-toys")]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<ProductDTO>>> GetMyToys()
         {
             var mainUserId = await GetAuthenticatedUserId();
-            if (mainUserId == -1)
-                return Unauthorized("Không thể xác thực người dùng.");
             var products = await _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Images)
+                .Include(p => p.RentRequests)
                 .Where(p => p.UserId == mainUserId)
                 .Select(p => new ProductDTO
                 {
@@ -431,7 +432,8 @@ namespace ToySharingAPI.Controllers
                     Price = p.Price,
                     SuitableAge = p.SuitableAge,
                     CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
-                    ImagePaths = p.Images.Select(i => i.Path).ToList()
+                    ImagePaths = p.Images.Select(i => i.Path).ToList(),
+                    BorrowCount = p.RentRequests.Count(r => r.Status == 1) 
                 })
                 .ToListAsync();
 
@@ -531,6 +533,51 @@ namespace ToySharingAPI.Controllers
                 .ToListAsync();
 
             return Ok(recommendations);
+        }
+        [HttpDelete("{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteProduct(int id)
+        {
+            try
+            {
+                // Lấy ID người dùng từ token
+                var mainUserId = await GetAuthenticatedUserId();
+
+                // Tìm sản phẩm và bao gồm danh sách RentRequests
+                var product = await _context.Products
+                    .Include(p => p.RentRequests)
+                    .FirstOrDefaultAsync(p => p.ProductId == id);
+
+                // Kiểm tra sản phẩm có tồn tại không
+                if (product == null)
+                {
+                    return NotFound(new { message = "Sản phẩm không tồn tại." });
+                }
+
+                // Kiểm tra quyền sở hữu
+                if (product.UserId != mainUserId)
+                {
+                    return Forbid("Bạn không có quyền xóa sản phẩm này vì bạn không phải là chủ sở hữu.");
+                }
+
+                // Kiểm tra xem sản phẩm có đang được cho mượn không
+                if (product.RentRequests.Any(r => r.Status == 1))
+                {
+                    return BadRequest(new { message = "Không thể xóa sản phẩm vì sản phẩm đang được cho mượn." });
+                }
+
+                // Xóa sản phẩm
+                _context.Products.Remove(product);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Xóa sản phẩm thành công." });
+            }
+            catch (Exception ex)
+            {
+                // Ghi log lỗi chi tiết hơn (có thể dùng ILogger nếu có)
+                Console.WriteLine($"Error deleting product {id}: {ex.Message}, StackTrace: {ex.StackTrace}");
+                return StatusCode(500, new { message = "Đã xảy ra lỗi khi xóa sản phẩm. Vui lòng thử lại sau." });
+            }
         }
         [HttpPost("upload-image")]
         [Authorize]

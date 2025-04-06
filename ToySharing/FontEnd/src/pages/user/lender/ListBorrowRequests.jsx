@@ -23,31 +23,28 @@ const ListBorrowRequests = () => {
   const navigate = useNavigate();
   const [activeLink, setActiveLink] = useState("muon-do-choi");
 
-  // State quản lý danh sách yêu cầu
   const [requests, setRequests] = useState([]);
   const [filterDate, setFilterDate] = useState(null);
   const [visibleItems, setVisibleItems] = useState(4);
 
-  // State cho Modal hiển thị lời nhắn
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
 
-  // State cho Modal xác nhận hành động
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState("");
   const [selectedRequestId, setSelectedRequestId] = useState(null);
 
-  // State cho Modal hiển thị profile
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileData, setProfileData] = useState(null);
 
   const API_BASE_URL = "https://localhost:7128/api";
 
-  // Gọi API để lấy dữ liệu yêu cầu mượn
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const localToken = localStorage.getItem("token");
+        const sessionToken = sessionStorage.getItem("token");
+        const token = sessionToken || localToken;
         if (!token) {
           toast.error("Vui lòng đăng nhập để xem danh sách yêu cầu mượn!");
           navigate("/login");
@@ -62,14 +59,14 @@ const ListBorrowRequests = () => {
 
         const formattedRequests = response.data.map((req) => ({
           id: req.requestId,
-          image: req.image || "https://via.placeholder.com/200", // Placeholder nếu không có ảnh
+          image: req.image || "https://via.placeholder.com/200",
           name: req.productName,
           price: `${req.price.toLocaleString("vi-VN")} VND`,
           requestDate: new Date(req.requestDate).toISOString().split("T")[0],
           borrowDate: new Date(req.rentDate).toISOString().split("T")[0],
           returnDate: new Date(req.returnDate).toISOString().split("T")[0],
           requesterId: req.userId,
-          requesterAvatar: req.borrowerAvatar || "https://via.placeholder.com/35", // Placeholder cho avatar
+          requesterAvatar: req.borrowerAvatar || "https://via.placeholder.com/35",
           message: req.message,
         }));
 
@@ -91,11 +88,9 @@ const ListBorrowRequests = () => {
   const formattedFilterDate = filterDate
     ? filterDate.toISOString().split("T")[0]
     : "";
-
   const filteredRequests = formattedFilterDate
     ? requests.filter((item) => item.requestDate === formattedFilterDate)
     : requests;
-
   const visibleRequests = filteredRequests.slice(0, visibleItems);
 
   const handleViewMessage = (message) => {
@@ -111,7 +106,7 @@ const ListBorrowRequests = () => {
 
   const handleConfirm = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token") || localStorage.getItem("token");
       const actionUrl = `${API_BASE_URL}/Requests/${selectedRequestId}/status`;
       const newStatus = confirmAction === "accept" ? 1 : 2;
       await axios.put(
@@ -147,7 +142,7 @@ const ListBorrowRequests = () => {
 
   const handleViewProfile = async (requesterId) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token") || localStorage.getItem("token");
       const response = await axios.get(`${API_BASE_URL}/Users/profile/${requesterId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -179,11 +174,7 @@ const ListBorrowRequests = () => {
                 { id: 1, label: "Đăng tải đồ chơi mới", link: "/addtoy" },
                 { id: 2, label: "Danh sách đồ chơi của tôi", link: "/mytoy" },
                 { id: 3, label: "Đang cho mượn", link: "/inlending" },
-                {
-                  id: 4,
-                  label: "Danh sách muốn mượn",
-                  link: "/listborrowrequests",
-                },
+                { id: 4, label: "Danh sách yêu cầu mượn", link: "/listborrowrequests" },
                 { id: 5, label: "Lịch sử trao đổi", link: "/transferhistory" },
               ]}
               activeItem={4}
@@ -211,13 +202,9 @@ const ListBorrowRequests = () => {
                 <Row className="lending-items-section">
                   {visibleRequests.map((request) => (
                     <Col key={request.id} xs={12} md={6} className="mb-4">
-                      <Card className="borrow-request-card">
-                        <Card.Img
-                          variant="top"
-                          src={request.image}
-                          className="toy-image"
-                        />
-                        <Card.Body className="text-center">
+                      <Card className="toy-card">
+                        <Card.Img variant="top" src={request.image} className="toy-image" />
+                        <Card.Body className="card-body">
                           <Card.Title className="toy-name">{request.name}</Card.Title>
                           <Card.Text className="toy-price">{request.price}</Card.Text>
                           <Card.Text className="request-date">
@@ -229,13 +216,9 @@ const ListBorrowRequests = () => {
                           <Card.Text className="return-date">
                             <strong>Ngày trả:</strong> {request.returnDate}
                           </Card.Text>
-                          <div className="lender-info mt-2 d-flex align-items-center justify-content-center">
-                            <img
-                              src={request.requesterAvatar}
-                              alt="Requester Avatar"
-                              className="requester-avatar"
-                            />
-                            <span className="ms-2">
+                          <div className="lender-info">
+                            <img src={request.requesterAvatar} alt="Requester Avatar" className="requester-avatar" />
+                            <span>
                               <Button
                                 variant="link"
                                 className="p-0 text-decoration-none"
@@ -245,26 +228,14 @@ const ListBorrowRequests = () => {
                               </Button>
                             </span>
                           </div>
-                          <div className="request-actions mt-3">
-                            <Button
-                              variant="info"
-                              size="lg"
-                              onClick={() => handleViewMessage(request.message)}
-                            >
+                          <div className="card-actions">
+                            <Button className="btn-view" onClick={() => handleViewMessage(request.message)}>
                               Xem lời nhắn
                             </Button>
-                            <Button
-                              variant="success"
-                              size="lg"
-                              onClick={() => handleConfirmAction("accept", request.id)}
-                            >
+                            <Button className="btn-accept" onClick={() => handleConfirmAction("accept", request.id)}>
                               Chấp nhận
                             </Button>
-                            <Button
-                              variant="danger"
-                              size="lg"
-                              onClick={() => handleConfirmAction("decline", request.id)}
-                            >
+                            <Button className="btn-decline" onClick={() => handleConfirmAction("decline", request.id)}>
                               Từ chối
                             </Button>
                           </div>
@@ -276,11 +247,7 @@ const ListBorrowRequests = () => {
 
                 {visibleRequests.length < filteredRequests.length && (
                   <div className="text-center">
-                    <Button
-                      variant="outline-primary"
-                      className="view-more-btn"
-                      onClick={handleLoadMore}
-                    >
+                    <Button variant="outline-primary" className="view-more-btn" onClick={handleLoadMore}>
                       Xem thêm
                     </Button>
                   </div>
@@ -289,7 +256,7 @@ const ListBorrowRequests = () => {
             )}
           </Col>
         </Row>
-        <Footer/>
+        <Footer />
       </Container>
 
       <Modal show={showMessageModal} onHide={() => setShowMessageModal(false)} centered>
@@ -298,10 +265,7 @@ const ListBorrowRequests = () => {
         </Modal.Header>
         <Modal.Body>{modalMessage}</Modal.Body>
         <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => setShowMessageModal(false)}
-          >
+          <Button variant="secondary" onClick={() => setShowMessageModal(false)}>
             Đóng
           </Button>
         </Modal.Footer>
@@ -317,10 +281,7 @@ const ListBorrowRequests = () => {
             : "Bạn có chắc chắn muốn từ chối yêu cầu mượn này?"}
         </Modal.Body>
         <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => setShowConfirmModal(false)}
-          >
+          <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>
             Hủy
           </Button>
           <Button variant="primary" onClick={handleConfirm}>
@@ -352,10 +313,7 @@ const ListBorrowRequests = () => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => setShowProfileModal(false)}
-          >
+          <Button variant="secondary" onClick={() => setShowProfileModal(false)}>
             Đóng
           </Button>
         </Modal.Footer>
