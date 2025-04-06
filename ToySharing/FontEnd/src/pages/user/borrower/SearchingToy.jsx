@@ -69,7 +69,7 @@ const SearchingToy = () => {
 
   // Get JWT token from localStorage
   const getAuthToken = () => {
-    return localStorage.getItem("token"); // Adjust based on how you store the token
+    return sessionStorage.getItem("token") || localStorage.getItem("token");
   };
 
   // Axios instance with default headers
