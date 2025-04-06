@@ -232,10 +232,10 @@ const AddToy = () => {
               </Form.Group>
 
               <Form.Group controlId="price" className="mb-3">
-                <Form.Label>Giá</Form.Label>
+                <Form.Label>Phí cho mượn</Form.Label>
                 <Form.Control
                   type="number"
-                  placeholder="Nhập giá"
+                  placeholder="Nhập"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                 />

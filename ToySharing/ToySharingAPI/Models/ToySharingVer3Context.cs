@@ -299,6 +299,9 @@ public partial class ToySharingVer3Context : DbContext
                 .HasDefaultValue(new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified))
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
+            entity.Property(e => e.DisplayName)
+                .HasMaxLength(50)
+                .HasColumnName("displayName");
             entity.Property(e => e.Gender).HasColumnName("gender");
             entity.Property(e => e.Latitude)
                 .HasColumnType("decimal(9, 6)")
@@ -309,6 +312,10 @@ public partial class ToySharingVer3Context : DbContext
             entity.Property(e => e.Name)
                 .HasMaxLength(100)
                 .HasColumnName("name");
+            entity.Property(e => e.Phone)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("phone");
             entity.Property(e => e.Rating).HasColumnName("rating");
             entity.Property(e => e.Status)
                 .HasDefaultValue(0)
