@@ -55,7 +55,7 @@ namespace ToySharingAPI.Controllers
             {
                 UserId = mainUserId,
                 Content = content,
-                CreatedDate = DateTime.UtcNow,
+                CreatedDate = DateTime.Now,
                 ReadStatus = false // Mặc định chưa đọc
             };
 
