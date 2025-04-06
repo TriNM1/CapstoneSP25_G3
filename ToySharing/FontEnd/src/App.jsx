@@ -63,7 +63,7 @@ function App() {
         <Route path="/borrowhistory" element={<BorrowHistory />} />
         <Route path="/message" element={<Message />} />
         <Route path="/user-info/:userId" element={<UserInfor />} />
-        <Route path="/userdetail" element={<UserDetail/>} />
+        <Route path="/userdetail/:id" element={<UserDetail/>} />
         <Route path="/addtoy" element={<AddToy />} />
         <Route path="/mytoy" element={<MyToy />} />
         <Route path="/inlending" element={<InLending />} />

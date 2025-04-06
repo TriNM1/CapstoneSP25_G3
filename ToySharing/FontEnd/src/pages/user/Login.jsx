@@ -33,17 +33,17 @@ const Login = () => {
           setError("Không nhận được token hoặc userId từ server!");
           return;
         }
-
+          if(remember){
           localStorage.setItem("token", jwtToken);
           localStorage.setItem("userId", userId);
           console.log("Token lưu vào localStorage:", localStorage.getItem("token"));
           console.log("UserId lưu vào localStorage:", localStorage.getItem("userId"));
-        
+          }else{
           sessionStorage.setItem("token", jwtToken);
           sessionStorage.setItem("userId", userId);
           console.log("Token lưu vào sessionStorage:", sessionStorage.getItem("token"));
           console.log("UserId lưu vào sessionStorage:", sessionStorage.getItem("userId"));
-        
+          }
 
         console.log("✅ Đăng nhập thành công! Token:", jwtToken, "UserId:", userId);
         navigate("/home");

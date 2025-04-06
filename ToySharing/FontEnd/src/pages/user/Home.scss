@@ -128,6 +128,39 @@
     margin-top: 40px;
     width: 100%;
   }
+  .user-info-modal {
+    .stat-number {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #2a5a97;
+    }
+    
+    .stat-label {
+      font-size: 0.9rem;
+      color: #666;
+    }
+    
+    .bi {
+      font-size: 1.2rem;
+    }
+    
+    h5 {
+      color: #2a5a97;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 0.5rem;
+    }
+    
+    .list-unstyled li {
+      padding: 0.3rem 0;
+    }
+  }
+  
+  .lender-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
 }
 
 // Fix container to take full width inside home-page
