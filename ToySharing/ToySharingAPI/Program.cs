@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Security.Claims;
@@ -9,6 +10,7 @@ using ToySharingAPI.Data;
 using ToySharingAPI.Hubs;
 using ToySharingAPI.Models;
 using ToySharingAPI.Repositories;
+using ToySharingAPI.Service;
 using ToySharingAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -134,6 +136,7 @@ builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 builder.Services.AddSignalR();
+builder.Services.Configure<AwsSettings>(builder.Configuration.GetSection("AWS"));
 
 builder.Services.AddCors(options =>
 {

@@ -20,7 +20,7 @@ const Header = ({
     { id: 2, text: "Xe đua mini của bạn đã được mượn" },
     { id: 3, text: "Báo cáo của bạn đã được xử lý" },
   ];
-
+  const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
   return (
     <Navbar bg="light" expand="lg" className="main-navbar">
       <Container>
@@ -111,7 +111,11 @@ const Header = ({
                     <img src={user} alt="Avatar" className="user-avatar" />
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
-                    <Dropdown.Item as={Link} to="/userdetail" onClick={() => setActiveLink("profile")}>
+                  <Dropdown.Item 
+                      as={Link} 
+                      to={`/userdetail/${userId}`}
+                      onClick={() => setActiveLink("profile")}
+                    >
                       Thông tin cá nhân
                     </Dropdown.Item>
                     <Dropdown.Item as={Link} to="/logout" onClick={() => setActiveLink("logout")}>

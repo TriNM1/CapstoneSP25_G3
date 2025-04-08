@@ -29,6 +29,10 @@ public partial class User
 
     public double? Rating { get; set; }
 
+    public string? DisplayName { get; set; }
+
+    public string? Phone { get; set; }
+
     public virtual ICollection<BanLog> BanLogs { get; set; } = new List<BanLog>();
 
     public virtual ICollection<Conversation> ConversationUser1s { get; set; } = new List<Conversation>();

@@ -22,63 +22,66 @@ import Footer from "../../../components/footer";
 const ListBorrowRequests = () => {
   const navigate = useNavigate();
   const [activeLink, setActiveLink] = useState("muon-do-choi");
-
   const [requests, setRequests] = useState([]);
   const [filterDate, setFilterDate] = useState(null);
   const [visibleItems, setVisibleItems] = useState(4);
-
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
-
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState("");
   const [selectedRequestId, setSelectedRequestId] = useState(null);
-
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileData, setProfileData] = useState(null);
 
   const API_BASE_URL = "https://localhost:7128/api";
 
-  useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        const localToken = localStorage.getItem("token");
-        const sessionToken = sessionStorage.getItem("token");
-        const token = sessionToken || localToken;
-        if (!token) {
-          toast.error("Vui lòng đăng nhập để xem danh sách yêu cầu mượn!");
-          navigate("/login");
-          return;
-        }
-
-        const response = await axios.get(`${API_BASE_URL}/Requests/pending`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const formattedRequests = response.data.map((req) => ({
-          id: req.requestId,
-          image: req.image || "https://via.placeholder.com/200",
-          name: req.productName,
-          price: `${req.price.toLocaleString("vi-VN")} VND`,
-          requestDate: new Date(req.requestDate).toISOString().split("T")[0],
-          borrowDate: new Date(req.rentDate).toISOString().split("T")[0],
-          returnDate: new Date(req.returnDate).toISOString().split("T")[0],
-          requesterId: req.userId,
-          requesterAvatar: req.borrowerAvatar || "https://via.placeholder.com/35",
-          message: req.message,
-        }));
-
-        setRequests(formattedRequests);
-      } catch (error) {
-        console.error("Lỗi khi lấy dữ liệu yêu cầu mượn:", error);
-        toast.error("Không thể tải dữ liệu từ API!");
-        setRequests([]);
+  const fetchRequests = async () => {
+    try {
+      const localToken = localStorage.getItem("token");
+      const sessionToken = sessionStorage.getItem("token");
+      const token = sessionToken || localToken;
+      if (!token) {
+        toast.error("Vui lòng đăng nhập để xem danh sách yêu cầu mượn!");
+        navigate("/login");
+        return;
       }
-    };
 
+      const response = await axios.get(`${API_BASE_URL}/Requests/pending`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const formattedRequests = response.data.map((req) => ({
+        id: req.requestId,
+        image: req.image || "https://via.placeholder.com/200",
+        name: req.productName,
+        price: `${req.price.toLocaleString("vi-VN")} VND`,
+        requestDate: new Date(req.requestDate).toISOString().split("T")[0],
+        borrowDate: new Date(req.rentDate).toISOString().split("T")[0],
+        returnDate: new Date(req.returnDate).toISOString().split("T")[0],
+        requesterId: req.userId,
+        requesterAvatar: req.borrowerAvatar || "https://via.placeholder.com/35",
+        message: req.message,
+      }));
+
+      setRequests(formattedRequests);
+    } catch (error) {
+      console.error("Lỗi khi lấy dữ liệu yêu cầu mượn:", error);
+      toast.error("Không thể tải dữ liệu từ API!");
+      setRequests([]);
+    }
+  };
+
+  useEffect(() => {
     fetchRequests();
+
+    // Làm mới dữ liệu sau 2 giây để đảm bảo dữ liệu được đồng bộ
+    const timer = setTimeout(() => {
+      fetchRequests();
+    }, 2000);
+
+    return () => clearTimeout(timer); // Dọn dẹp timer khi component unmount
   }, [navigate]);
 
   const handleLoadMore = () => {

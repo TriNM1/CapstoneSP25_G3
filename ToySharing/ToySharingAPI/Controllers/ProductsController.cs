@@ -1,10 +1,16 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Amazon;
+using Amazon.Runtime;
+using Amazon.S3;
+using Amazon.S3.Transfer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using ToySharingAPI.DTO;
 using ToySharingAPI.Models;
+using ToySharingAPI.Service;
 
 namespace ToySharingAPI.Controllers
 {
@@ -13,10 +19,15 @@ namespace ToySharingAPI.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly ToySharingVer3Context _context;
+        private readonly AwsSettings _awsSettings;
+        private readonly IAmazonS3 _s3Client;
 
-        public ProductsController(ToySharingVer3Context context)
+        public ProductsController(ToySharingVer3Context context, IOptions<AwsSettings> awsSettings)
         {
             _context = context;
+            _awsSettings = awsSettings.Value;
+            var credentials = new BasicAWSCredentials(_awsSettings.AccessKey, _awsSettings.SecretKey);
+            _s3Client = new AmazonS3Client(credentials, RegionEndpoint.GetBySystemName(_awsSettings.Region));
         }
 
         // Hàm hỗ trợ lấy mainUserId từ JWT token
@@ -37,6 +48,24 @@ namespace ToySharingAPI.Controllers
                 throw new UnauthorizedAccessException("Không tìm thấy người dùng trong hệ thống.");
 
             return mainUser.Id;
+        }
+        // Phương thức upload ảnh lên S3
+        private async Task<string> UploadImageToS3(IFormFile file)
+        {
+            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+            var key = $"uploads/{fileName}";
+            var uploadRequest = new TransferUtilityUploadRequest
+            {
+                InputStream = file.OpenReadStream(),
+                Key = key,
+                BucketName = _awsSettings.BucketName,
+                ContentType = file.ContentType
+            };
+
+            var transferUtility = new TransferUtility(_s3Client);
+            await transferUtility.UploadAsync(uploadRequest);
+
+            return $"https://{_awsSettings.BucketName}.s3.{_awsSettings.Region}.amazonaws.com/{key}";
         }
 
         // Thêm endpoint để lấy danh sách danh mục
@@ -84,7 +113,7 @@ namespace ToySharingAPI.Controllers
                     ProductStatus = p.ProductStatus,
                     Price = p.Price,
                     SuitableAge = p.SuitableAge,
-                    CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
+                    CreatedAt = p.CreatedAt ?? DateTime.Now,
                     ImagePaths = p.Images.Select(i => i.Path).ToList()
                 })
                 .ToListAsync();
@@ -109,7 +138,7 @@ namespace ToySharingAPI.Controllers
                     ProductStatus = p.ProductStatus,
                     Price = p.Price,
                     SuitableAge = p.SuitableAge,
-                    CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
+                    CreatedAt = p.CreatedAt ?? DateTime.Now,
                     ImagePaths = p.Images.Select(i => i.Path).ToList()
                 })
                 .ToListAsync();
@@ -135,7 +164,7 @@ namespace ToySharingAPI.Controllers
                     ProductStatus = p.ProductStatus,
                     Price = p.Price,
                     SuitableAge = p.SuitableAge,
-                    CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
+                    CreatedAt = p.CreatedAt ?? DateTime.Now,
                     ImagePaths = p.Images.Select(i => i.Path).ToList()
                 })
                 .FirstOrDefaultAsync();
@@ -209,97 +238,91 @@ namespace ToySharingAPI.Controllers
             return Ok(owner);
         }
 
+        // Endpoint tạo sản phẩm mới
         [HttpPost]
-        public async Task<ActionResult<ProductDTO>> CreateProduct([FromBody] ProductDTO productDto)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<ProductDTO>> CreateProduct([FromForm] ProductCreateModelDTO model)
         {
             var mainUserId = await GetAuthenticatedUserId();
-            if (mainUserId == -1)
-                return Unauthorized("Không thể xác thực người dùng.");
-            if (productDto == null)
-            {
-                return BadRequest("Product data is required.");
-            }
 
-            if (string.IsNullOrWhiteSpace(productDto.Name))
-            {
-                return BadRequest("Product name is required and cannot be empty or whitespace.");
-            }
-            if (productDto.SuitableAge < 0 || productDto.SuitableAge > 100)
-            {
-                return BadRequest("Suitable age must be between 0 and 100.");
-            }
+            if (string.IsNullOrWhiteSpace(model.Name))
+                return BadRequest("Product name is required.");
+            if (string.IsNullOrWhiteSpace(model.CategoryName))
+                return BadRequest("Category name is required.");
 
-            if (!string.IsNullOrEmpty(productDto.Description) && productDto.Description.Length > 500)
+            // Validation cho ProductStatus
+            if (model.ProductStatus < 0 || model.ProductStatus > 2)
+                return BadRequest("ProductStatus must be 0 (New), 1 (Used), or 2.");
+            var imagePaths = new List<string>();
+            if (model.Files == null || model.Files.Count == 0)
+                return BadRequest("At least one image is required.");
+
+            if (model.Files.Count > 10)
+                return BadRequest("Maximum 10 images allowed.");
+
+            foreach (var file in model.Files)
             {
-                return BadRequest("Description cannot exceed 500 characters.");
+                if (!file.ContentType.StartsWith("image/"))
+                    return BadRequest("Only image files are allowed.");
+                if (file.Length > 5 * 1024 * 1024)
+                    return BadRequest("File size exceeds 5MB.");
+
+                var imageUrl = await UploadImageToS3(file); 
+                imagePaths.Add(imageUrl);
             }
 
             var product = new Product
             {
                 UserId = mainUserId,
-                Name = productDto.Name.Trim(),
-                Available = productDto.Available,
-                Description = productDto.Description?.Trim(),
-                ProductStatus = productDto.ProductStatus,
-                Price = productDto.Price,
-                SuitableAge = productDto.SuitableAge,
+                Name = model.Name.Trim(),
+                Description = model.Description?.Trim(),
+                ProductStatus = model.ProductStatus,
+                SuitableAge = model.SuitableAge,
+                Price = model.Price,
+                Available = 0,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
 
-            if (!string.IsNullOrWhiteSpace(productDto.CategoryName))
+            // Gán ảnh
+            product.Images = imagePaths.Select(path => new Image
             {
-                var category = await _context.Categories
-                    .FirstOrDefaultAsync(c => c.CategoryName == productDto.CategoryName.Trim());
-                if (category == null)
-                {
-                    category = new Category
-                    {
-                        CategoryName = productDto.CategoryName.Trim()
-                    };
-                    _context.Categories.Add(category);
-                    await _context.SaveChangesAsync();
-                }
-                product.CategoryId = category.CategoryId;
-            }
+                Path = path.Trim(),
+                CreateTime = DateTime.UtcNow
+            }).ToList();
 
-            if (productDto.ImagePaths != null && productDto.ImagePaths.Any())
+            // Xử lý danh mục
+            var category = await _context.Categories.FirstOrDefaultAsync(c => c.CategoryName == model.CategoryName);
+            if (category == null)
             {
-                if (productDto.ImagePaths.Count > 10)
+                category = new Category
                 {
-                    return BadRequest("Maximum 10 images are allowed.");
-                }
-                foreach (var path in productDto.ImagePaths)
-                {
-                    if (string.IsNullOrWhiteSpace(path))
-                    {
-                        return BadRequest("Image path cannot be empty.");
-                    }
-                    if (path.Length > 255)
-                    {
-                        return BadRequest("Image path cannot exceed 255 characters.");
-                    }
-                }
-                product.Images = productDto.ImagePaths.Select(path => new Image
-                {
-                    Path = path.Trim(),
-                    CreateTime = DateTime.UtcNow
-                }).ToList();
-            }
-
-            try
-            {
-                _context.Products.Add(product);
+                    CategoryName = model.CategoryName
+                };
+                _context.Categories.Add(category);
                 await _context.SaveChangesAsync();
-                productDto.ProductId = product.ProductId;
-                productDto.UserId = product.UserId;
-                productDto.CreatedAt = DateTime.Now;
-                return CreatedAtAction(nameof(GetProductById), new { id = product.ProductId }, productDto);
             }
-            catch (DbUpdateException ex)
+            product.CategoryId = category.CategoryId;
+
+            _context.Products.Add(product);
+            await _context.SaveChangesAsync();
+
+            var productDto = new ProductDTO
             {
-                return StatusCode(500, $"Database error occurred: {ex.InnerException?.Message}");
-            }
+                ProductId = product.ProductId,
+                UserId = product.UserId,
+                Name = product.Name,
+                CategoryName = category.CategoryName,
+                ProductStatus = product.ProductStatus,
+                SuitableAge = product.SuitableAge,
+                Price = product.Price,
+                Description = product.Description,
+                Available = product.Available ?? 0,
+                CreatedAt = product.CreatedAt ?? DateTime.UtcNow,
+                ImagePaths = imagePaths
+            };
+
+            return CreatedAtAction(nameof(GetProductById), new { id = product.ProductId }, productDto);
         }
 
         [HttpPut("{id}")]
@@ -371,7 +394,7 @@ namespace ToySharingAPI.Controllers
             product.ProductStatus = productDto.ProductStatus;
             product.Price = productDto.Price;
             product.SuitableAge = productDto.SuitableAge;
-            product.UpdatedAt = DateTime.UtcNow;
+            product.UpdatedAt = DateTime.Now;
 
             if (productDto.ImagePaths != null)
             {
@@ -394,7 +417,7 @@ namespace ToySharingAPI.Controllers
                 product.Images = productDto.ImagePaths.Select(path => new Image
                 {
                     Path = path.Trim(),
-                    CreateTime = DateTime.UtcNow
+                    CreateTime = DateTime.Now
                 }).ToList();
             }
 
@@ -431,9 +454,9 @@ namespace ToySharingAPI.Controllers
                     ProductStatus = p.ProductStatus,
                     Price = p.Price,
                     SuitableAge = p.SuitableAge,
-                    CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
+                    CreatedAt = p.CreatedAt ?? DateTime.Now,
                     ImagePaths = p.Images.Select(i => i.Path).ToList(),
-                    BorrowCount = p.RentRequests.Count(r => r.Status == 1) 
+                    BorrowCount = p.RentRequests.Count(r => r.Status == 1)
                 })
                 .ToListAsync();
 
@@ -461,7 +484,7 @@ namespace ToySharingAPI.Controllers
                     ProductStatus = p.ProductStatus,
                     Price = p.Price,
                     SuitableAge = p.SuitableAge,
-                    CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
+                    CreatedAt = p.CreatedAt ?? DateTime.Now,
                     ImagePaths = p.Images.Select(i => i.Path).ToList()
                 })
                 .ToListAsync();
@@ -490,7 +513,7 @@ namespace ToySharingAPI.Controllers
                     ProductStatus = p.ProductStatus,
                     Price = p.Price,
                     SuitableAge = p.SuitableAge,
-                    CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
+                    CreatedAt = p.CreatedAt ?? DateTime.Now,
                     ImagePaths = p.Images.Select(i => i.Path).ToList()
                 })
                 .ToListAsync();
@@ -503,7 +526,6 @@ namespace ToySharingAPI.Controllers
         {
             return await GetAllProducts();
         }
-
         [HttpGet("recommendations")]
         public async Task<ActionResult<IEnumerable<ProductDTO>>> ListToyRecommendations()
         {
@@ -514,8 +536,6 @@ namespace ToySharingAPI.Controllers
                 .Include(p => p.Category)
                 .Include(p => p.Images)
                 .Where(p => (p.Available ?? 0) == 0 && p.UserId != mainUserId)
-                .OrderBy(p => Guid.NewGuid())
-                .Take(5)
                 .Select(p => new ProductDTO
                 {
                     ProductId = p.ProductId,
@@ -527,7 +547,7 @@ namespace ToySharingAPI.Controllers
                     ProductStatus = p.ProductStatus,
                     Price = p.Price,
                     SuitableAge = p.SuitableAge,
-                    CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
+                    CreatedAt = p.CreatedAt ?? DateTime.Now,
                     ImagePaths = p.Images.Select(i => i.Path).ToList()
                 })
                 .ToListAsync();
