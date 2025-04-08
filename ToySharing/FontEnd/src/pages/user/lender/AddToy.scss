@@ -1,20 +1,17 @@
-@use '../../../styles/ToyCard' as toyCard;
-
-// Các kiểu dáng khác (nếu có)
 @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto&display=swap');
 
-$primary-color: #ff6f61; // Match InLending's coral color
-$success-color: #28a745; // Match InLending's green for success
-$danger-color: #dc3545;  // Match InLending's red for danger
+$primary-color: #ff6f61;
+$success-color: #28a745;
+$danger-color: #dc3545;
 
 .add-toy-page {
-  background-color: #f7f9fc; // Match InLending's page background
-  font-family: 'Roboto', sans-serif; // Match InLending's font
+  background-color: #f7f9fc;
+  font-family: 'Roboto', sans-serif;
   color: #333;
-  padding-bottom: 40px; // Match InLending's padding-bottom
+  padding-bottom: 40px;
 
   .side-menu {
-    background: #fff; // Match InLending's side menu background (assumed)
+    background: #fff;
     padding: 1rem;
     border-right: 1px solid #ddd;
     height: 100vh;
@@ -34,7 +31,7 @@ $danger-color: #dc3545;  // Match InLending's red for danger
           transition: color 0.3s;
 
           &:hover {
-            color: $primary-color; // Match InLending's accent color
+            color: $primary-color;
           }
         }
 
@@ -67,44 +64,63 @@ $danger-color: #dc3545;  // Match InLending's red for danger
   }
 
   .main-content {
-    background-color: #fff; // Match InLending's main content background
-    border-radius: 12px; // Match InLending's border-radius
-    padding: 30px; // Match InLending's padding
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); // Match InLending's shadow
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
   .page-title {
-    font-family: 'Fredoka One', cursive; // Match InLending's font for titles
+    font-family: 'Roboto', cursive;
     font-size: 2rem;
-    color: #ff6f61; // Match InLending's accent color
+    color: $primary-color;
+    margin-bottom: 10px; // Reduced margin to bring notice closer
+  }
+
+  .required-notice {
+    font-size: 0.9rem;
+    color: $danger-color; // Red color for the notice
+    font-style: italic;
     margin-bottom: 20px;
   }
 
   .form-group {
-    label {
-      font-size: 1rem;
-      font-weight: bold;
-      color: #333;
-    }
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
 
     .form-control {
       width: 100%;
+      max-width: 500px; // Limit width for better alignment
       padding: 0.5rem;
       font-size: 1rem;
       border: 1px solid #ddd;
       border-radius: 5px;
-      color: #333;
-      background: #fff;
+      color: #555; // Lighter color for input text
+      background: #f9f9f9; // Light background for inputs
 
       &:focus {
         border-color: $primary-color;
         box-shadow: 0 0 5px rgba(255, 111, 97, 0.3);
+        background: #fff;
       }
     }
 
     textarea.form-control {
       resize: vertical;
     }
+  }
+
+  label {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #0c101d; // Darker color for labels
+    margin-bottom: 5px;
+  }
+  .required-asterisk {
+    color: $danger-color; // Red color for asterisks
+    font-size: 1.2rem;
+    margin-left: 3px;
   }
 
   .preview-image {
@@ -121,12 +137,12 @@ $danger-color: #dc3545;  // Match InLending's red for danger
     padding: 10px 20px;
     border-radius: 8px;
     border: none;
-    background-color: #007bff; // Bootstrap's primary color
+    background-color: #007bff;
     color: #fff;
     transition: background-color 0.3s;
 
     &:hover {
-      background-color: #0056b3; // Darker shade for hover
+      background-color: #0056b3;
     }
   }
 }
