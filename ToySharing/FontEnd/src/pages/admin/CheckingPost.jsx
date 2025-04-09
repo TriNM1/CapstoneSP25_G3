@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Row,
@@ -7,196 +7,273 @@ import {
   Button,
   Form,
   Modal,
+  Spinner,
+  Carousel,
 } from "react-bootstrap";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import AdminSideMenu from "../../components/AdminSideMenu";
-import toy1 from "../../assets/toy1.jpg";
+import defaultImage from "../../assets/toy1.jpg";
 import "./CheckingPost.scss";
 
 const CheckingPost = () => {
-  // Mảng menu dành cho AdminSideMenu
-  const menuItems = [
-    { id: 1, label: "Trang chủ", link: "/adminpage" },
-    { id: 2, label: "Quản lý người dùng", link: "/manageuser" },
-    { id: 3, label: "Duyệt bài đăng", link: "/checkingpost" },
-    { id: 4, label: "Quản lý vi phạm", link: "/managefeedback" },
-    { id: 5, label: "Thống kê", link: "/statistic" },
-  ];
-
-  // Dữ liệu bài đăng mẫu
-  const initialPosts = [
-    { id: 1, image: toy1, name: "Xe đua mini", price: "50,000 VND" },
-    { id: 2, image: toy1, name: "Robot chơi", price: "70,000 VND" },
-    { id: 3, image: toy1, name: "Búp bê Barbie", price: "60,000 VND" },
-    { id: 4, image: toy1, name: "Khối xếp hình", price: "40,000 VND" },
-    { id: 5, image: toy1, name: "Xe điều khiển", price: "80,000 VND" },
-    { id: 6, image: toy1, name: "Đồ chơi xếp hình", price: "30,000 VND" },
-  ];
-
-  const [posts, setPosts] = useState(initialPosts);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchText, setSearchText] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("");
-  const [selectedDate, setSelectedDate] = useState(null);
-
-  // State cho modal khóa bài đăng
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [blockReason, setBlockReason] = useState("");
-  const [selectedPost, setSelectedPost] = useState(null);
 
-  // Xử lý duyệt bài đăng
-  const handleApprove = (postId) => {
-    setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
-    toast.success("Duyệt thành công!");
+  // Fetch data từ API
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const response = await fetch("https://localhost:7128/api/Products");
+        if (!response.ok) throw new Error("Không thể tải dữ liệu");
+        const data = await response.json();
+
+        const formattedPosts = data.map((product) => ({
+          ...product,
+          priceFormatted: product.price
+            ? `${product.price.toLocaleString("vi-VN")} VND`
+            : "Liên hệ",
+          createdAtFormatted: new Date(product.createdAt).toLocaleDateString(
+            "vi-VN"
+          ),
+        }));
+
+        setPosts(formattedPosts);
+      } catch (err) {
+        setError(err.message);
+        toast.error("Lỗi khi tải bài đăng");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, []);
+
+  // Xử lý hiển thị modal chi tiết
+  const handleShowDetail = (product) => {
+    setSelectedProduct(product);
+    setShowDetailModal(true);
   };
 
-  // Mở modal khóa bài đăng
-  const handleOpenBlockModal = (post) => {
-    setSelectedPost(post);
-    setShowBlockModal(true);
-  };
-
-  const handleCloseBlockModal = () => {
+  // Xử lý đóng modal
+  const handleCloseModals = () => {
+    setShowDetailModal(false);
     setShowBlockModal(false);
     setBlockReason("");
-    setSelectedPost(null);
+    setSelectedProduct(null);
   };
 
-  const handleBlock = () => {
+  // Xử lý duyệt bài
+  const handleApprove = async (productId) => {
+    try {
+      const response = await fetch(
+        `https://localhost:7128/api/Products/${productId}/approve`,
+        {
+          method: "PUT",
+        }
+      );
+
+      if (!response.ok) throw new Error("Duyệt bài thất bại");
+
+      setPosts((prev) => prev.filter((p) => p.productId !== productId));
+      toast.success("Duyệt thành công!");
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  // Xử lý từ chối bài
+  const handleReject = () => {
     if (!blockReason.trim()) {
-      toast.error("Vui lòng nhập lý do khóa!");
+      toast.error("Vui lòng nhập lý do từ chối!");
       return;
     }
-    if (selectedPost) {
-      setPosts((prevPosts) =>
-        prevPosts.filter((post) => post.id !== selectedPost.id)
-      );
-      toast.success("Khóa thành công!");
-    }
-    handleCloseBlockModal();
+    // Gọi API từ chối ở đây
+    console.log(
+      "Từ chối bài:",
+      selectedProduct.productId,
+      "Lý do:",
+      blockReason
+    );
+    setPosts((prev) =>
+      prev.filter((p) => p.productId !== selectedProduct.productId)
+    );
+    toast.success("Đã từ chối bài đăng");
+    handleCloseModals();
   };
 
-  // Bộ lọc tìm kiếm (ví dụ chỉ lọc theo tên đồ chơi)
+  // Lọc bài đăng
   const filteredPosts = posts.filter((post) =>
-    post.name.toLowerCase().includes(searchText.toLowerCase())
+    post.name?.toLowerCase().includes(searchText.toLowerCase())
   );
 
   return (
     <div className="checking-post-page">
       <Container fluid className="mt-4">
         <Row>
-          {/* Side Menu dùng chung */}
-          <Col xs={12} md={2}>
-            <AdminSideMenu menuItems={menuItems} />
+          <Col md={2}>
+            <AdminSideMenu
+              menuItems={[
+                { id: 1, label: "Trang chủ", link: "/adminpage" },
+                { id: 2, label: "Quản lý người dùng", link: "/manageuser" },
+                { id: 3, label: "Duyệt bài đăng", link: "/checkingpost" },
+                { id: 4, label: "Quản lý vi phạm", link: "/managefeedback" },
+                { id: 5, label: "Thống kê", link: "/statistic" },
+              ]}
+            />
           </Col>
-          {/* Nội dung chính */}
-          <Col xs={12} md={10} className="main-content">
-            {/* Thanh tìm kiếm */}
-            <div className="search-bar mb-4">
-              <Form>
-                <Row className="align-items-center">
-                  <Col xs={12} md={4} className="mb-2">
-                    <Form.Control
-                      type="text"
-                      placeholder="Tìm kiếm..."
-                      value={searchText}
-                      onChange={(e) => setSearchText(e.target.value)}
-                    />
-                  </Col>
-                  <Col xs={12} md={3} className="mb-2">
-                    <Form.Select
-                      value={selectedStatus}
-                      onChange={(e) => setSelectedStatus(e.target.value)}
+
+          <Col md={10} className="main-content">
+            <Form.Control
+              type="text"
+              placeholder="Tìm kiếm..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="mb-4"
+            />
+
+            {loading ? (
+              <div className="text-center">
+                <Spinner animation="border" />
+                <p>Đang tải dữ liệu...</p>
+              </div>
+            ) : error ? (
+              <div className="alert alert-danger">{error}</div>
+            ) : (
+              <Row>
+                {filteredPosts.map((product) => (
+                  <Col key={product.productId} md={4} className="mb-4">
+                    <Card
+                      onClick={() => handleShowDetail(product)}
+                      className="post-card"
                     >
-                      <option value="">Tất cả trạng thái</option>
-                      <option value="Hiện">Hiện</option>
-                      <option value="Ẩn">Ẩn</option>
-                    </Form.Select>
-                  </Col>
-                  <Col xs={12} md={3} className="mb-2">
-                    <DatePicker
-                      selected={selectedDate}
-                      onChange={(date) => setSelectedDate(date)}
-                      dateFormat="yyyy-MM-dd"
-                      placeholderText="Chọn ngày"
-                      className="form-control"
-                    />
-                  </Col>
-                </Row>
-              </Form>
-            </div>
-
-            {/* Danh sách bài đăng */}
-            <Row>
-              {filteredPosts.map((post) => (
-                <Col key={post.id} xs={12} md={6} className="mb-4">
-                  <Card className="post-card">
-                    <Card.Img
-                      variant="top"
-                      src={post.image}
-                      className="post-image"
-                    />
-                    <Card.Body>
-                      <Card.Title className="post-title">
-                        {post.name}
-                      </Card.Title>
-                      <Card.Text className="post-price">{post.price}</Card.Text>
-                      <div className="post-actions d-flex justify-content-center">
-                        <Button
-                          variant="primary"
-                          className="me-2"
-                          onClick={() => handleApprove(post.id)}
+                      <Card.Img
+                        variant="top"
+                        src={product.imagePaths?.[0] || defaultImage}
+                        className="post-image"
+                        onError={(e) => {
+                          e.target.src = defaultImage;
+                        }}
+                      />
+                      <Card.Body>
+                        <Card.Title>{product.name}</Card.Title>
+                        <div
+                          className="post-actions"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          Duyệt
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          onClick={() => handleOpenBlockModal(post)}
-                        >
-                          Khóa
-                        </Button>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-
-            {/* Nút phân trang */}
-            <div className="pagination-section text-center mt-4">
-              <Button variant="outline-primary">Phân trang</Button>
-            </div>
+                          <Button
+                            variant="success"
+                            className="me-2"
+                            onClick={() => handleApprove(product.productId)}
+                          >
+                            Duyệt
+                          </Button>
+                          <Button
+                            variant="danger"
+                            onClick={() => {
+                              setSelectedProduct(product);
+                              setShowBlockModal(true);
+                            }}
+                          >
+                            Từ chối
+                          </Button>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+            )}
           </Col>
         </Row>
       </Container>
 
-      {/* Modal nhập lý do khóa */}
-      <Modal show={showBlockModal} onHide={handleCloseBlockModal} centered>
+      {/* Modal chi tiết sản phẩm */}
+      <Modal show={showDetailModal} onHide={handleCloseModals} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>Nhập lý do khóa</Modal.Title>
+          <Modal.Title>{selectedProduct?.name}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedProduct && (
+            <>
+              <Carousel>
+                {selectedProduct.imagePaths?.map((img, index) => (
+                  <Carousel.Item key={index}>
+                    <img
+                      className="d-block w-100"
+                      src={img}
+                      alt={`Ảnh ${index + 1}`}
+                      onError={(e) => {
+                        e.target.src = defaultImage;
+                      }}
+                    />
+                  </Carousel.Item>
+                ))}
+              </Carousel>
+
+              <div className="product-details mt-4">
+                <p>
+                  <strong>Mã sản phẩm:</strong> {selectedProduct.productId}
+                </p>
+                <p>
+                  <strong>Danh mục:</strong>{" "}
+                  {selectedProduct.categoryName || "Chưa phân loại"}
+                </p>
+                <p>
+                  <strong>Giá:</strong> {selectedProduct.priceFormatted}
+                </p>
+                <p>
+                  <strong>Độ tuổi phù hợp:</strong>{" "}
+                  {selectedProduct.suitableAge}
+                </p>
+                <p>
+                  <strong>Số lượng:</strong> {selectedProduct.available}
+                </p>
+                <p>
+                  <strong>Ngày đăng:</strong>{" "}
+                  {selectedProduct.createdAtFormatted}
+                </p>
+                <p>
+                  <strong>Trạng thái:</strong> {selectedProduct.productStatus}
+                </p>
+                <p>
+                  <strong>Mô tả:</strong> {selectedProduct.description}
+                </p>
+              </div>
+            </>
+          )}
+        </Modal.Body>
+      </Modal>
+
+      {/* Modal từ chối */}
+      <Modal show={showBlockModal} onHide={handleCloseModals} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Lý do từ chối</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
-            <Form.Group controlId="blockReason">
-              <Form.Label>Lý do:</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                value={blockReason}
-                onChange={(e) => setBlockReason(e.target.value)}
-                placeholder="Nhập lý do..."
-              />
-            </Form.Group>
+            <Form.Control
+              as="textarea"
+              rows={3}
+              value={blockReason}
+              onChange={(e) => setBlockReason(e.target.value)}
+              placeholder="Nhập lý do từ chối..."
+            />
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseBlockModal}>
-            Quay lại
+          <Button variant="secondary" onClick={handleCloseModals}>
+            Hủy
           </Button>
-          <Button variant="primary" onClick={handleBlock}>
-            Khóa
+          <Button variant="danger" onClick={handleReject}>
+            Xác nhận từ chối
           </Button>
         </Modal.Footer>
       </Modal>
