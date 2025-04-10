@@ -8,6 +8,7 @@ import SignUp from "./pages/user/signup/SignUp";
 import ValidateMail from "./pages/user/signup/ValidateMail";
 import InforInput from "./pages/user/signup/InforInput";
 import ListBorrowRequests from "./pages/user/lender/ListBorrowRequests";
+import BorrowHistory from "./pages/user/borrower/BorrowHistory";
 import SearchToy from "./pages/user/borrower/SearchingToy";
 import Message from "./pages/user/generate/Message";
 import UserInfor from "./pages/user/generate/UserInfor";
@@ -20,6 +21,7 @@ import Policy from "./pages/user/generate/Policy";
 import UserGuide from "./pages/user/generate/UserGuide";
 import SendingRequest from "./pages/user/borrower/SendingRequest";
 import ToyDetail from "./pages/user/generate/ToyDetail";
+
 //admin
 import AdminPage from "./pages/admin/AdminPage";
 import ManageUser from "./pages/admin/ManageUser";
@@ -27,8 +29,11 @@ import CheckingPost from "./pages/admin/CheckingPost";
 import ManageFeedback from "./pages/admin/ManageFeedback";
 import Statistic from "./pages/admin/Statistic";
 
+// Route wrappers
+// import RouteProtected from "./components/ProtectedRoute"
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import BorrowHistory from "./pages/user/borrower/BorrowHistory";
+
 
 function App() {
   
