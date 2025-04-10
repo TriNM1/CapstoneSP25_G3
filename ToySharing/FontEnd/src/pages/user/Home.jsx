@@ -208,7 +208,7 @@ const Home = () => {
                       />
                       <a
                         className="ms-2"
-                        href="/userdetail"
+                        href="/userinfo"
                         id="trangcanhanlink"
                       >
                         Trang cá nhân người cho mượn

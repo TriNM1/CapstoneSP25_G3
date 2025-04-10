@@ -31,19 +31,21 @@
       font-size: 2rem;
       margin-bottom: 20px;
       color: #ff6f61;
-      text-align: center;
+      text-align: left;
     }
     p {
       font-size: 1.1rem;
       line-height: 1.6;
       margin-bottom: 20px;
+      text-align: left;
     }
     ol {
-      margin-left: 20px;
+      margin-left: 0px;
       li {
         margin-bottom: 10px;
         font-size: 1.1rem;
       }
+      text-align: left;
     }
   }
 }

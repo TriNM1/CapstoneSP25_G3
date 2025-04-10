@@ -4,7 +4,7 @@
   font-family: 'Roboto', sans-serif;
   background-color: #f7f9fc;
   padding: 20px;
-
+  border-radius: 8px; // Thêm bo góc cho toàn bộ container
 
   .filter-section {
     margin-bottom: 20px;
@@ -16,7 +16,7 @@
       transition: border-color 0.3s;
       &:focus {
         border-color: #ff9800;
-        box-shadow: none;
+        box-shadow: 0 0 5px rgba(255, 152, 0, 0.5); // Thêm hiệu ứng bóng khi focus
       }
     }
   }
@@ -37,6 +37,7 @@
       text-decoration: none;
       &:hover {
         text-decoration: underline;
+        color: #ff9800; // Thay đổi màu khi hover
       }
     }
   }
@@ -45,6 +46,7 @@
   .modal-header {
     background-color: #ff9800;
     color: #fff;
+    border-bottom: 2px solid #e68a00; // Thêm đường viền dưới cho modal header
     .close {
       color: #fff;
       opacity: 1;
@@ -60,5 +62,11 @@
   .modal-footer {
     display: flex;
     justify-content: flex-end;
+    button {
+      border-radius: 5px; // Thêm bo góc cho các nút
+      &:hover {
+        background-color: #e68a00; // Thay đổi màu nền khi hover
+      }
+    }
   }
 }

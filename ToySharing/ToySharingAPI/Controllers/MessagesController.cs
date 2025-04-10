@@ -105,10 +105,20 @@ namespace ToySharingAPI.Controllers
             conversation.LastMessageAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
+            // Xác định receiverId (integer Id từ bảng Users)
             var receiverId = (conversation.User1Id == mainUserId) ? conversation.User2Id : conversation.User1Id;
 
-            await _chatHubContext.Clients.User(receiverId.ToString())
-                .SendAsync("ReceiveMessage", conversationId, mainUserId, request.Content, message.SentAt);
+            // Lấy AuthUserId (GUID) của receiver từ bảng Users
+            var receiver = await _context.Users.FirstOrDefaultAsync(u => u.Id == receiverId);
+            if (receiver == null)
+                return NotFound("Không tìm thấy người nhận.");
+
+            string receiverAuthUserId = receiver.AuthUserId.ToString();
+
+            // Gửi thông báo SignalR bằng receiverAuthUserId (GUID string)
+            Console.WriteLine($"Sending to {receiverAuthUserId} with messageId {message.MessageId}");
+            await _chatHubContext.Clients.User(receiverAuthUserId)
+                .SendAsync("ReceiveMessage", conversationId, mainUserId, request.Content, message.SentAt, message.MessageId);
 
             var responseDTO = new MessageResponseDTO
             {

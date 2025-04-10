@@ -3,6 +3,8 @@
     public class UserDTO
     {
         public string Name { get; set; } = null!; // Không nullable, khớp với User.Name
+        public string? DisplayName { get; set; } = null!; //  nullable, khớp với User.Name
+        public string? Phone { get; set; } = null!; //  nullable, khớp với User.Name
         public string? Address { get; set; } // Nullable, khớp với User.Address
         public int? Status { get; set; } // Nullable, khớp với User.Status
         public string? Avatar { get; set; } // Nullable, khớp với User.Avatar
