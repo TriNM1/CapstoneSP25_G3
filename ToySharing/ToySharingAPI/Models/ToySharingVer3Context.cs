@@ -299,7 +299,7 @@ public partial class ToySharingVer3Context : DbContext
                 .HasDefaultValue(new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified))
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
-            entity.Property(e => e.Displayname)
+            entity.Property(e => e.DisplayName)
                 .HasMaxLength(100)
                 .HasColumnName("displayname");
             entity.Property(e => e.Gender).HasColumnName("gender");

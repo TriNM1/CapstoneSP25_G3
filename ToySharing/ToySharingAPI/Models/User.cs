@@ -29,7 +29,7 @@ public partial class User
 
     public double? Rating { get; set; }
 
-    public string? Displayname { get; set; }
+    public string? DisplayName { get; set; }
 
     public string? Phone { get; set; }
 
