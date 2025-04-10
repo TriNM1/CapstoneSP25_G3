@@ -36,7 +36,6 @@ const InLending = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [lendings, setLendings] = useState([]);
   const [visibleItems, setVisibleItems] = useState(4);
-  const [currentUserId, setCurrentUserId] = useState(null);
 
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [rating, setRating] = useState(null);
@@ -48,29 +47,12 @@ const InLending = () => {
   const [reportReason, setReportReason] = useState("");
   const [selectedReportId, setSelectedReportId] = useState(null);
 
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileData, setProfileData] = useState(null);
+
   const API_BASE_URL = "https://localhost:7128/api";
 
   useEffect(() => {
-    const fetchCurrentUserId = async () => {
-      try {
-        const localToken = localStorage.getItem("token");
-        const sessionToken = sessionStorage.getItem("token");
-        const token = sessionToken || localToken;
-        if (!token) {
-          console.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
-          return;
-        }
-        const response = await axios.get(`${API_BASE_URL}/Users/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setCurrentUserId(response.data.id);
-      } catch (error) {
-        console.error("Error fetching current user ID:", error);
-      }
-    };
-
     const fetchLendings = async () => {
       try {
         const localToken = localStorage.getItem("token");
@@ -78,6 +60,7 @@ const InLending = () => {
         const token = sessionToken || localToken;
         if (!token) {
           toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
+          navigate("/login");
           return;
         }
         const response = await axios.get(`${API_BASE_URL}/Requests/borrowing`, {
@@ -98,9 +81,10 @@ const InLending = () => {
           }));
         setLendings(filteredLendings);
       } catch (error) {
-        console.error("Error fetching lendings:", error);
+        console.error("Lỗi khi lấy danh sách đồ chơi đang cho mượn:", error);
         if (error.response && error.response.status === 401) {
           toast.error("Token không hợp lệ hoặc đã hết hạn! Vui lòng đăng nhập lại.");
+          navigate("/login");
         } else {
           toast.error("Không thể tải dữ liệu từ API!");
         }
@@ -108,9 +92,8 @@ const InLending = () => {
       }
     };
 
-    fetchCurrentUserId();
     fetchLendings();
-  }, []);
+  }, [navigate]);
 
   const handleReturn = (id) => {
     setSelectedLendingId(id);
@@ -126,7 +109,7 @@ const InLending = () => {
         toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
         return;
       }
-      const response = await axios.put(
+      await axios.put(
         `${API_BASE_URL}/Requests/history/${selectedLendingId}/complete`,
         {
           rating: rating,
@@ -142,7 +125,7 @@ const InLending = () => {
       setLendings((prev) => prev.filter((item) => item.id !== selectedLendingId));
       toast.success("Đã hoàn thành yêu cầu thành công!");
     } catch (error) {
-      console.error("Error completing request:", error);
+      console.error("Lỗi khi hoàn thành yêu cầu:", error);
       toast.error("Có lỗi xảy ra khi hoàn thành yêu cầu! Chỉ xóa cục bộ.");
       setLendings((prev) => prev.filter((item) => item.id !== selectedLendingId));
     } finally {
@@ -183,7 +166,7 @@ const InLending = () => {
       setLendings((prev) => prev.filter((item) => item.id !== selectedReportId));
       toast.success("Đã hủy yêu cầu và gán 1 sao cho người mượn!");
     } catch (error) {
-      console.error("Error canceling request:", error);
+      console.error("Lỗi khi hủy yêu cầu:", error);
       toast.error("Có lỗi xảy ra khi hủy yêu cầu! Chỉ xóa cục bộ.");
       setLendings((prev) => prev.filter((item) => item.id !== selectedReportId));
     } finally {
@@ -197,8 +180,26 @@ const InLending = () => {
     toast.info("Chức năng nhắn tin đang chờ API tạo conversation!");
   };
 
-  const handleViewProfile = (lenderId) => {
-    navigate(`/user-info/${lenderId}`);
+  const handleViewProfile = async (lenderId) => {
+    try {
+      const localToken = localStorage.getItem("token");
+      const sessionToken = sessionStorage.getItem("token");
+      const token = sessionToken || localToken;
+      if (!token) {
+        toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
+        return;
+      }
+      const response = await axios.get(`${API_BASE_URL}/User/profile/${lenderId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setProfileData(response.data.userInfo);
+      setShowProfileModal(true);
+    } catch (error) {
+      console.error("Lỗi khi lấy thông tin người mượn:", error);
+      toast.error("Không thể tải thông tin người mượn!");
+    }
   };
 
   const handleLoadMore = () => {
@@ -212,6 +213,11 @@ const InLending = () => {
     ? lendings.filter((item) => item.borrowDate === formattedFilterDate)
     : lendings;
   const visibleLendings = filteredLendings.slice(0, visibleItems);
+
+  const canCancelRequest = (borrowDate) => {
+    const today = new Date().toISOString().split("T")[0];
+    return today >= borrowDate;
+  };
 
   return (
     <div className="inlending-page home-page">
@@ -227,7 +233,7 @@ const InLending = () => {
           <Col xs={12} md={2}>
             <SideMenu menuItems={sideMenuItems} activeItem={3} />
           </Col>
-          <Col xs={12} md={10} className="main-content">
+          <Col xs={12} md={10} className={`main-content ${lendings.length === 0 ? 'empty' : ''}`}>
             <Form.Group controlId="selectDate" className="mb-3">
               <Form.Label>Chọn ngày mượn</Form.Label>
               <DatePicker
@@ -239,7 +245,7 @@ const InLending = () => {
               />
             </Form.Group>
             {visibleLendings.length === 0 ? (
-              <div className="text-center mt-5">
+              <div className="text-center">
                 <h5>Không có đồ chơi nào trong trạng thái đang cho mượn</h5>
               </div>
             ) : (
@@ -262,14 +268,14 @@ const InLending = () => {
                             <span className="in-progress">Đang cho mượn</span>
                           </Card.Text>
                           <div className="lender-info">
-                            <img src={item.lenderAvatar} alt="Avatar" className="lender-avatar" />
+                            <img src={item.lenderAvatar} alt="Ảnh đại diện người mượn" className="lender-avatar" />
                             <span>
                               <Button
                                 variant="link"
                                 className="p-0 text-decoration-none"
                                 onClick={() => handleViewProfile(item.lenderId)}
                               >
-                                Trang cá nhân người mượn
+                                Thông tin người mượn
                               </Button>
                             </span>
                           </div>
@@ -280,9 +286,11 @@ const InLending = () => {
                             <Button className="btn-return" onClick={() => handleReturn(item.id)}>
                               Đã trả
                             </Button>
-                            <Button className="btn-cancel" onClick={() => handleReport(item.id)}>
-                              Hủy yêu cầu
-                            </Button>
+                            {canCancelRequest(item.borrowDate) && (
+                              <Button className="btn-cancel" onClick={() => handleReport(item.id)}>
+                                Hủy yêu cầu
+                              </Button>
+                            )}
                           </div>
                         </Card.Body>
                       </Card>
@@ -375,6 +383,35 @@ const InLending = () => {
           </Button>
           <Button variant="primary" onClick={handleSendReport}>
             <FaPaperPlane className="me-2" /> Gửi
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={showProfileModal} onHide={() => setShowProfileModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Thông tin người mượn</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {profileData ? (
+            <div>
+              <img
+                src={profileData.avatar || user}
+                alt="Ảnh đại diện"
+                className="rounded-circle mb-3"
+                style={{ width: "100px", height: "100px" }}
+              />
+              <p><strong>Tên hiển thị:</strong> {profileData.displayName}</p>
+              <p><strong>Tuổi:</strong> {profileData.age}</p>
+              <p><strong>Địa chỉ:</strong> {profileData.address}</p>
+              <p><strong>Đánh giá:</strong> {profileData.rating ? profileData.rating.toFixed(2) : "Chưa có đánh giá"}</p>
+            </div>
+          ) : (
+            <p>Đang tải thông tin...</p>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowProfileModal(false)}>
+            Đóng
           </Button>
         </Modal.Footer>
       </Modal>

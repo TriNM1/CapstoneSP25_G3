@@ -10,13 +10,15 @@
   position: relative;
 }
 
-// Adjust side banners to take fixed width
+// Adjust side banners to scale with viewport width
 .side-banner {
-  width: 150px;
-  height: 120vh;
+  width: 10vw; // Chiều rộng dựa trên viewport width
+  max-width: 150px; // Giới hạn tối đa
+  min-width: 120px; // Giới hạn tối thiểu
+  height: 80vh; // Giảm chiều cao để không bị cắt
   border-radius: 10px;
   position: fixed;
-  top: 31%;
+  top: 20%; // Điều chỉnh vị trí top để banner không bị lệch
   z-index: 50000;
 
   &.left-banner {
@@ -30,6 +32,8 @@
   img {
     border-radius: 0px;
     width: 100%;
+    height: 100%; // Đảm bảo ảnh lấp đầy banner
+    object-fit: cover; // Giữ tỷ lệ ảnh
   }
 }
 
@@ -114,7 +118,7 @@
         padding: 0.375rem 0.75rem;
       }
     }
-    #trangcanhanlink{
+    #trangcanhanlink {
       color: #333;
     }
   }
@@ -172,14 +176,21 @@
 // Media query for responsive design
 @media (max-width: 992px) {
   .side-banner {
-    width: 120px;
-    
+    width: 8vw; // Giảm chiều rộng khi màn hình nhỏ hơn
+    max-width: 120px;
+    min-width: 100px;
   }
   
   .home-page {
     .toy-actions Button {
       font-size: 0.9rem;
       padding: 0.25rem 0.5rem;
+    }
+  }
+
+  .banner-section {
+    .banner-image {
+      height: 300px; // Giảm chiều cao banner khi màn hình nhỏ
     }
   }
 }
@@ -190,6 +201,20 @@
   }
   
   .home-page {
-    width: 200%;
+    width: 100%; // Sửa từ 200% thành 100% để tránh tràn màn hình
+  }
+
+  .banner-section {
+    .banner-image {
+      height: 250px; // Giảm chiều cao banner hơn nữa
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .banner-section {
+    .banner-image {
+      height: 200px; // Giảm chiều cao banner cho màn hình rất nhỏ
+    }
   }
 }

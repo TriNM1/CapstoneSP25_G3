@@ -6,6 +6,7 @@ import {
   Card,
   Button,
   Form,
+  Modal,
 } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -15,24 +16,24 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import "./BorrowHistory.scss"; // Import file SCSS mới
+import "./BorrowHistory.scss";
 
 const BorrowHistory = () => {
   const navigate = useNavigate();
   const [activeLink, setActiveLink] = useState("transfer-history");
   const [selectedDate, setSelectedDate] = useState(null);
   const [histories, setHistories] = useState([]);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileData, setProfileData] = useState(null);
 
   const API_BASE_URL = "https://localhost:7128/api";
 
-  // Side Menu Items
   const sideMenuItems = [
     { id: 1, label: "Tìm kiếm đồ chơi", link: "/searchtoy" },
     { id: 2, label: "Danh sách mượn", link: "/sendingrequest" },
     { id: 3, label: "Lịch sử trao đổi", link: "/borrowhistory" },
   ];
 
-  // Lấy lịch sử mượn từ API
   useEffect(() => {
     const fetchHistory = async () => {
       try {
@@ -62,19 +63,35 @@ const BorrowHistory = () => {
     fetchHistory();
   }, [navigate]);
 
-  // Lọc lịch sử theo ngày trả (returnDate)
+  const handleViewProfile = async (userId) => {
+    try {
+      const localToken = localStorage.getItem("token");
+      const sessionToken = sessionStorage.getItem("token");
+      const token = sessionToken || localToken;
+      const response = await axios.get(`${API_BASE_URL}/User/profile/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setProfileData(response.data.userInfo);
+      setShowProfileModal(true);
+    } catch (error) {
+      console.error("Lỗi khi lấy thông tin người cho mượn:", error);
+      toast.error("Không thể tải thông tin người cho mượn!");
+    }
+  };
+
   const filteredHistories = selectedDate
     ? histories.filter((history) => {
-      const returnDate = new Date(history.returnDate);
-      return (
-        returnDate.getDate() === selectedDate.getDate() &&
-        returnDate.getMonth() === selectedDate.getMonth() &&
-        returnDate.getFullYear() === selectedDate.getFullYear()
-      );
-    })
+        const returnDate = new Date(history.returnDate);
+        return (
+          returnDate.getDate() === selectedDate.getDate() &&
+          returnDate.getMonth() === selectedDate.getMonth() &&
+          returnDate.getFullYear() === selectedDate.getFullYear()
+        );
+      })
     : histories;
 
-  // Xử lý "Xem thêm" (giả lập phân trang)
   const handleLoadMore = () => {
     toast.info("Đã hiển thị tất cả lịch sử!");
   };
@@ -91,14 +108,11 @@ const BorrowHistory = () => {
 
       <Container fluid className="mt-4">
         <Row>
-          {/* Side Menu */}
           <Col xs={12} md={2}>
             <SideMenu menuItems={sideMenuItems} activeItem={3} />
           </Col>
 
-          {/* Main Content */}
           <Col xs={12} md={10} className="main-content">
-            {/* DatePicker để chọn ngày (lọc theo ngày trả) */}
             <Form.Group controlId="selectDate" className="mb-3">
               <Form.Label>Chọn ngày trả</Form.Label>
               <DatePicker
@@ -146,15 +160,16 @@ const BorrowHistory = () => {
                             history.borrowerAvatar ||
                             "https://via.placeholder.com/50?text=Avatar"
                           }
-                          alt="Borrower Avatar"
+                          alt="Ảnh đại diện người cho mượn"
                           className="lender-avatar"
                         />
-                        <a
-                          href={`/userinfo/${history.userId}`}
-                          className="ms-2 lender-link"
+                        <Button
+                          variant="link"
+                          className="ms-2 lender-link p-0 text-decoration-none"
+                          onClick={() => handleViewProfile(history.userId)}
                         >
-                          {history.borrowerName || "Người mượn"}
-                        </a>
+                          Thông tin người cho mượn
+                        </Button>
                       </div>
                     </Card.Body>
                   </Card>
@@ -175,6 +190,35 @@ const BorrowHistory = () => {
           </Col>
         </Row>
       </Container>
+
+      <Modal show={showProfileModal} onHide={() => setShowProfileModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Thông tin người cho mượn</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {profileData ? (
+            <div>
+              <img
+                src={profileData.avatar || "https://via.placeholder.com/100"}
+                alt="Ảnh đại diện"
+                className="rounded-circle mb-3"
+                style={{ width: "100px", height: "100px" }}
+              />
+              <p><strong>Tên hiển thị:</strong> {profileData.displayName}</p>
+              <p><strong>Tuổi:</strong> {profileData.age}</p>
+              <p><strong>Địa chỉ:</strong> {profileData.address}</p>
+              <p><strong>Đánh giá:</strong> {profileData.rating ? profileData.rating.toFixed(2) : "Chưa có đánh giá"}</p>
+            </div>
+          ) : (
+            <p>Đang tải thông tin...</p>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowProfileModal(false)}>
+            Đóng
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
       <ToastContainer position="top-right" autoClose={3000} />
     </div>

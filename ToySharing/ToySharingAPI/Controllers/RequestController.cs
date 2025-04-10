@@ -362,7 +362,7 @@ namespace ToySharingAPI.Controllers
             return Ok(requests); // Trả về danh sách yêu cầu, bao gồm cả pending (status == 0)
         }
 
-        // Lấy danh sách yêu cầu mượn liên quan đến đồ chơi của người dùng hiện tại (chủ sở hữu) với trạng thái pending (0) hoặc accepted (1).
+        // Lấy danh sách yêu cầu mượn liên quan đến đồ chơi của người dùng hiện tại (chủ sở hữu) với trạng thái pending (0) hoặc accepted (1)
         [HttpGet("borrowing")]
         [Authorize(Roles = "User")]
         public async Task<ActionResult<IEnumerable<RequestDTO>>> GetBorrowingRequests()
@@ -377,7 +377,10 @@ namespace ToySharingAPI.Controllers
                 .Include(r => r.Product)
                 .ThenInclude(p => p.User)
                 .Include(r => r.User)
-                .Where(r => r.Product.UserId == mainUserId && (r.Status == 0 || r.Status == 1))
+                .Include(r => r.History) // Thêm Include để kiểm tra History
+                .Where(r => r.Product.UserId == mainUserId &&
+                            (r.Status == 0 || r.Status == 1) &&
+                            (r.History == null || (r.History.Status != 2 || r.History.Rating != 1))) // Loại bỏ các yêu cầu canceled với rating 1
                 .Select(r => new RequestDTO
                 {
                     RequestId = r.RequestId,
@@ -629,7 +632,7 @@ namespace ToySharingAPI.Controllers
             }
         }
 
-        // Hủy một yêu cầu mượn đã được chấp nhận, cập nhật trạng thái History thành canceled (2) và ghi lại lý do hủy.
+        // Hủy một yêu cầu mượn đã được chấp nhận, cập nhật trạng thái History thành canceled (2) và ghi lại lý do hủy
         [HttpPut("{requestId}/cancel")]
         [Authorize(Roles = "User")]
         public async Task<IActionResult> CancelRequest(int requestId, [FromBody] CancelRequestDTO formData)
@@ -652,6 +655,10 @@ namespace ToySharingAPI.Controllers
 
             if (request.Status != 1)
                 return BadRequest("Can only cancel from 'accepted' status.");
+
+            // Kiểm tra ngày mượn
+            if (DateTime.Now < request.RentDate)
+                return BadRequest("Cannot cancel the request before the rent date.");
 
             var history = await _context.Histories
                 .FirstOrDefaultAsync(h => h.RequestId == requestId);

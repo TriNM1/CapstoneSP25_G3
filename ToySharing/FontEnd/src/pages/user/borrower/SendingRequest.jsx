@@ -25,18 +25,18 @@ const SendingRequest = () => {
   const [requests, setRequests] = useState([]);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState(null);
-  const [cancelReason, setCancelReason] = useState(""); // Lý do hủy yêu cầu
+  const [cancelReason, setCancelReason] = useState("");
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileData, setProfileData] = useState(null);
 
   const API_BASE_URL = "https://localhost:7128/api";
 
-  // Side Menu Items
   const sideMenuItems = [
     { id: 1, label: "Tìm kiếm đồ chơi", link: "/searchtoy" },
     { id: 2, label: "Danh sách mượn", link: "/sendingrequest" },
     { id: 3, label: "Lịch sử trao đổi", link: "/borrowhistory" },
   ];
 
-  // Lấy danh sách yêu cầu mượn từ API
   useEffect(() => {
     const fetchRequests = async () => {
       try {
@@ -66,25 +66,29 @@ const SendingRequest = () => {
     fetchRequests();
   }, [navigate]);
 
-  // Lọc yêu cầu theo ngày (nếu có)
-  const filteredRequests = selectedDate
-    ? requests.filter((request) => {
-      const requestDate = new Date(request.requestDate);
-      return (
-        requestDate.getDate() === selectedDate.getDate() &&
-        requestDate.getMonth() === selectedDate.getMonth() &&
-        requestDate.getFullYear() === selectedDate.getFullYear()
-      );
-    })
-    : requests;
+  const handleViewProfile = async (ownerId) => {
+    try {
+      const localToken = localStorage.getItem("token");
+      const sessionToken = sessionStorage.getItem("token");
+      const token = sessionToken || localToken;
+      const response = await axios.get(`${API_BASE_URL}/User/profile/${ownerId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setProfileData(response.data.userInfo);
+      setShowProfileModal(true);
+    } catch (error) {
+      console.error("Lỗi khi lấy thông tin người cho mượn:", error);
+      toast.error("Không thể tải thông tin người cho mượn!");
+    }
+  };
 
-  // Khi bấm nút Hủy trên một yêu cầu
   const handleCancelClick = (id) => {
     setSelectedRequestId(id);
     setShowCancelModal(true);
   };
 
-  // Xác nhận hủy yêu cầu
   const handleConfirmCancel = async () => {
     if (!cancelReason) {
       toast.error("Vui lòng nhập lý do hủy yêu cầu!");
@@ -92,7 +96,9 @@ const SendingRequest = () => {
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const localToken = localStorage.getItem("token");
+      const sessionToken = sessionStorage.getItem("token");
+      const token = sessionToken || localToken;
       await axios.put(
         `${API_BASE_URL}/Requests/${selectedRequestId}/cancel`,
         { reason: cancelReason },
@@ -104,7 +110,6 @@ const SendingRequest = () => {
         }
       );
 
-      // Cập nhật danh sách yêu cầu sau khi hủy
       setRequests((prev) => prev.filter((req) => req.requestId !== selectedRequestId));
       toast.success("Hủy yêu cầu thành công!");
       setShowCancelModal(false);
@@ -116,11 +121,20 @@ const SendingRequest = () => {
     }
   };
 
-  // Xử lý "Xem thêm" (giả lập phân trang, có thể tích hợp API sau)
   const handleLoadMore = () => {
-    // Hiện tại API không hỗ trợ phân trang, nên chỉ hiển thị lại dữ liệu
     toast.info("Đã hiển thị tất cả yêu cầu!");
   };
+
+  const filteredRequests = selectedDate
+    ? requests.filter((request) => {
+        const requestDate = new Date(request.requestDate);
+        return (
+          requestDate.getDate() === selectedDate.getDate() &&
+          requestDate.getMonth() === selectedDate.getMonth() &&
+          requestDate.getFullYear() === selectedDate.getFullYear()
+        );
+      })
+    : requests;
 
   return (
     <div className="sending-request-page home-page">
@@ -134,14 +148,11 @@ const SendingRequest = () => {
 
       <Container fluid className="mt-4">
         <Row>
-          {/* Side Menu */}
           <Col xs={12} md={2}>
             <SideMenu menuItems={sideMenuItems} activeItem={2} />
           </Col>
 
-          {/* Main Content */}
           <Col xs={12} md={10} className="main-content">
-            {/* DatePicker để chọn ngày (lọc theo ngày gửi yêu cầu) */}
             <Form.Group controlId="selectDate" className="mb-3">
               <Form.Label>Chọn ngày</Form.Label>
               <DatePicker
@@ -181,15 +192,16 @@ const SendingRequest = () => {
                             request.ownerAvatar ||
                             "https://via.placeholder.com/50?text=Avatar"
                           }
-                          alt="Lender Avatar"
+                          alt="Ảnh đại diện người cho mượn"
                           className="lender-avatar"
                         />
-                        <a
-                          href={`/userinfo/${request.ownerId}`}
-                          className="ms-2 lender-link"
+                        <Button
+                          variant="link"
+                          className="ms-2 lender-link p-0 text-decoration-none"
+                          onClick={() => handleViewProfile(request.ownerId)}
                         >
-                          {request.ownerName || "Người cho mượn"}
-                        </a>
+                          Thông tin người cho mượn
+                        </Button>
                       </div>
                       <div className="request-actions text-center">
                         <Button
@@ -219,7 +231,6 @@ const SendingRequest = () => {
         </Row>
       </Container>
 
-      {/* Modal xác nhận hủy yêu cầu */}
       <Modal
         show={showCancelModal}
         onHide={() => setShowCancelModal(false)}
@@ -247,6 +258,35 @@ const SendingRequest = () => {
           </Button>
           <Button variant="primary" onClick={handleConfirmCancel}>
             Xác nhận
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={showProfileModal} onHide={() => setShowProfileModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Thông tin người cho mượn</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {profileData ? (
+            <div>
+              <img
+                src={profileData.avatar || "https://via.placeholder.com/100"}
+                alt="Ảnh đại diện"
+                className="rounded-circle mb-3"
+                style={{ width: "100px", height: "100px" }}
+              />
+              <p><strong>Tên hiển thị:</strong> {profileData.displayName}</p>
+              <p><strong>Tuổi:</strong> {profileData.age}</p>
+              <p><strong>Địa chỉ:</strong> {profileData.address}</p>
+              <p><strong>Đánh giá:</strong> {profileData.rating ? profileData.rating.toFixed(2) : "Chưa có đánh giá"}</p>
+            </div>
+          ) : (
+            <p>Đang tải thông tin...</p>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowProfileModal(false)}>
+            Đóng
           </Button>
         </Modal.Footer>
       </Modal>
