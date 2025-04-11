@@ -23,7 +23,6 @@ import ToyDetail from "./pages/user/generate/ToyDetail";
 //admin
 import AdminPage from "./pages/admin/AdminPage";
 import ManageUser from "./pages/admin/ManageUser";
-import CheckingPost from "./pages/admin/CheckingPost";
 import ManageFeedback from "./pages/admin/ManageFeedback";
 import Statistic from "./pages/admin/Statistic";
 
@@ -71,9 +70,8 @@ function App() {
 
         <Route path="/adminpage" element={<AdminPage />} />
         <Route path="/manageuser" element={<ManageUser />} />
-        <Route path="/checkingpost" element={<CheckingPost />} />
         <Route path="/managefeedback" element={<ManageFeedback />} />
-        <Route path="/statistic" element={<Statistic />} />
+        <Route path="/statistic" element={<Statistic />} /> 
 
         {/* Route ToyDetail */}
         <Route path="/toydetail/:toyId" element={<ToyDetail />} />

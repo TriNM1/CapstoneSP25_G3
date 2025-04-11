@@ -8,9 +8,8 @@ const AdminPage = () => {
   const menuItems = [
     { id: 1, label: "Trang chủ", link: "/adminpage" },
     { id: 2, label: "Quản lý người dùng", link: "/manageuser" },
-    { id: 3, label: "Duyệt bài đăng", link: "/checkingpost" },
-    { id: 4, label: "Quản lý vi phạm", link: "/managefeedback" },
-    { id: 5, label: "Thống kê", link: "/statistic" },
+    { id: 3, label: "Quản lý vi phạm", link: "/managefeedback" },
+    { id: 4, label: "Thống kê", link: "/statistic" },
   ];
 
   return (
@@ -42,10 +41,6 @@ const AdminPage = () => {
                 <li>
                   <strong>Quản lý người dùng:</strong> Xem, chỉnh sửa và xóa
                   thông tin người dùng.
-                </li>
-                <li>
-                  <strong>Duyệt bài đăng:</strong> Kiểm duyệt các bài đăng từ
-                  người dùng.
                 </li>
                 <li>
                   <strong>Quản lý vi phạm:</strong> Xem và xử lý các báo cáo vi

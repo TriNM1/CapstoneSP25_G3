@@ -8,6 +8,7 @@ using ToySharingAPI.DTO;
 using ToySharingAPI.Models;
 using System.Net.Http;
 using System.Text.Json;
+using Microsoft.AspNetCore.Identity;
 
 namespace ToySharingAPI.Controllers
 {
@@ -17,12 +18,15 @@ namespace ToySharingAPI.Controllers
     {
         private readonly ToySharingVer3Context _context;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public UserController(ToySharingVer3Context context, IHttpClientFactory httpClientFactory)
+        public UserController(ToySharingVer3Context context, IHttpClientFactory httpClientFactory, UserManager<IdentityUser> userManager)
         {
             _context = context;
             _httpClientFactory = httpClientFactory;
+            _userManager = userManager;
         }
+        
         private async Task<int> GetAuthenticatedUserId()
         {
             // Kiểm tra xem User có được xác thực không
@@ -305,7 +309,7 @@ namespace ToySharingAPI.Controllers
         }
 
         [HttpPost("ban")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> BanUser([FromBody] BanUnbanRequestDTO request)
         {
             var user = await _context.Users.FindAsync(request.UserId);
@@ -328,7 +332,7 @@ namespace ToySharingAPI.Controllers
         }
 
         [HttpPost("unban")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> UnbanUser([FromBody] BanUnbanRequestDTO request)
         {
             var user = await _context.Users.FindAsync(request.UserId);
@@ -363,6 +367,40 @@ namespace ToySharingAPI.Controllers
                 .ToListAsync();
 
             return Ok(logs);
+        }
+
+        [HttpGet("role/user")]
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllUsersWithUserRole()
+        {
+            var identityUsers = await _userManager.GetUsersInRoleAsync("User");
+            var result = new List<ListUserDTO>();
+
+            foreach (var identityUser in identityUsers)
+            {
+                if (Guid.TryParse(identityUser.Id, out Guid authUserGuid))
+                {
+                    var roles = await _userManager.GetRolesAsync(identityUser);
+                    var roleStr = roles.FirstOrDefault() ?? string.Empty;
+                    var mainUser = await _context.Users
+                        .FirstOrDefaultAsync(u => u.AuthUserId == authUserGuid);
+
+                    if (mainUser != null)
+                    {
+                        result.Add(new ListUserDTO
+                        {
+                            Id = mainUser.Id,
+                            Email = mainUser.Name,
+                            DisplayName = mainUser.DisplayName,
+                            Gender = mainUser.Gender,
+                            Status = mainUser.Status,
+                            Role = roleStr,
+                        });
+                    }
+                }
+            }
+
+            return Ok(result);
         }
     }
 }
