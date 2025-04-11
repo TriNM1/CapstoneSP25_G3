@@ -14,6 +14,7 @@ using Amazon.S3;
 using Amazon.Runtime;
 using Amazon;
 using Amazon.S3.Transfer;
+using Microsoft.AspNetCore.Identity;
 
 namespace ToySharingAPI.Controllers
 {
@@ -22,13 +23,16 @@ namespace ToySharingAPI.Controllers
     public class UserController : ControllerBase
     {
         private readonly ToySharingVer3Context _context;
+        private readonly UserManager<IdentityUser> _userManager;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly AwsSettings _awsSettings;
         private readonly IAmazonS3 _s3Client;
 
-        public UserController(ToySharingVer3Context context, IHttpClientFactory httpClientFactory, IOptions<AwsSettings> awsSettings)
+        public UserController(ToySharingVer3Context context, IHttpClientFactory httpClientFactory, IOptions<AwsSettings> awsSettings,
+            UserManager<IdentityUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
             _httpClientFactory = httpClientFactory;
             _awsSettings = awsSettings.Value;
             var credentials = new BasicAWSCredentials(_awsSettings.AccessKey, _awsSettings.SecretKey);
@@ -415,6 +419,40 @@ namespace ToySharingAPI.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { avatarUrl = imageUrl });
+        }
+        
+        [HttpGet("role/user")]
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllUsersWithUserRole()
+        {
+            var identityUsers = await _userManager.GetUsersInRoleAsync("User");
+            var result = new List<ListUserDTO>();
+
+            foreach (var identityUser in identityUsers)
+            {
+                if (Guid.TryParse(identityUser.Id, out Guid authUserGuid))
+                {
+                    var roles = await _userManager.GetRolesAsync(identityUser);
+                    var roleStr = roles.FirstOrDefault() ?? string.Empty;
+                    var mainUser = await _context.Users
+                        .FirstOrDefaultAsync(u => u.AuthUserId == authUserGuid);
+                    
+                    if (mainUser != null)
+                    {
+                        result.Add(new ListUserDTO
+                        {
+                            Id = mainUser.Id,
+                            Email = mainUser.Name,
+                            DisplayName = mainUser.DisplayName,
+                            Gender = mainUser.Gender,
+                            Status = mainUser.Status,
+                            Role = roleStr,
+                        });
+                    }
+                }
+            }
+
+            return Ok(result);
         }
     }
 }

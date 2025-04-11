@@ -1,9 +1,10 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Container, Navbar, Nav, Badge, Dropdown } from "react-bootstrap";
 import { FaEnvelope, FaBell } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 import logo from "../assets/logo.png";
 import user from "../assets/user.png";
 import "./Header.scss";
@@ -12,15 +13,112 @@ const Header = ({
   activeLink,
   setActiveLink,
   isLoggedIn,
-  unreadMessages,
-  notificationCount,
+  unreadMessages: initialUnreadMessages,
+  notificationCount: initialNotificationCount,
 }) => {
-  const notifications = [
-    { id: 1, text: "Bạn có tin nhắn mới từ Alice" },
-    { id: 2, text: "Xe đua mini của bạn đã được mượn" },
-    { id: 3, text: "Báo cáo của bạn đã được xử lý" },
-  ];
+  const [notifications, setNotifications] = useState([]);
+  const [notificationCount, setNotificationCount] = useState(initialNotificationCount || 0);
+  const [conversations, setConversations] = useState([]);
+  const [unreadMessages, setUnreadMessages] = useState(initialUnreadMessages || 0);
   const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
+  const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!isLoggedIn || !token) {
+        setNotifications([]);
+        setNotificationCount(0);
+        return;
+      }
+      try {
+        const response = await axios.get("https://localhost:7128/api/Notifications/user", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setNotifications(response.data);
+        setNotificationCount(response.data.filter(notif => !notif.readStatus).length);
+      } catch (error) {
+        console.error("Lỗi khi lấy thông báo:", error);
+        setNotifications([]);
+        setNotificationCount(0);
+      }
+    };
+    fetchNotifications();
+  }, [isLoggedIn, token]);
+
+  useEffect(() => {
+    const fetchConversations = async () => {
+      if (!isLoggedIn || !token) {
+        setConversations([]);
+        setUnreadMessages(0);
+        return;
+      }
+      try {
+        const response = await axios.get("https://localhost:7128/api/Conversations", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setConversations(response.data);
+        const unreadCount = response.data.reduce((count, convo) => {
+          return count + (convo.lastMessageContent && !convo.isRead && convo.lastSenderId !== parseInt(userId) ? 1 : 0);
+        }, 0);
+        setUnreadMessages(unreadCount);
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách cuộc trò chuyện:", error);
+        setConversations([]);
+        setUnreadMessages(0);
+      }
+    };
+    fetchConversations();
+  }, [isLoggedIn, token, userId]);
+
+  const handleMarkNotificationAsRead = async (notificationId) => {
+    try {
+      await axios.put(
+        `https://localhost:7128/api/Notifications/${notificationId}/read`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setNotifications((prev) =>
+        prev.map((notif) =>
+          notif.notificationId === notificationId ? { ...notif, readStatus: true } : notif
+        )
+      );
+      setNotificationCount((prev) => prev - 1);
+    } catch (error) {
+      console.error("Lỗi khi đánh dấu thông báo đã đọc:", error);
+    }
+  };
+
+  const handleMarkMessagesAsRead = async (conversationId) => {
+    try {
+      const response = await axios.get(
+        `https://localhost:7128/api/conversations/${conversationId}/messages?page=1&pageSize=100`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const messages = response.data;
+      const unreadMessages = messages.filter(msg => !msg.isRead && msg.senderId !== parseInt(userId));
+      await Promise.all(
+        unreadMessages.map(msg =>
+          axios.put(
+            `https://localhost:7128/api/conversations/${conversationId}/messages/${msg.messageId}/read`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+        )
+      );
+
+      setConversations((prev) =>
+        prev.map((convo) =>
+          convo.conversationId === conversationId ? { ...convo, isRead: true } : convo
+        )
+      );
+      setUnreadMessages((prev) => prev - unreadMessages.length);
+      navigate("/message", { state: { activeConversationId: conversationId } });
+    } catch (error) {
+      console.error("Lỗi khi đánh dấu tin nhắn đã đọc:", error);
+    }
+  };
+
   return (
     <Navbar bg="light" expand="lg" className="main-navbar">
       <Container>
@@ -79,19 +177,45 @@ const Header = ({
           <Nav className="ms-auto align-items-center">
             {isLoggedIn ? (
               <>
-                <Nav.Link as={Link} to="/message" className="position-relative">
-                  <FaEnvelope size={20} />
-                  {unreadMessages > 0 && (
-                    <Badge bg="danger" className="position-absolute top-0 start-100 translate-middle">
-                      {unreadMessages}
-                    </Badge>
-                  )}
-                </Nav.Link>
+                <Dropdown align="end" className="message-dropdown me-2">
+                  <Dropdown.Toggle variant="link" id="dropdown-messages" className="p-0 position-relative">
+                    <FaEnvelope size={20} />
+                    {unreadMessages > 0 && (
+                      <Badge
+                        bg="danger"
+                        className="position-absolute top-0 start-100 translate-middle"
+                      >
+                        {unreadMessages}
+                      </Badge>
+                    )}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu className="message-menu">
+                    {conversations.length > 0 ? (
+                      conversations.map((convo) => {
+                        const isUnread = convo.lastMessageContent && !convo.isRead && convo.lastSenderId !== parseInt(userId);
+                        return (
+                          <Dropdown.Item
+                            key={convo.conversationId}
+                            onClick={() => handleMarkMessagesAsRead(convo.conversationId)}
+                            className={isUnread ? "unread" : "read"}
+                          >
+                            <strong>{convo.otherUser.name}</strong>: {convo.lastMessageContent || "Chưa có tin nhắn"}
+                          </Dropdown.Item>
+                        );
+                      })
+                    ) : (
+                      <Dropdown.Item>Không có tin nhắn</Dropdown.Item>
+                    )}
+                  </Dropdown.Menu>
+                </Dropdown>
                 <Dropdown align="end" className="notification-dropdown me-2">
                   <Dropdown.Toggle variant="link" id="dropdown-notifications" className="p-0">
                     <FaBell size={20} className="notification-icon" />
                     {notificationCount > 0 && (
-                      <Badge bg="danger" className="position-absolute top-0 start-100 translate-middle">
+                      <Badge
+                        bg="danger"
+                        className="position-absolute top-0 start-100 translate-middle"
+                      >
                         {notificationCount}
                       </Badge>
                     )}
@@ -99,7 +223,13 @@ const Header = ({
                   <Dropdown.Menu className="notification-menu">
                     {notifications.length > 0 ? (
                       notifications.map((notif) => (
-                        <Dropdown.Item key={notif.id}>{notif.text}</Dropdown.Item>
+                        <Dropdown.Item
+                          key={notif.notificationId}
+                          onClick={() => !notif.readStatus && handleMarkNotificationAsRead(notif.notificationId)}
+                          className={notif.readStatus ? "read" : "unread"}
+                        >
+                          {notif.content}
+                        </Dropdown.Item>
                       ))
                     ) : (
                       <Dropdown.Item>Không có thông báo</Dropdown.Item>
@@ -111,8 +241,8 @@ const Header = ({
                     <img src={user} alt="Avatar" className="user-avatar" />
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
-                  <Dropdown.Item 
-                      as={Link} 
+                    <Dropdown.Item
+                      as={Link}
                       to={`/userdetail/${userId}`}
                       onClick={() => setActiveLink("profile")}
                     >
