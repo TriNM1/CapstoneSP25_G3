@@ -39,25 +39,38 @@ namespace ToySharingAPI.Controllers
             _s3Client = new AmazonS3Client(credentials, RegionEndpoint.GetBySystemName(_awsSettings.Region));
 
         }
+
         private async Task<int> GetAuthenticatedUserId()
         {
-            // Kiểm tra xem User có được xác thực không
             if (!User.Identity.IsAuthenticated)
+            {
+                Console.WriteLine("User is not authenticated.");
                 throw new UnauthorizedAccessException("Người dùng chưa đăng nhập.");
+            }
 
             var authUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(authUserIdStr))
+            {
+                Console.WriteLine("ClaimTypes.NameIdentifier not found in token.");
                 throw new UnauthorizedAccessException("Không tìm thấy thông tin xác thực người dùng.");
+            }
 
             if (!Guid.TryParse(authUserIdStr, out Guid authUserId))
+            {
+                Console.WriteLine($"Invalid authUserId format: {authUserIdStr}");
                 throw new UnauthorizedAccessException("ID người dùng không hợp lệ.");
+            }
 
             var mainUser = await _context.Users.FirstOrDefaultAsync(u => u.AuthUserId == authUserId);
             if (mainUser == null)
+            {
+                Console.WriteLine($"User with AuthUserId {authUserId} not found in database.");
                 throw new UnauthorizedAccessException("Không tìm thấy người dùng trong hệ thống.");
+            }
 
             return mainUser.Id;
         }
+
         // Get user by ID (không hiển thị Latitude, Longitude)
         [HttpGet("{id}")]
         public async Task<ActionResult<UserDTO>> GetUserById(int id)
@@ -129,7 +142,7 @@ namespace ToySharingAPI.Controllers
                 {
                     UserInfo = new UserInfo
                     {
-                        Name = u.Name,
+                        DisplayName = u.DisplayName, // Thay Name bằng DisplayName
                         Age = u.Age ?? 0,
                         Address = u.Address,
                         Avatar = u.Avatar,
@@ -269,50 +282,111 @@ namespace ToySharingAPI.Controllers
                 return null;
             }
         }
-
-        // Calculate Distance to Product Owner (dùng Haversine thay vì Google Maps)
-        [HttpGet("distance-to-product/{productId}")]
-        public async Task<IActionResult> CalculateDistanceToProduct(int productId, decimal myLatitude, decimal myLongitude)
+        [HttpGet("current/location")]
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> GetCurrentUserLocation()
         {
-            var product = await _context.Products
-                .Include(p => p.User)
-                .FirstOrDefaultAsync(p => p.ProductId == productId);
-
-            if (product == null)
+            try
             {
-                return NotFound("Product not found.");
+                var mainUserId = await GetAuthenticatedUserId();
+                var user = await _context.Users
+                    .Where(u => u.Id == mainUserId)
+                    .Select(u => new
+                    {
+                        Latitude = u.Latitude,
+                        Longitude = u.Longtitude,
+                        Address = u.Address
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (user == null)
+                {
+                    return NotFound("User not found.");
+                }
+
+                if (!user.Latitude.HasValue || !user.Longitude.HasValue || (user.Latitude == 0 && user.Longitude == 0))
+                {
+                    return Ok(new
+                    {
+                        Latitude = (decimal?)null,
+                        Longitude = (decimal?)null,
+                        Address = user.Address,
+                        Message = "Vị trí của người dùng chưa được xác định hoặc không hợp lệ."
+                    });
+                }
+
+                return Ok(new
+                {
+                    Latitude = user.Latitude,
+                    Longitude = user.Longitude,
+                    Address = user.Address
+                });
             }
-
-            var owner = product.User;
-            if (owner == null || !owner.Latitude.HasValue || !owner.Longtitude.HasValue)
+            catch (UnauthorizedAccessException ex)
             {
-                return BadRequest("Owner location is not available.");
+                return Unauthorized(new { message = ex.Message });
             }
-
-            var ownerLatitude = owner.Latitude.Value;
-            var ownerLongitude = owner.Longtitude.Value;
-
-            // Tính khoảng cách bằng công thức Haversine
-            double distance = CalculateHaversineDistance(myLatitude, myLongitude, ownerLatitude, ownerLongitude);
-
-            return Ok(new
-            {
-                DistanceKilometers = distance,
-                DistanceText = $"{distance:F2} km"
-            });
         }
 
-        // Công thức Haversine tính khoảng cách (km)
+        [HttpGet("distance-to-product/{productId}")]
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> CalculateDistanceToProduct(int productId, decimal myLatitude, decimal myLongitude)
+        {
+            try
+            {
+                var mainUserId = await GetAuthenticatedUserId();
+
+                var product = await _context.Products
+                    .Include(p => p.User)
+                    .FirstOrDefaultAsync(p => p.ProductId == productId);
+
+                if (product == null)
+                {
+                    return NotFound("Product not found.");
+                }
+
+                var owner = product.User;
+                if (owner == null || !owner.Latitude.HasValue || !owner.Longtitude.HasValue || (owner.Latitude == 0 && owner.Longtitude == 0))
+                {
+                    return Ok(new
+                    {
+                        DistanceKilometers = (double?)null,
+                        DistanceText = "Chưa xác định được vị trí của đồ chơi"
+                    });
+                }
+
+                var ownerLatitude = owner.Latitude.Value;
+                var ownerLongitude = owner.Longtitude.Value;
+
+                double distance = CalculateHaversineDistance(myLatitude, myLongitude, ownerLatitude, ownerLongitude);
+
+                return Ok(new
+                {
+                    DistanceKilometers = distance,
+                    DistanceText = $"{distance:F2} km"
+                });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
+        }
+
         private double CalculateHaversineDistance(decimal lat1, decimal lon1, decimal lat2, decimal lon2)
         {
-            const double R = 6371; // Bán kính Trái Đất (km)
+            const double R = 6371;
             double dLat = ToRadians((double)(lat2 - lat1));
             double dLon = ToRadians((double)(lon2 - lon1));
+            double lat1Rad = ToRadians((double)lat1);
+            double lat2Rad = ToRadians((double)lat2);
+
             double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
-                       Math.Cos(ToRadians((double)lat1)) * Math.Cos(ToRadians((double)lat2)) *
+                       Math.Cos(lat1Rad) * Math.Cos(lat2Rad) *
                        Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
             double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-            return R * c;
+            double distance = R * c;
+
+            return distance;
         }
 
         private double ToRadians(double degrees)
@@ -365,6 +439,7 @@ namespace ToySharingAPI.Controllers
 
             return Ok("User unbanned successfully");
         }
+
         [HttpGet("ban-history")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllBanHistory()

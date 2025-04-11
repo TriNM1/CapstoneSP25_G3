@@ -1,6 +1,5 @@
 @use '../../../styles/ToyCard' as toyCard;
 
-// Các kiểu dáng khác (nếu có)
 @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto&display=swap');
 
 $primary-color: #ff6f61;
@@ -12,6 +11,16 @@ $danger-color: #dc3545;
   font-family: 'Roboto', sans-serif;
   color: #333;
   padding-bottom: 40px;
+
+  .container-fluid {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .row {
+    flex: 1;
+  }
 
   .side-menu {
     background: #fff;
@@ -73,6 +82,12 @@ $danger-color: #dc3545;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
+  .main-content.empty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
   .date-picker-input {
     width: 100%;
     padding: 0.5rem;
@@ -84,7 +99,7 @@ $danger-color: #dc3545;
   }
 
   .lending-items-section {
-    .lending-card {
+    .toy-card {
       background-color: #fff;
       border: none;
       border-radius: 12px;
@@ -140,49 +155,38 @@ $danger-color: #dc3545;
           border: 1px solid #ddd;
         }
 
-        .lender-link {
+        span {
           margin-left: 8px;
-          font-size: 1rem;
-          color: #333;
-          text-decoration: underline;
-          transition: color 0.3s;
-
-          &:hover {
-            color: $primary-color;
-          }
         }
       }
 
-      .lending-buttons {
+      .card-actions {
         margin-top: 15px;
         display: flex;
         justify-content: center;
         gap: 10px;
 
-        button {
-          font-size: 1rem;
-          padding: 10px 20px;
-          border-radius: 8px;
-          border: none;
-          cursor: pointer;
-          transition: background-color 0.3s;
-
-          &:nth-child(1) {
-            background-color: $success-color;
-            color: #fff;
-
-            &:hover {
-              background-color: #218838;
-            }
+        .btn-message {
+          background-color: #17a2b8;
+          color: #fff;
+          &:hover {
+            background-color: #138496;
           }
+        }
 
-          &:nth-child(2) {
-            background-color: $danger-color;
-            color: #fff;
+        .btn-return {
+          background-color: $success-color;
+          color: #fff;
+          &:hover {
+            background-color: #218838;
+          }
+        }
 
-            &:hover {
-              background-color: #c82333;
-            }
+        .btn-cancel {
+          background-color: $danger-color;
+          color: #fff;
+          &:hover {
+            background-color: #c82333;
           }
         }
       }

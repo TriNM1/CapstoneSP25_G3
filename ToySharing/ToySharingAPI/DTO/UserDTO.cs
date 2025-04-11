@@ -23,7 +23,7 @@
 
     public class UserInfo
     {
-        public string Name { get; set; } = null!;
+        public string DisplayName { get; set; } // Thay Name bằng DisplayName
         public int Age { get; set; } // Không nullable, mặc định 0 nếu null
         public string? Address { get; set; }
         public string? Avatar { get; set; }

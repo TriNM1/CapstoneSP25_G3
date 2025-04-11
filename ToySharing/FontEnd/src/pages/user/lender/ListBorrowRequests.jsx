@@ -150,16 +150,16 @@ const ListBorrowRequests = () => {
       const localToken = localStorage.getItem("token");
       const sessionToken = sessionStorage.getItem("token");
       const token = sessionToken || localToken;
-      const response = await axios.get(`${API_BASE_URL}/Users/profile/${requesterId}`, {
+      const response = await axios.get(`${API_BASE_URL}/User/profile/${requesterId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      setProfileData(response.data.userInfo);
+      setProfileData(response.data.userInfo); // Truy cập vào userInfo
       setShowProfileModal(true);
     } catch (error) {
-      console.error("Lỗi khi lấy thông tin người dùng:", error);
-      toast.error("Không thể tải thông tin người dùng!");
+      console.error("Lỗi khi lấy thông tin người mượn:", error);
+      toast.error("Không thể tải thông tin người mượn!");
     }
   };
 
@@ -224,14 +224,14 @@ const ListBorrowRequests = () => {
                             <strong>Ngày trả:</strong> {request.returnDate}
                           </Card.Text>
                           <div className="lender-info">
-                            <img src={request.requesterAvatar} alt="Requester Avatar" className="requester-avatar" />
+                            <img src={request.requesterAvatar} alt="Ảnh đại diện người mượn" className="requester-avatar" />
                             <span>
                               <Button
                                 variant="link"
                                 className="p-0 text-decoration-none"
                                 onClick={() => handleViewProfile(request.requesterId)}
                               >
-                                Trang cá nhân người muốn mượn
+                                Thông tin người mượn
                               </Button>
                             </span>
                           </div>
@@ -306,14 +306,14 @@ const ListBorrowRequests = () => {
             <div>
               <img
                 src={profileData.avatar || "https://via.placeholder.com/100"}
-                alt="Avatar"
+                alt="Ảnh đại diện"
                 className="rounded-circle mb-3"
                 style={{ width: "100px", height: "100px" }}
               />
               <p><strong>Tên:</strong> {profileData.name}</p>
               <p><strong>Tuổi:</strong> {profileData.age}</p>
               <p><strong>Địa chỉ:</strong> {profileData.address}</p>
-              <p><strong>Đánh giá:</strong> {profileData.rating.toFixed(2)}</p>
+              <p><strong>Đánh giá:</strong> {profileData.rating ? profileData.rating.toFixed(2) : "Chưa có đánh giá"}</p>
             </div>
           ) : (
             <p>Đang tải thông tin...</p>

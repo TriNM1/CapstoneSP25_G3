@@ -40,8 +40,8 @@ public partial class ToySharingVer3Context : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         var builder = new ConfigurationBuilder()
-                      .SetBasePath(Directory.GetCurrentDirectory())
-                      .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+                              .SetBasePath(Directory.GetCurrentDirectory())
+                              .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
         IConfigurationRoot configuration = builder.Build();
         optionsBuilder.UseSqlServer(configuration.GetConnectionString("MyCnn"));
     }
@@ -300,8 +300,8 @@ public partial class ToySharingVer3Context : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
             entity.Property(e => e.DisplayName)
-                .HasMaxLength(50)
-                .HasColumnName("displayName");
+                .HasMaxLength(100)
+                .HasColumnName("displayname");
             entity.Property(e => e.Gender).HasColumnName("gender");
             entity.Property(e => e.Latitude)
                 .HasColumnType("decimal(9, 6)")
@@ -313,7 +313,7 @@ public partial class ToySharingVer3Context : DbContext
                 .HasMaxLength(100)
                 .HasColumnName("name");
             entity.Property(e => e.Phone)
-                .HasMaxLength(20)
+                .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("phone");
             entity.Property(e => e.Rating).HasColumnName("rating");

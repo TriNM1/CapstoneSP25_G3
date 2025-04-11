@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col, Card, Button, Form } from "react-bootstrap";
+import { Container, Row, Col, Card, Button, Form, Modal } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useNavigate } from "react-router-dom";
@@ -28,6 +28,10 @@ const TransferHistory = () => {
   const [transferData, setTransferData] = useState([]);
   const [filterDate, setFilterDate] = useState(null);
   const [visibleItems, setVisibleItems] = useState(6);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileData, setProfileData] = useState(null);
+
+  const API_BASE_URL = "https://localhost:7128/api";
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -40,7 +44,7 @@ const TransferHistory = () => {
           return;
         }
 
-        const response = await axios.get("https://localhost:7128/api/Requests/borrow-history", {
+        const response = await axios.get(`${API_BASE_URL}/Requests/borrow-history`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -52,15 +56,15 @@ const TransferHistory = () => {
           name: item.productName,
           price: item.price ? `${item.price.toLocaleString()} VND` : "Không xác định",
           transferDate: item.returnDate ? new Date(item.returnDate).toISOString().split("T")[0] : "Không xác định",
-          status: item.requestStatus, // "completed" hoặc "canceled"
+          status: item.requestStatus,
           partnerAvatar: item.borrowerAvatar || user,
-          partnerLink: `/user/${item.borrowerId}`,
+          partnerId: item.borrowerId,
           isMock: false,
         }));
 
         setTransferData(formattedData);
       } catch (error) {
-        console.error("Error fetching transfer history:", error);
+        console.error("Lỗi khi lấy lịch sử trao đổi:", error);
         if (error.response && error.response.status === 401) {
           toast.error("Token không hợp lệ hoặc đã hết hạn! Vui lòng đăng nhập lại.");
         } else if (error.response && error.response.status === 404) {
@@ -79,8 +83,22 @@ const TransferHistory = () => {
     setVisibleItems((prev) => prev + 3);
   };
 
-  const handleViewProfile = (partnerId) => {
-    navigate(`/user/${partnerId}`);
+  const handleViewProfile = async (partnerId) => {
+    try {
+      const localToken = localStorage.getItem("token");
+      const sessionToken = sessionStorage.getItem("token");
+      const token = sessionToken || localToken;
+      const response = await axios.get(`${API_BASE_URL}/User/profile/${partnerId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setProfileData(response.data.userInfo);
+      setShowProfileModal(true);
+    } catch (error) {
+      console.error("Lỗi khi lấy thông tin người mượn:", error);
+      toast.error("Không thể tải thông tin người mượn!");
+    }
   };
 
   const formattedFilterDate = filterDate
@@ -143,13 +161,13 @@ const TransferHistory = () => {
                             </span>
                           </Card.Text>
                           <div className="partner-info">
-                            <img src={item.partnerAvatar} alt="Partner Avatar" className="partner-avatar" />
+                            <img src={item.partnerAvatar} alt="Ảnh đại diện người mượn" className="partner-avatar" />
                             <Button
                               variant="link"
                               className="p-0 text-decoration-none partner-link"
-                              onClick={() => handleViewProfile(item.partnerLink.split("/")[2])}
+                              onClick={() => handleViewProfile(item.partnerId)}
                             >
-                              Trang cá nhân người mượn
+                              Thông tin người mượn
                             </Button>
                           </div>
                         </Card.Body>
@@ -170,6 +188,36 @@ const TransferHistory = () => {
         </Row>
         <Footer />
       </Container>
+
+      <Modal show={showProfileModal} onHide={() => setShowProfileModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Thông tin người mượn</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {profileData ? (
+            <div>
+              <img
+                src={profileData.avatar || "https://via.placeholder.com/100"}
+                alt="Ảnh đại diện"
+                className="rounded-circle mb-3"
+                style={{ width: "100px", height: "100px" }}
+              />
+              <p><strong>Tên hiển thị:</strong> {profileData.displayName}</p>
+              <p><strong>Tuổi:</strong> {profileData.age}</p>
+              <p><strong>Địa chỉ:</strong> {profileData.address}</p>
+              <p><strong>Đánh giá:</strong> {profileData.rating ? profileData.rating.toFixed(2) : "Chưa có đánh giá"}</p>
+            </div>
+          ) : (
+            <p>Đang tải thông tin...</p>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowProfileModal(false)}>
+            Đóng
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
       <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
