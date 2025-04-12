@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Azure.Core;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -155,6 +156,7 @@ using (var scope = app.Services.CreateScope())
 {
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var mainContext = scope.ServiceProvider.GetRequiredService<ToySharingVer3Context>();
 
     var adminEmail = builder.Configuration["AdminSettings:Email"];
     var adminPassword = builder.Configuration["AdminSettings:Password"];
@@ -180,6 +182,20 @@ using (var scope = app.Services.CreateScope())
         {
             await userManager.AddToRoleAsync(adminUser, adminRole);
         }
+    }
+    var mainAdmin = await mainContext.Users
+                      .FirstOrDefaultAsync(u => u.AuthUserId == Guid.Parse(adminUser.Id));
+    if (mainAdmin == null)
+    {
+        mainAdmin = new User
+        {
+            AuthUserId = Guid.Parse(adminUser.Id),
+            Name = adminEmail,
+            CreatedAt = DateTime.Now,
+            DisplayName = "Administrator",
+        };
+        mainContext.Users.Add(mainAdmin);
+        await mainContext.SaveChangesAsync();
     }
 }
 // Configure the HTTP request pipeline.

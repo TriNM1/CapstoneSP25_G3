@@ -139,10 +139,18 @@ namespace ToySharingAPI.Controllers
                         {
                             return BadRequest("Không tìm thấy người dùng trong database chính.");
                         }
+
+                        bool isProfileCompleted =
+                            !string.IsNullOrEmpty(mainUser.Phone) &&
+                            !string.IsNullOrEmpty(mainUser.Address) &&
+                            !string.IsNullOrEmpty(mainUser.DisplayName);
+
                         var response = new LoginResponseDTO
                         {
                             JwtToken = jwtToken,
-                            UserId = mainUser.Id
+                            UserId = mainUser.Id,
+                            IsProfileCompleted = isProfileCompleted,
+                            Role = roles.FirstOrDefault()
                         };
                         return Ok(response);
                     }

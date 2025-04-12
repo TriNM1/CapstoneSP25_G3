@@ -90,7 +90,7 @@ namespace ToySharingAPI.Controllers
                     UserId = n.UserId,
                     Content = n.Content,
                     CreatedDate = n.CreatedDate,
-                    //ReadStatus = n.ReadStatus
+                    ReadStatus = n.ReadStatus
                 })
                 .ToListAsync();
 
@@ -116,7 +116,7 @@ namespace ToySharingAPI.Controllers
                 UserId = notification.UserId,
                 Content = notification.Content,
                 CreatedDate = notification.CreatedDate,
-                //ReadStatus = notification.ReadStatus
+                ReadStatus = notification.ReadStatus
             };
 
             return Ok(notificationDto);

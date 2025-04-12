@@ -88,7 +88,7 @@ const AddToy = () => {
       toast.error("Độ tuổi phù hợp là bắt buộc!");
       return;
     }
-    if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
+    if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= -1) {
       toast.error("Phí cho mượn phải là một số lớn hơn 0!");
       return;
     }

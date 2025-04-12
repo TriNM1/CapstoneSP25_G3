@@ -6,5 +6,7 @@
         public OtherUserDTO OtherUser { get; set; }
         public string LastMessageContent { get; set; }
         public DateTime LastMessageAt { get; set; }
+        public bool IsRead { get; set; } 
+        public int LastSenderId { get; set; }
     }
 }
