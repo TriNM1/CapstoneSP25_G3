@@ -5,6 +5,7 @@ import "./Message.scss";
 import userAvatar from "../../../assets/user.png";
 import friendAvatar from "../../../assets/toy1.jpg";
 import Header from "../../../components/Header";
+import { useLocation } from "react-router-dom";
 
 let signalRConnection = null;
 
@@ -14,18 +15,16 @@ const Message = () => {
   const [activeConversation, setActiveConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  const userId = parseInt(localStorage.getItem("userId") || sessionStorage.getItem("userId")); // Chuyển thành số ngay từ đầu
+  const userId = parseInt(localStorage.getItem("userId") || sessionStorage.getItem("userId"));
+  const token = localStorage.getItem("token") || sessionStorage.getItem("token");
   const connectionRef = useRef(null);
+  const messagesRef = useRef(null); // Ref để focus vào danh sách tin nhắn
+  const location = useLocation(); // Nhận state từ navigate
 
+  // Khởi tạo SignalR
   useEffect(() => {
-    const localToken = localStorage.getItem("token");
-    const sessionToken = sessionStorage.getItem("token");
-    const token = sessionToken || localToken;
-
-    console.log("Token used for SignalR:", token);
-
-    if (!token) {
-      console.error("No token available for SignalR connection");
+    if (!token || !userId) {
+      console.error("No token or userId available for SignalR connection");
       return;
     }
 
@@ -139,51 +138,67 @@ const Message = () => {
     return () => {
       signalRConnection.off("ReceiveMessage", handleReceiveMessage);
     };
-  }, []);
+  }, [token, userId]);
 
+  // Lấy danh sách cuộc trò chuyện và chọn activeConversation từ state
   useEffect(() => {
     const fetchConversations = async () => {
       try {
-        const token = sessionStorage.getItem("token") || localStorage.getItem("token");
         const response = await axios.get("https://localhost:7128/api/Conversations", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const sortedConversations = response.data.sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
+        const sortedConversations = response.data.sort(
+          (a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt)
+        );
         setConversations(sortedConversations);
-        if (sortedConversations.length > 0) {
-          setActiveConversation(sortedConversations[0]);
+
+        // Kiểm tra nếu có activeConversationId từ Header
+        const activeConvoId = location.state?.activeConversationId;
+        if (activeConvoId) {
+          const activeConvo = sortedConversations.find(
+            (convo) => convo.conversationId === activeConvoId
+          );
+          if (activeConvo) {
+            setActiveConversation(activeConvo);
+          }
+        } else if (sortedConversations.length > 0 && !activeConversation) {
+          setActiveConversation(sortedConversations[0]); // Mặc định chọn cuộc đầu tiên
         }
       } catch (error) {
         console.error("Lỗi khi lấy danh sách cuộc trò chuyện:", error);
       }
     };
     fetchConversations();
-  }, []);
+  }, [token, location.state]);
 
+  // Lấy tin nhắn và focus vào danh sách tin nhắn
   useEffect(() => {
-    if (activeConversation) {
-      const fetchMessages = async () => {
-        try {
-          const token = sessionStorage.getItem("token") || localStorage.getItem("token");
-          const response = await axios.get(
-            `https://localhost:7128/api/conversations/${activeConversation.conversationId}/messages?page=1&pageSize=10`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          const sortedMessages = response.data.sort((a, b) => new Date(a.sentAt) - new Date(b.sentAt));
-          setMessages(sortedMessages);
-        } catch (error) {
-          console.error("Lỗi khi lấy danh sách tin nhắn:", error);
+    if (!activeConversation) return;
+
+    const fetchMessages = async () => {
+      try {
+        const response = await axios.get(
+          `https://localhost:7128/api/conversations/${activeConversation.conversationId}/messages?page=1&pageSize=10`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const sortedMessages = response.data.sort((a, b) => new Date(a.sentAt) - new Date(b.sentAt));
+        setMessages(sortedMessages);
+
+        // Focus vào khu vực tin nhắn
+        if (messagesRef.current) {
+          messagesRef.current.scrollTop = messagesRef.current.scrollHeight; // Cuộn xuống dưới cùng
         }
-      };
-      fetchMessages();
-    }
-  }, [activeConversation]);
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách tin nhắn:", error);
+      }
+    };
+    fetchMessages();
+  }, [activeConversation, token]);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !activeConversation) return;
 
     try {
-      const token = sessionStorage.getItem("token") || localStorage.getItem("token");
       const response = await axios.post(
         `https://localhost:7128/api/conversations/${activeConversation.conversationId}/messages`,
         { content: newMessage },
@@ -211,6 +226,10 @@ const Message = () => {
       });
 
       setNewMessage("");
+      // Cuộn xuống dưới sau khi gửi tin nhắn
+      if (messagesRef.current) {
+        messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+      }
     } catch (error) {
       console.error("Lỗi khi gửi tin nhắn:", error);
     }
@@ -222,7 +241,11 @@ const Message = () => {
         activeLink={activeLink}
         setActiveLink={setActiveLink}
         isLoggedIn={true}
-        unreadMessages={3}
+        unreadMessages={conversations.reduce(
+          (count, convo) =>
+            count + (convo.lastMessageContent && !convo.isRead && convo.lastSenderId !== userId ? 1 : 0),
+          0
+        )} // Cập nhật động số tin nhắn chưa đọc
         notificationCount={2}
       />
       <div className="message-page">
@@ -269,12 +292,12 @@ const Message = () => {
                 />
                 <h3>{activeConversation.otherUser.name}</h3>
               </div>
-              <div className="chat-messages">
+              <div className="chat-messages" ref={messagesRef}>
                 {messages
                   .filter((message) => message.conversationId === activeConversation.conversationId)
                   .map((message) => {
-                    const isMe = message.senderId === userId; // So sánh trực tiếp vì userId đã là số
-                    console.log("userId:", userId, "senderId:", message.senderId, "isMe:", isMe); // Log để debug
+                    const isMe = message.senderId === userId;
+                    console.log("userId:", userId, "senderId:", message.senderId, "isMe:", isMe);
                     return (
                       <div
                         key={message.messageId}

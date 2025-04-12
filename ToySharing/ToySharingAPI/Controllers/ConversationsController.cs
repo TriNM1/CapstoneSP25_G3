@@ -75,7 +75,9 @@ namespace ToySharingAPI.Controllers
                     LastMessageContent = lastMessage != null ? lastMessage.Content : string.Empty,
                     LastMessageAt = lastMessage != null
                                     ? lastMessage.SentAt.GetValueOrDefault()
-                                    : conv.LastMessageAt.GetValueOrDefault()
+                                    : conv.LastMessageAt.GetValueOrDefault(),
+                    IsRead = lastMessage != null ? lastMessage.IsRead.GetValueOrDefault() : true,
+                    LastSenderId = lastMessage != null ? lastMessage.SenderId.GetValueOrDefault() : 0
                 });
             }
 
