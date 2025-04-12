@@ -129,7 +129,7 @@ namespace ToySharingAPI.Controllers
                 {
                     UserInfo = new UserInfo
                     {
-                        Name = u.Name,
+                        DisplayName = u.DisplayName,
                         Age = u.Age ?? 0,
                         Address = u.Address,
                         Avatar = u.Avatar,
