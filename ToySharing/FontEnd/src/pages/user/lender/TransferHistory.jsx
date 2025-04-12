@@ -18,7 +18,6 @@ const TransferHistory = () => {
   const [activeLink, setActiveLink] = useState("transferhistory");
 
   const sideMenuItems = [
-    { id: 1, label: "Đăng Tải Đồ Chơi Mới", link: "/addtoy" },
     { id: 2, label: "Danh sách đồ chơi của tôi", link: "/mytoy" },
     { id: 3, label: "Đang cho mượn", link: "/inlending" },
     { id: 4, label: "Danh sách yêu cầu mượn", link: "/listborrowrequests" },
