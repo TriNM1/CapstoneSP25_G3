@@ -10,6 +10,7 @@ import {
 } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { FaStar, FaPaperPlane } from "react-icons/fa";
 import Header from "../../../components/Header";
 import SideMenu from "../../../components/SideMenu";
 import "./SendingRequest.scss";
@@ -28,6 +29,11 @@ const SendingRequest = () => {
   const [cancelReason, setCancelReason] = useState("");
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileData, setProfileData] = useState(null);
+  const [showPickedUpModal, setShowPickedUpModal] = useState(false);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [rating, setRating] = useState(null);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [reviewText, setReviewText] = useState("");
 
   const API_BASE_URL = "https://localhost:7128/api";
 
@@ -40,9 +46,7 @@ const SendingRequest = () => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const localToken = localStorage.getItem("token");
-        const sessionToken = sessionStorage.getItem("token");
-        const token = sessionToken || localToken;
+        const token = sessionStorage.getItem("token") || localStorage.getItem("token");
         if (!token) {
           toast.error("Vui lòng đăng nhập để xem danh sách yêu cầu!");
           navigate("/login");
@@ -55,7 +59,23 @@ const SendingRequest = () => {
           },
         });
 
-        setRequests(response.data);
+        // Map API response to frontend format
+        const formattedRequests = response.data.map((req) => ({
+          requestId: req.requestId,
+          productId: req.productId,
+          productName: req.productName,
+          ownerId: req.ownerId || null,
+          ownerName: req.ownerName || "Không xác định",
+          ownerAvatar: req.ownerAvatar || "https://via.placeholder.com/50?text=Avatar",
+          borrowDate: req.borrowDate,
+          returnDate: req.returnDate,
+          requestDate: req.requestDate || new Date().toISOString(),
+          message: req.message,
+          status: req.status,
+          image: req.image || "https://via.placeholder.com/300x200?text=No+Image",
+        }));
+
+        setRequests(formattedRequests);
       } catch (error) {
         console.error("Lỗi khi lấy danh sách yêu cầu:", error);
         toast.error("Không thể tải danh sách yêu cầu!");
@@ -67,10 +87,12 @@ const SendingRequest = () => {
   }, [navigate]);
 
   const handleViewProfile = async (ownerId) => {
+    if (!ownerId) {
+      toast.error("Không có thông tin người cho mượn!");
+      return;
+    }
     try {
-      const localToken = localStorage.getItem("token");
-      const sessionToken = sessionStorage.getItem("token");
-      const token = sessionToken || localToken;
+      const token = sessionStorage.getItem("token") || localStorage.getItem("token");
       const response = await axios.get(`${API_BASE_URL}/User/profile/${ownerId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -89,6 +111,100 @@ const SendingRequest = () => {
     setShowCancelModal(true);
   };
 
+  const handlePickedUpClick = (id) => {
+    setSelectedRequestId(id);
+    setShowPickedUpModal(true);
+  };
+
+  const handleCompleteClick = (id) => {
+    setSelectedRequestId(id);
+    setShowCompleteModal(true);
+  };
+
+  const handleConfirmPickedUp = async () => {
+    try {
+      const token = sessionStorage.getItem("token") || localStorage.getItem("token");
+      if (!token) {
+        toast.error("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!");
+        navigate("/login");
+        return;
+      }
+
+      const response = await axios.put(
+        `${API_BASE_URL}/Requests/${selectedRequestId}/picked-up`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      setRequests((prev) =>
+        prev.map((req) =>
+          req.requestId === selectedRequestId ? { ...req, status: 2 } : req
+        )
+      );
+      toast.success("Đã đánh dấu yêu cầu là đã lấy!");
+      setShowPickedUpModal(false);
+      setSelectedRequestId(null);
+    } catch (error) {
+      console.error("Lỗi khi đánh dấu đã lấy:", {
+        message: error.message,
+        response: error.response ? {
+          status: error.response.status,
+          data: error.response.data,
+        } : "No response",
+        requestId: selectedRequestId,
+      });
+      let errorMessage = "Không thể đánh dấu đã lấy!";
+      if (error.response) {
+        errorMessage = error.response.data.message || errorMessage;
+        if (error.response.status === 401) {
+          errorMessage = "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!";
+          navigate("/login");
+        } else if (error.response.status === 403) {
+          errorMessage = "Bạn không có quyền thực hiện hành động này!";
+        } else if (error.response.status === 404) {
+          errorMessage = "Yêu cầu không tồn tại!";
+        } else if (error.response.status === 400) {
+          errorMessage = error.response.data.message || "Yêu cầu không hợp lệ!";
+        } else if (error.response.status === 500) {
+          errorMessage = error.response.data.error || "Lỗi server, vui lòng thử lại sau!";
+        }
+      }
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleConfirmComplete = async () => {
+    try {
+      const token = sessionStorage.getItem("token") || localStorage.getItem("token");
+      await axios.put(
+        `${API_BASE_URL}/Requests/history/${selectedRequestId}/complete`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      setRequests((prev) =>
+        prev.filter((req) => req.requestId !== selectedRequestId)
+      );
+      toast.success("Đã hoàn thành yêu cầu thành công!");
+      setShowCompleteModal(false);
+      setRating(null);
+      setHoverRating(0);
+      setReviewText("");
+      setSelectedRequestId(null);
+    } catch (error) {
+      console.error("Lỗi khi hoàn thành yêu cầu:", error);
+      toast.error("Không thể hoàn thành yêu cầu!");
+    }
+  };
+
   const handleConfirmCancel = async () => {
     if (!cancelReason) {
       toast.error("Vui lòng nhập lý do hủy yêu cầu!");
@@ -96,9 +212,7 @@ const SendingRequest = () => {
     }
 
     try {
-      const localToken = localStorage.getItem("token");
-      const sessionToken = sessionStorage.getItem("token");
-      const token = sessionToken || localToken;
+      const token = sessionStorage.getItem("token") || localStorage.getItem("token");
       await axios.put(
         `${API_BASE_URL}/Requests/${selectedRequestId}/cancel`,
         { reason: cancelReason },
@@ -127,14 +241,15 @@ const SendingRequest = () => {
 
   const filteredRequests = selectedDate
     ? requests.filter((request) => {
-        const requestDate = new Date(request.requestDate);
-        return (
-          requestDate.getDate() === selectedDate.getDate() &&
-          requestDate.getMonth() === selectedDate.getMonth() &&
-          requestDate.getFullYear() === selectedDate.getFullYear()
-        );
-      })
-    : requests;
+      const requestDate = new Date(request.borrowDate);
+      return (
+        (request.status === 1 || request.status === 2) &&
+        requestDate.getDate() === selectedDate.getDate() &&
+        requestDate.getMonth() === selectedDate.getMonth() &&
+        requestDate.getFullYear() === selectedDate.getFullYear()
+      );
+    })
+    : requests.filter((request) => request.status === 1 || request.status === 2);
 
   return (
     <div className="sending-request-page home-page">
@@ -145,16 +260,14 @@ const SendingRequest = () => {
         unreadMessages={3}
         notificationCount={2}
       />
-
       <Container fluid className="mt-4">
         <Row>
           <Col xs={12} md={2}>
             <SideMenu menuItems={sideMenuItems} activeItem={2} />
           </Col>
-
           <Col xs={12} md={10} className="main-content">
             <Form.Group controlId="selectDate" className="mb-3">
-              <Form.Label>Chọn ngày</Form.Label>
+              <Form.Label>Chọn ngày mượn</Form.Label>
               <DatePicker
                 selected={selectedDate}
                 onChange={(date) => setSelectedDate(date)}
@@ -169,14 +282,16 @@ const SendingRequest = () => {
                   <Card className="request-card">
                     <Card.Img
                       variant="top"
-                      src={request.image || "https://via.placeholder.com/300x200?text=No+Image"}
+                      src={request.image}
                       className="toy-image"
                     />
                     <Card.Body>
                       <Card.Title className="toy-name">{request.productName}</Card.Title>
                       <Card.Text className="send-date">
                         <strong>Ngày gửi:</strong>{" "}
-                        {new Date(request.requestDate).toLocaleDateString()}
+                        {request.requestDate
+                          ? new Date(request.requestDate).toLocaleDateString()
+                          : "Không xác định"}
                       </Card.Text>
                       <Card.Text className="borrow-date">
                         <strong>Ngày mượn:</strong>{" "}
@@ -186,12 +301,15 @@ const SendingRequest = () => {
                         <strong>Ngày trả:</strong>{" "}
                         {new Date(request.returnDate).toLocaleDateString()}
                       </Card.Text>
+                      <Card.Text className="status">
+                        <strong>Trạng thái:</strong>{" "}
+                        <span>
+                          {request.status === 1 ? "Chấp nhận, chưa lấy" : "Đã lấy"}
+                        </span>
+                      </Card.Text>
                       <div className="lender-info d-flex align-items-center mb-2">
                         <img
-                          src={
-                            request.ownerAvatar ||
-                            "https://via.placeholder.com/50?text=Avatar"
-                          }
+                          src={request.ownerAvatar}
                           alt="Ảnh đại diện người cho mượn"
                           className="lender-avatar"
                         />
@@ -204,12 +322,31 @@ const SendingRequest = () => {
                         </Button>
                       </div>
                       <div className="request-actions text-center">
-                        <Button
-                          variant="danger"
-                          onClick={() => handleCancelClick(request.requestId)}
-                        >
-                          Hủy
-                        </Button>
+                        {request.status === 1 && (
+                          <>
+                            <Button
+                              variant="primary"
+                              onClick={() => handlePickedUpClick(request.requestId)}
+                              className="me-2"
+                            >
+                              Đã lấy
+                            </Button>
+                            <Button
+                              variant="danger"
+                              onClick={() => handleCancelClick(request.requestId)}
+                            >
+                              Hủy
+                            </Button>
+                          </>
+                        )}
+                        {request.status === 2 && (
+                          <Button
+                            variant="success"
+                            onClick={() => handleCompleteClick(request.requestId)}
+                          >
+                            Đã trả
+                          </Button>
+                        )}
                       </div>
                     </Card.Body>
                   </Card>
@@ -262,7 +399,85 @@ const SendingRequest = () => {
         </Modal.Footer>
       </Modal>
 
-      <Modal show={showProfileModal} onHide={() => setShowProfileModal(false)} centered>
+      <Modal
+        show={showPickedUpModal}
+        onHide={() => setShowPickedUpModal(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Xác nhận đã lấy</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Bạn có chắc chắn đã lấy đồ chơi này không?</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowPickedUpModal(false)}>
+            Hủy
+          </Button>
+          <Button variant="primary" onClick={handleConfirmPickedUp}>
+            Xác nhận
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal
+        show={showCompleteModal}
+        onHide={() => setShowCompleteModal(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Đánh giá người cho mượn (Tùy chọn)</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group controlId="ratingStars" className="mb-3">
+              <Form.Label>Đánh giá sao (Tùy chọn)</Form.Label>
+              <div className="rating-stars">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <span
+                    key={star}
+                    onClick={() => setRating(star)}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    style={{
+                      cursor: "pointer",
+                      color: star <= (hoverRating || (rating || 0)) ? "#ffc107" : "#ddd",
+                      fontSize: "1.5rem",
+                      marginRight: "5px",
+                    }}
+                  >
+                    <FaStar />
+                  </span>
+                ))}
+              </div>
+            </Form.Group>
+            <Form.Group controlId="reviewText">
+              <Form.Label>Đánh giá (Tùy chọn)</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                placeholder="Nhập đánh giá của bạn"
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowCompleteModal(false)}>
+            Hủy
+          </Button>
+          <Button variant="primary" onClick={handleConfirmComplete}>
+            <FaPaperPlane className="me-2" /> Xác nhận hoàn thành
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal
+        show={showProfileModal}
+        onHide={() => setShowProfileModal(false)}
+        centered
+      >
         <Modal.Header closeButton>
           <Modal.Title>Thông tin người cho mượn</Modal.Title>
         </Modal.Header>

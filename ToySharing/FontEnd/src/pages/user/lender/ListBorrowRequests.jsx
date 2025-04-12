@@ -61,7 +61,7 @@ const ListBorrowRequests = () => {
         borrowDate: new Date(req.rentDate).toISOString().split("T")[0],
         returnDate: new Date(req.returnDate).toISOString().split("T")[0],
         requesterId: req.userId,
-        requesterAvatar: req.borrowerAvatar || "https://via.placeholder.com/35",
+        requesterAvatar: req.borrowerAvatar,
         message: req.message,
       }));
 
@@ -305,7 +305,7 @@ const ListBorrowRequests = () => {
           {profileData ? (
             <div>
               <img
-                src={profileData.avatar || "https://via.placeholder.com/100"}
+                src={profileData.avatar}
                 alt="Ảnh đại diện"
                 className="rounded-circle mb-3"
                 style={{ width: "100px", height: "100px" }}

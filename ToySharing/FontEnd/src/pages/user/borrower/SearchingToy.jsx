@@ -146,6 +146,7 @@ const SearchingToy = () => {
             userId: toy.userId,
             image: toy.imagePaths && toy.imagePaths.length > 0 ? toy.imagePaths[0] : "https://placehold.co/300x200?text=No+Image",
             name: toy.name,
+            ownerAvatar: toy.ownerAvatar,
             createdAt: new Date(toy.createdAt).toISOString().split("T")[0],
             categoryName: toy.categoryName,
             productStatus: toy.productStatus,
@@ -338,7 +339,7 @@ const SearchingToy = () => {
                         </Card.Text>
                         <div className="lender-info d-flex align-items-center mb-2">
                           <img
-                            src={toy.ownerAvatar || "https://placehold.co/50x50?text=Avatar"}
+                            src={toy.ownerAvatar}
                             alt="Ảnh đại diện người cho mượn"
                             className="lender-avatar"
                           />
@@ -463,7 +464,7 @@ const SearchingToy = () => {
           {profileData ? (
             <div>
               <img
-                src={profileData.avatar || "https://placehold.co/100x100?text=Avatar"}
+                src={profileData.avatar}
                 alt="Ảnh đại diện"
                 className="rounded-circle mb-3"
                 style={{ width: "100px", height: "100px" }}
