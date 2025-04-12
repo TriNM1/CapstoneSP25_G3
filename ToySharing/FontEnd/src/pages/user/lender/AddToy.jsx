@@ -127,6 +127,7 @@ const AddToy = () => {
 
       toast.success("Đăng tải đồ chơi thành công!");
       navigate("/mytoy");
+      // Reset form
       setPreviewImage(null);
       setImageFile(null);
       setToyName("");
@@ -135,6 +136,9 @@ const AddToy = () => {
       setAgeGroup("");
       setPrice("");
       setDescription("");
+
+      // Chuyển hướng đến trang "Danh sách đồ chơi của tôi"
+      navigate("/mytoy");
     } catch (error) {
       console.error("Error creating product:", error);
       const errorMessage = error.response?.data?.message || "Có lỗi xảy ra khi gửi yêu cầu!";

@@ -10,7 +10,6 @@ import {
 } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { FaStar, FaPaperPlane } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Header from "../../../components/Header";
 import SideMenu from "../../../components/SideMenu";
@@ -35,17 +34,6 @@ const InLending = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [lendings, setLendings] = useState([]);
   const [visibleItems, setVisibleItems] = useState(4);
-
-  const [showRatingModal, setShowRatingModal] = useState(false);
-  const [rating, setRating] = useState(null);
-  const [hoverRating, setHoverRating] = useState(0);
-  const [reviewText, setReviewText] = useState("");
-  const [selectedLendingId, setSelectedLendingId] = useState(null);
-
-  const [showReportModal, setShowReportModal] = useState(false);
-  const [reportReason, setReportReason] = useState("");
-  const [selectedReportId, setSelectedReportId] = useState(null);
-
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileData, setProfileData] = useState(null);
 
@@ -68,7 +56,7 @@ const InLending = () => {
           },
         });
         const filteredLendings = response.data
-          .filter((req) => req.requestStatus === "Accepted")
+          .filter((req) => req.requestStatus === "Accepted" || req.requestStatus === "PickedUp")
           .map((req) => ({
             id: req.requestId,
             image: req.image || toy1,
@@ -77,6 +65,7 @@ const InLending = () => {
             returnDate: new Date(req.returnDate).toISOString().split("T")[0],
             lenderId: req.userId,
             lenderAvatar: req.borrowerAvatar || user,
+            status: req.requestStatus,
           }));
         setLendings(filteredLendings);
       } catch (error) {
@@ -93,87 +82,6 @@ const InLending = () => {
 
     fetchLendings();
   }, [navigate]);
-
-  const handleReturn = (id) => {
-    setSelectedLendingId(id);
-    setShowRatingModal(true);
-  };
-
-  const handleSendRating = async () => {
-    try {
-      const localToken = localStorage.getItem("token");
-      const sessionToken = sessionStorage.getItem("token");
-      const token = sessionToken || localToken;
-      if (!token) {
-        toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
-        return;
-      }
-      await axios.put(
-        `${API_BASE_URL}/Requests/history/${selectedLendingId}/complete`,
-        {
-          rating: rating,
-          message: reviewText || null,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      setLendings((prev) => prev.filter((item) => item.id !== selectedLendingId));
-      toast.success("Đã hoàn thành yêu cầu thành công!");
-    } catch (error) {
-      console.error("Lỗi khi hoàn thành yêu cầu:", error);
-      toast.error("Có lỗi xảy ra khi hoàn thành yêu cầu! Chỉ xóa cục bộ.");
-      setLendings((prev) => prev.filter((item) => item.id !== selectedLendingId));
-    } finally {
-      setShowRatingModal(false);
-      setRating(null);
-      setHoverRating(0);
-      setReviewText("");
-      setSelectedLendingId(null);
-    }
-  };
-
-  const handleReport = (id) => {
-    setSelectedReportId(id);
-    setShowReportModal(true);
-  };
-
-  const handleSendReport = async () => {
-    try {
-      const localToken = localStorage.getItem("token");
-      const sessionToken = sessionStorage.getItem("token");
-      const token = sessionToken || localToken;
-      if (!token) {
-        toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
-        return;
-      }
-      await axios.put(
-        `${API_BASE_URL}/Requests/${selectedReportId}/cancel`,
-        {
-          reason: reportReason,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      setLendings((prev) => prev.filter((item) => item.id !== selectedReportId));
-      toast.success("Đã hủy yêu cầu và gán 1 sao cho người mượn!");
-    } catch (error) {
-      console.error("Lỗi khi hủy yêu cầu:", error);
-      toast.error("Có lỗi xảy ra khi hủy yêu cầu! Chỉ xóa cục bộ.");
-      setLendings((prev) => prev.filter((item) => item.id !== selectedReportId));
-    } finally {
-      setShowReportModal(false);
-      setReportReason("");
-      setSelectedReportId(null);
-    }
-  };
 
   const handleMessage = (lenderId) => {
     toast.info("Chức năng nhắn tin đang chờ API tạo conversation!");
@@ -212,11 +120,6 @@ const InLending = () => {
     ? lendings.filter((item) => item.borrowDate === formattedFilterDate)
     : lendings;
   const visibleLendings = filteredLendings.slice(0, visibleItems);
-
-  const canCancelRequest = (borrowDate) => {
-    const today = new Date().toISOString().split("T")[0];
-    return today >= borrowDate;
-  };
 
   return (
     <div className="inlending-page home-page">
@@ -264,7 +167,9 @@ const InLending = () => {
                           </Card.Text>
                           <Card.Text className="lending-status">
                             <strong>Trạng thái:</strong>{" "}
-                            <span className="in-progress">Đang cho mượn</span>
+                            <span className="in-progress">
+                              {item.status === "Accepted" ? "Đã chấp nhận" : "Đã lấy"}
+                            </span>
                           </Card.Text>
                           <div className="lender-info">
                             <img src={item.lenderAvatar} alt="Ảnh đại diện người mượn" className="lender-avatar" />
@@ -282,14 +187,6 @@ const InLending = () => {
                             <Button className="btn-message" onClick={() => handleMessage(item.lenderId)}>
                               Nhắn tin
                             </Button>
-                            <Button className="btn-return" onClick={() => handleReturn(item.id)}>
-                              Đã trả
-                            </Button>
-                            {canCancelRequest(item.borrowDate) && (
-                              <Button className="btn-cancel" onClick={() => handleReport(item.id)}>
-                                Hủy yêu cầu
-                              </Button>
-                            )}
                           </div>
                         </Card.Body>
                       </Card>
@@ -308,83 +205,6 @@ const InLending = () => {
           </Col>
         </Row>
       </Container>
-
-      <Modal show={showRatingModal} onHide={() => setShowRatingModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Đánh giá người mượn (Tùy chọn)</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group controlId="ratingStars" className="mb-3">
-              <Form.Label>Đánh giá sao (Tùy chọn)</Form.Label>
-              <div className="rating-stars">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <span
-                    key={star}
-                    onClick={() => setRating(star)}
-                    onMouseEnter={() => setHoverRating(star)}
-                    onMouseLeave={() => setHoverRating(0)}
-                    style={{
-                      cursor: "pointer",
-                      color: star <= (hoverRating || (rating || 0)) ? "#ffc107" : "#ddd",
-                      fontSize: "1.5rem",
-                      marginRight: "5px",
-                    }}
-                  >
-                    <FaStar />
-                  </span>
-                ))}
-              </div>
-            </Form.Group>
-            <Form.Group controlId="reviewText">
-              <Form.Label>Đánh giá (Tùy chọn)</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                placeholder="Nhập đánh giá của bạn"
-                value={reviewText}
-                onChange={(e) => setReviewText(e.target.value)}
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowRatingModal(false)}>
-            Hủy
-          </Button>
-          <Button variant="primary" onClick={handleSendRating}>
-            <FaPaperPlane className="me-2" /> Xác nhận hoàn thành
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      <Modal show={showReportModal} onHide={() => setShowReportModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Hủy yêu cầu cho mượn</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group controlId="reportReason" className="mb-3">
-              <Form.Label>Nhập lý do hủy</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                placeholder="Nhập lý do hủy yêu cầu"
-                value={reportReason}
-                onChange={(e) => setReportReason(e.target.value)}
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowReportModal(false)}>
-            Hủy
-          </Button>
-          <Button variant="primary" onClick={handleSendReport}>
-            <FaPaperPlane className="me-2" /> Gửi
-          </Button>
-        </Modal.Footer>
-      </Modal>
 
       <Modal show={showProfileModal} onHide={() => setShowProfileModal(false)} centered>
         <Modal.Header closeButton>

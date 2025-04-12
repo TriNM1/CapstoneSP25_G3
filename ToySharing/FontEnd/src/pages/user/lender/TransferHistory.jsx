@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Card, Button, Form, Modal } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { FaStar, FaPaperPlane } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Header from "../../../components/Header";
 import SideMenu from "../../../components/SideMenu";
@@ -29,6 +30,11 @@ const TransferHistory = () => {
   const [visibleItems, setVisibleItems] = useState(6);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileData, setProfileData] = useState(null);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [rating, setRating] = useState(null);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [reviewText, setReviewText] = useState("");
+  const [selectedRequestId, setSelectedRequestId] = useState(null);
 
   const API_BASE_URL = "https://localhost:7128/api";
 
@@ -48,7 +54,7 @@ const TransferHistory = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-
+        console.log("API response:", response.data); // Debug API response
         const formattedData = response.data.map((item) => ({
           id: item.requestId,
           image: item.image || toy1,
@@ -58,6 +64,8 @@ const TransferHistory = () => {
           status: item.requestStatus,
           partnerAvatar: item.borrowerAvatar || user,
           partnerId: item.borrowerId,
+          rating: item.rating,
+          message: item.message,
           isMock: false,
         }));
 
@@ -97,6 +105,49 @@ const TransferHistory = () => {
     } catch (error) {
       console.error("Lỗi khi lấy thông tin người mượn:", error);
       toast.error("Không thể tải thông tin người mượn!");
+    }
+  };
+
+  const handleRateBorrower = (requestId) => {
+    setSelectedRequestId(requestId);
+    setShowRatingModal(true);
+  };
+
+  const handleSendRating = async () => {
+    try {
+      const localToken = localStorage.getItem("token");
+      const sessionToken = sessionStorage.getItem("token");
+      const token = sessionToken || localToken;
+      await axios.put(
+        `${API_BASE_URL}/Requests/history/${selectedRequestId}/complete`,
+        {
+          rating: rating,
+          message: reviewText || null,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      setTransferData((prev) =>
+        prev.map((item) =>
+          item.id === selectedRequestId
+            ? { ...item, rating: rating, message: reviewText }
+            : item
+        )
+      );
+      toast.success("Đã gửi đánh giá thành công!");
+    } catch (error) {
+      console.error("Lỗi khi gửi đánh giá:", error);
+      toast.error("Có lỗi xảy ra khi gửi đánh giá!");
+    } finally {
+      setShowRatingModal(false);
+      setRating(null);
+      setHoverRating(0);
+      setReviewText("");
+      setSelectedRequestId(null);
     }
   };
 
@@ -159,6 +210,16 @@ const TransferHistory = () => {
                               {item.status === "completed" ? "Hoàn thành" : "Hủy"}
                             </span>
                           </Card.Text>
+                          {item.rating && (
+                            <Card.Text className="rating">
+                              <strong>Đánh giá:</strong> {item.rating}/5
+                            </Card.Text>
+                          )}
+                          {item.message && (
+                            <Card.Text className="message">
+                              <strong>Phản hồi:</strong> {item.message}
+                            </Card.Text>
+                          )}
                           <div className="partner-info">
                             <img src={item.partnerAvatar} alt="Ảnh đại diện người mượn" className="partner-avatar" />
                             <Button
@@ -169,6 +230,16 @@ const TransferHistory = () => {
                               Thông tin người mượn
                             </Button>
                           </div>
+                          {item.status === "completed" && !item.rating && (
+                            <div className="rating-actions">
+                              <Button
+                                variant="primary"
+                                onClick={() => handleRateBorrower(item.id)}
+                              >
+                                Đánh giá người mượn
+                              </Button>
+                            </div>
+                          )}
                         </Card.Body>
                       </Card>
                     </Col>
@@ -213,6 +284,55 @@ const TransferHistory = () => {
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowProfileModal(false)}>
             Đóng
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={showRatingModal} onHide={() => setShowRatingModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Đánh giá người mượn</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group controlId="ratingStars" className="mb-3">
+              <Form.Label>Đánh giá sao</Form.Label>
+              <div className="rating-stars">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <span
+                    key={star}
+                    onClick={() => setRating(star)}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    style={{
+                      cursor: "pointer",
+                      color: star <= (hoverRating || (rating || 0)) ? "#ffc107" : "#ddd",
+                      fontSize: "1.5rem",
+                      marginRight: "5px",
+                    }}
+                  >
+                    <FaStar />
+                  </span>
+                ))}
+              </div>
+            </Form.Group>
+            <Form.Group controlId="reviewText">
+              <Form.Label>Phản hồi (Tùy chọn)</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                placeholder="Nhập phản hồi của bạn"
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowRatingModal(false)}>
+            Hủy
+          </Button>
+          <Button variant="primary" onClick={handleSendRating}>
+            <FaPaperPlane className="me-2" /> Gửi đánh giá
           </Button>
         </Modal.Footer>
       </Modal>

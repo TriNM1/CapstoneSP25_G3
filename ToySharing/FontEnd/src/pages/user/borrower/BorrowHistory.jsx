@@ -85,6 +85,7 @@ const BorrowHistory = () => {
     ? histories.filter((history) => {
         const returnDate = new Date(history.returnDate);
         return (
+          (history.status === 3 || history.status === 4) &&
           returnDate.getDate() === selectedDate.getDate() &&
           returnDate.getMonth() === selectedDate.getMonth() &&
           returnDate.getFullYear() === selectedDate.getFullYear()

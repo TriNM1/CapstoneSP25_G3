@@ -19,22 +19,12 @@ namespace ToySharingAPI.DTO
 
         public int ProductId { get; set; }
 
-        [StringLength(100, ErrorMessage = "Product name cannot exceed 100 characters.")]
-        [RegularExpression(@"^[a-zA-Z0-9\sáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđĐ]+$",
-            ErrorMessage = "Product name can only contain letters, numbers, spaces, and Vietnamese characters.")]
         public string? ProductName { get; set; }
 
         public decimal Price { get; set; }
         public int OwnerId { get; set; }
-
-        [StringLength(100, ErrorMessage = "Owner name cannot exceed 100 characters.")]
-        [RegularExpression(@"^[a-zA-Z\sáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđĐ]+$",
-            ErrorMessage = "Owner name can only contain letters, spaces, and Vietnamese characters.")]
         public string? OwnerName { get; set; }
-
-        [StringLength(255, ErrorMessage = "Message cannot exceed 255 characters.")]
-        [RegularExpression(@"^[a-zA-Z0-9\sáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđĐ,.!?]+$",
-            ErrorMessage = "Message can only contain letters, numbers, Vietnamese characters, spaces, and basic punctuation (,.!?)")]
+        public string? OwnerAvatar { get; set; }
         public string? Message { get; set; }
 
         public int Status { get; set; }

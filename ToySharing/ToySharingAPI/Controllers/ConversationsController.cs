@@ -175,8 +175,8 @@ namespace ToySharingAPI.Controllers
             {
                 User1Id = User1Id,
                 User2Id = request.User2Id,
-                CreatedAt = DateTime.UtcNow,
-                LastMessageAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now,
+                LastMessageAt = DateTime.Now
             };
 
             _context.Conversations.Add(conversation);
