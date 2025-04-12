@@ -108,7 +108,6 @@ const AddToy = () => {
       const formData = new FormData();
       formData.append("Name", toyName);
       formData.append("CategoryName", category);
-      // Gửi ProductStatus dưới dạng số: 0 = New, 1 = Used
       formData.append("ProductStatus", condition === "new" ? "0" : "1");
       formData.append("SuitableAge", parseInt(ageGroup.split("-")[0], 10));
       formData.append("Price", parseFloat(price));
@@ -128,6 +127,8 @@ const AddToy = () => {
       });
 
       toast.success("Đăng tải đồ chơi thành công!");
+      
+      // Reset form
       setPreviewImage(null);
       setImageFile(null);
       setToyName("");
@@ -136,6 +137,9 @@ const AddToy = () => {
       setAgeGroup("");
       setPrice("");
       setDescription("");
+
+      // Chuyển hướng đến trang "Danh sách đồ chơi của tôi"
+      navigate("/mytoy");
     } catch (error) {
       console.error("Error creating product:", error);
       const errorMessage = error.response?.data?.message || "Có lỗi xảy ra khi gửi yêu cầu!";

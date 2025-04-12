@@ -280,15 +280,15 @@ namespace ToySharingAPI.Controllers
                 SuitableAge = model.SuitableAge,
                 Price = model.Price,
                 Available = 0,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
             };
 
             // Gán ảnh
             product.Images = imagePaths.Select(path => new Image
             {
                 Path = path.Trim(),
-                CreateTime = DateTime.UtcNow
+                CreateTime = DateTime.Now
             }).ToList();
 
             // Xử lý danh mục
@@ -318,7 +318,7 @@ namespace ToySharingAPI.Controllers
                 Price = product.Price,
                 Description = product.Description,
                 Available = product.Available ?? 0,
-                CreatedAt = product.CreatedAt ?? DateTime.UtcNow,
+                CreatedAt = product.CreatedAt ?? DateTime.Now,
                 ImagePaths = imagePaths
             };
 
