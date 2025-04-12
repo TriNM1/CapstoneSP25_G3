@@ -369,7 +369,7 @@ namespace ToySharingAPI.Controllers
             product.ProductStatus = model.ProductStatus;
             product.Price = model.Price;
             product.SuitableAge = model.SuitableAge;
-            product.UpdatedAt = DateTime.UtcNow;
+            product.UpdatedAt = DateTime.Now;
 
             // Handle new image uploads
             if (model.Files != null && model.Files.Count > 0)
@@ -396,7 +396,7 @@ namespace ToySharingAPI.Controllers
                 product.Images = imagePaths.Select(path => new Image
                 {
                     Path = path.Trim(),
-                    CreateTime = DateTime.UtcNow
+                    CreateTime = DateTime.Now
                 }).ToList();
             }
 

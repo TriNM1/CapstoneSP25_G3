@@ -76,12 +76,11 @@ const ListBorrowRequests = () => {
   useEffect(() => {
     fetchRequests();
 
-    // Làm mới dữ liệu sau 2 giây để đảm bảo dữ liệu được đồng bộ
     const timer = setTimeout(() => {
       fetchRequests();
     }, 2000);
 
-    return () => clearTimeout(timer); // Dọn dẹp timer khi component unmount
+    return () => clearTimeout(timer);
   }, [navigate]);
 
   const handleLoadMore = () => {
@@ -178,7 +177,6 @@ const ListBorrowRequests = () => {
           <Col xs={12} md={2}>
             <SideMenu
               menuItems={[
-                { id: 1, label: "Đăng tải đồ chơi mới", link: "/addtoy" },
                 { id: 2, label: "Danh sách đồ chơi của tôi", link: "/mytoy" },
                 { id: 3, label: "Đang cho mượn", link: "/inlending" },
                 { id: 4, label: "Danh sách yêu cầu mượn", link: "/listborrowrequests" },

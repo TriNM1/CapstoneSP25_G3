@@ -21,7 +21,6 @@ const MyToy = () => {
   const navigate = useNavigate();
   const [activeLink, setActiveLink] = useState("mytoy");
   const sideMenuItems = [
-    { id: 1, label: "Đăng Tải Đồ Chơi Mới", link: "/addtoy" },
     { id: 2, label: "Danh sách đồ chơi của tôi", link: "/mytoy" },
     { id: 3, label: "Đang cho mượn", link: "/inlending" },
     { id: 4, label: "Danh sách yêu cầu mượn", link: "/listborrowrequests" },
@@ -48,14 +47,14 @@ const MyToy = () => {
   const [editToyData, setEditToyData] = useState({
     id: null,
     imagePaths: [],
-    files: [], 
+    files: [],
     name: "",
     categoryName: "",
     productStatus: "",
     suitableAge: "",
     price: "",
     description: "",
-    available: 0, 
+    available: 0,
   });
 
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -135,7 +134,7 @@ const MyToy = () => {
       setEditToyData({
         id: toyToEdit.id,
         imagePaths: [toyToEdit.image],
-        files: [], 
+        files: [],
         name: toyToEdit.name || "",
         categoryName: toyToEdit.categoryName || "",
         productStatus: toyToEdit.productStatus || "",
@@ -218,16 +217,16 @@ const MyToy = () => {
         prevToys.map((toy) =>
           toy.id === editToyData.id
             ? {
-                ...toy,
-                image: response.data.imagePaths[0] || toy.image,
-                name: response.data.name,
-                categoryName: response.data.categoryName,
-                productStatus: response.data.productStatus,
-                suitableAge: response.data.suitableAge,
-                price: `${response.data.price.toLocaleString("vi-VN")} VND`,
-                description: response.data.description,
-                status: response.data.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
-              }
+              ...toy,
+              image: response.data.imagePaths[0] || toy.image,
+              name: response.data.name,
+              categoryName: response.data.categoryName,
+              productStatus: response.data.productStatus,
+              suitableAge: response.data.suitableAge,
+              price: `${response.data.price.toLocaleString("vi-VN")} VND`,
+              description: response.data.description,
+              status: response.data.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
+            }
             : toy
         )
       );
@@ -288,6 +287,10 @@ const MyToy = () => {
     setVisibleItems((prev) => prev + 3);
   };
 
+  const handleAddToy = () => {
+    navigate("/addtoy");
+  };
+  
   const visibleToys = toys.slice(0, visibleItems);
 
   return (
@@ -307,14 +310,20 @@ const MyToy = () => {
           </Col>
 
           <Col xs={12} md={10} className="main-content">
-            <FilterPanel
-              showFilter={showFilter}
-              onToggle={() => setShowFilter(!showFilter)}
-              onSubmit={(e) => e.preventDefault()}
-              filterValues={filterValues}
-              onChange={(e) => setFilterValues({ ...filterValues, [e.target.name]: e.target.value })}
-            />
-
+          <div className="d-flex align-items-center mb-3">
+              <div className="filter-panel-wrapper flex-grow-1">
+                <FilterPanel
+                  showFilter={showFilter}
+                  onToggle={() => setShowFilter(!showFilter)}
+                  onSubmit={(e) => e.preventDefault()}
+                  filterValues={filterValues}
+                  onChange={(e) => setFilterValues({ ...filterValues, [e.target.name]: e.target.value })}
+                />
+              </div>
+              <Button variant="primary" className="add-toy-btn ms-3" onClick={handleAddToy}>
+                Đăng đồ chơi mới
+              </Button>
+            </div>
             {toys.length === 0 ? (
               <div className="text-center mt-5">
                 <h5>Không có đồ chơi nào</h5>
@@ -378,21 +387,21 @@ const MyToy = () => {
         </Modal.Header>
         <Modal.Body>
           <Form>
-          <Form.Group controlId="editToyOldImages" className="mb-3">
-            <Form.Label>Ảnh hiện tại</Form.Label>
-            {editToyData.imagePaths.length > 0 ? (
-              editToyData.imagePaths.map((path, index) => (
-                <img
-                  key={index}
-                  src={path}
-                  alt={`Old image ${index}`}
-                  style={{ width: "100px", height: "100px", objectFit: "cover", marginRight: "10px" }}
-                />
-              ))
-            ) : (
-              <p>Chưa có ảnh</p>
-            )}
-          </Form.Group>
+            <Form.Group controlId="editToyOldImages" className="mb-3">
+              <Form.Label>Ảnh hiện tại</Form.Label>
+              {editToyData.imagePaths.length > 0 ? (
+                editToyData.imagePaths.map((path, index) => (
+                  <img
+                    key={index}
+                    src={path}
+                    alt={`Old image ${index}`}
+                    style={{ width: "100px", height: "100px", objectFit: "cover", marginRight: "10px" }}
+                  />
+                ))
+              ) : (
+                <p>Chưa có ảnh</p>
+              )}
+            </Form.Group>
             <Form.Group controlId="editToyImage" className="mb-3">
               <Form.Label>Upload ảnh mới(nếu bạn muốn thay đổi ảnh)</Form.Label>
               <Form.Control type="file" multiple onChange={handleEditImageChange} />

@@ -13,7 +13,6 @@ const AddToy = () => {
   const [activeLink, setActiveLink] = useState("add-toy");
 
   const sideMenuItems = [
-    { id: 1, label: "Đăng Tải Đồ Chơi Mới", link: "/addtoy" },
     { id: 2, label: "Danh sách đồ chơi của tôi", link: "/mytoy" },
     { id: 3, label: "Đang cho mượn", link: "/inlending" },
     { id: 4, label: "Danh sách yêu cầu mượn", link: "/listborrowrequests" },
@@ -127,7 +126,7 @@ const AddToy = () => {
       });
 
       toast.success("Đăng tải đồ chơi thành công!");
-      
+      navigate("/mytoy");
       // Reset form
       setPreviewImage(null);
       setImageFile(null);
@@ -166,9 +165,6 @@ const AddToy = () => {
 
           <Col xs={12} md={10} className="main-content">
             <h2 className="page-title">Đăng Tải Đồ Chơi Mới</h2>
-            <div className="required-notice">
-              <span>Dấu (*) màu đỏ là những trường bắt buộc phải nhập</span>
-            </div>
             <Form onSubmit={handleSubmit}>
               <Form.Group controlId="toyImage" className="mb-3">
                 <Form.Label>

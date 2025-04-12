@@ -111,7 +111,7 @@ namespace ToySharingAPI.Controllers
                     ProductStatus = p.ProductStatus,
                     Price = p.Price,
                     SuitableAge = p.SuitableAge,
-                    CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
+                    CreatedAt = p.CreatedAt ?? DateTime.Now,
                     ImagePaths = p.Images.Select(i => i.Path).ToList()
                 })
                 .ToListAsync();
