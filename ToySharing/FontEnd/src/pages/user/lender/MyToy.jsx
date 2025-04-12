@@ -321,7 +321,7 @@ const MyToy = () => {
                 />
               </div>
               <Button variant="primary" className="add-toy-btn ms-3" onClick={handleAddToy}>
-                Thêm đồ chơi mới
+                Đăng đồ chơi mới
               </Button>
             </div>
             {toys.length === 0 ? (
