@@ -21,8 +21,8 @@ const ManageUser = () => {
   const menuItems = [
     { id: 1, label: "Trang chủ", link: "/adminpage" },
     { id: 2, label: "Quản lý người dùng", link: "/manageuser" },
-    { id: 3, label: "Quản lý vi phạm", link: "/managefeedback" },
-    { id: 4, label: "Thống kê", link: "/statistic" },
+    // { id: 3, label: "Quản lý vi phạm", link: "/managefeedback" },
+    { id: 3, label: "Thống kê", link: "/statistic" },
   ];
 
   // Các trạng thái tìm kiếm
@@ -117,14 +117,14 @@ const ManageUser = () => {
   };
 
   // Hành động thay đổi role
-  const handleRoleChange = (id, newRole) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((user) =>
-        user.id === id ? { ...user, role: newRole } : user
-      )
-    );
-    toast.success("Cập nhật role thành công!");
-  };
+  // const handleRoleChange = (id, newRole) => {
+  //   setUsers((prevUsers) =>
+  //     prevUsers.map((user) =>
+  //       user.id === id ? { ...user, role: newRole } : user
+  //     )
+  //   );
+  //   toast.success("Cập nhật role thành công!");
+  // };
 
   return (
     <div className="manage-user-page home-page">
@@ -159,17 +159,17 @@ const ManageUser = () => {
                 </Col>
                 <Col xs={12} md={4} className="mb-3">
                   {/* Nếu API không chứa createdAt, bạn có thể xóa DatePicker đi */}
-                  <DatePicker
+                  {/* <DatePicker
                     selected={filterDate}
                     onChange={(date) => setFilterDate(date)}
                     dateFormat="yyyy-MM-dd"
                     className="form-control"
                     placeholderText="Chọn ngày"
-                  />
+                  /> */}
                 </Col>
               </Row>
               <Button variant="primary" type="submit">
-                Áp dụng
+                Tìm kiếm
               </Button>
             </Form>
             {/* Bảng danh sách người dùng */}
@@ -181,7 +181,7 @@ const ManageUser = () => {
                   <th>Giới tính</th>
                   <th>Trạng thái</th>
                   <th>Action</th>
-                  <th>Role</th>
+                  {/* <th>Role</th> */}
                 </tr>
               </thead>
               <tbody>
@@ -208,7 +208,7 @@ const ManageUser = () => {
                         )}
                       </Button>
                     </td>
-                    <td>
+                    {/* <td>
                       <Form.Select
                         value={user.role}
                         onChange={(e) =>
@@ -218,7 +218,7 @@ const ManageUser = () => {
                         <option value="User">User</option>
                         <option value="Admin">Admin</option>
                       </Form.Select>
-                    </td>
+                    </td> */}
                   </tr>
                 ))}
               </tbody>

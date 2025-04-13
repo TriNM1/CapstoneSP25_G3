@@ -23,7 +23,7 @@ import ToyDetail from "./pages/user/generate/ToyDetail";
 //admin
 import AdminPage from "./pages/admin/AdminPage";
 import ManageUser from "./pages/admin/ManageUser";
-import ManageFeedback from "./pages/admin/ManageFeedback";
+// import ManageFeedback from "./pages/admin/ManageFeedback";
 import Statistic from "./pages/admin/Statistic";
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -70,7 +70,7 @@ function App() {
 
         <Route path="/adminpage" element={<AdminPage />} />
         <Route path="/manageuser" element={<ManageUser />} />
-        <Route path="/managefeedback" element={<ManageFeedback />} />
+        {/* <Route path="/managefeedback" element={<ManageFeedback />} /> */}
         <Route path="/statistic" element={<Statistic />} /> 
 
         {/* Route ToyDetail */}
