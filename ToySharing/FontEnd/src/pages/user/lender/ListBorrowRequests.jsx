@@ -145,12 +145,12 @@ const ListBorrowRequests = () => {
     }
   };
 
-  const handleViewProfile = async (requesterId) => {
+  const handleViewProfile = async (userId) => {
     try {
       const localToken = localStorage.getItem("token");
       const sessionToken = sessionStorage.getItem("token");
       const token = sessionToken || localToken;
-      const response = await axios.get(`${API_BASE_URL}/User/profile/${requesterId}`, {
+      const response = await axios.get(`${API_BASE_URL}/User/profile/${userId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -310,7 +310,7 @@ const ListBorrowRequests = () => {
                 className="rounded-circle mb-3"
                 style={{ width: "100px", height: "100px" }}
               />
-              <p><strong>Tên:</strong> {profileData.name}</p>
+              <p><strong>Tên:</strong> {profileData.displayName}</p>
               <p><strong>Tuổi:</strong> {profileData.age}</p>
               <p><strong>Địa chỉ:</strong> {profileData.address}</p>
               <p><strong>Đánh giá:</strong> {profileData.rating ? profileData.rating.toFixed(2) : "Chưa có đánh giá"}</p>

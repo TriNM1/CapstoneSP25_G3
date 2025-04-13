@@ -47,6 +47,7 @@ const TransferHistory = () => {
         const token = sessionToken || localToken;
         if (!token) {
           toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
+          navigate("/login");
           return;
         }
 
@@ -55,14 +56,14 @@ const TransferHistory = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-        console.log("API response:", response.data); // Debug API response
+
         const formattedData = response.data.map((item) => ({
           id: item.requestId,
           image: item.image || toy1,
           name: item.productName,
           price: item.price ? `${item.price.toLocaleString()} VND` : "Không xác định",
           transferDate: item.returnDate ? new Date(item.returnDate).toISOString().split("T")[0] : "Không xác định",
-          status: item.requestStatus,
+          status: item.requestStatus === "completed" ? 1 : 2,
           partnerAvatar: item.borrowerAvatar || user,
           partnerId: item.borrowerId,
           rating: item.rating,
@@ -75,6 +76,7 @@ const TransferHistory = () => {
         console.error("Lỗi khi lấy lịch sử trao đổi:", error);
         if (error.response && error.response.status === 401) {
           toast.error("Token không hợp lệ hoặc đã hết hạn! Vui lòng đăng nhập lại.");
+          navigate("/login");
         } else if (error.response && error.response.status === 404) {
           toast.info("Không có lịch sử trao đổi nào.");
         } else {
@@ -85,7 +87,7 @@ const TransferHistory = () => {
     };
 
     fetchHistory();
-  }, []);
+  }, [navigate]);
 
   const handleLoadMore = () => {
     setVisibleItems((prev) => prev + 3);
@@ -115,12 +117,17 @@ const TransferHistory = () => {
   };
 
   const handleSendRating = async () => {
+    if (!rating) {
+      toast.error("Vui lòng chọn số sao để đánh giá!");
+      return;
+    }
+
     try {
       const localToken = localStorage.getItem("token");
       const sessionToken = sessionStorage.getItem("token");
       const token = sessionToken || localToken;
       await axios.put(
-        `${API_BASE_URL}/Requests/history/${selectedRequestId}/complete`,
+        `${API_BASE_URL}/Requests/history/${selectedRequestId}/rate`,
         {
           rating: rating,
           message: reviewText || null,
@@ -142,7 +149,21 @@ const TransferHistory = () => {
       toast.success("Đã gửi đánh giá thành công!");
     } catch (error) {
       console.error("Lỗi khi gửi đánh giá:", error);
-      toast.error("Có lỗi xảy ra khi gửi đánh giá!");
+      let errorMessage = "Có lỗi xảy ra khi gửi đánh giá!";
+      if (error.response) {
+        errorMessage = error.response.data.message || errorMessage;
+        if (error.response.status === 401) {
+          errorMessage = "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!";
+          navigate("/login");
+        } else if (error.response.status === 403) {
+          errorMessage = "Bạn không có quyền thực hiện hành động này!";
+        } else if (error.response.status === 404) {
+          errorMessage = "Lịch sử không tồn tại!";
+        } else if (error.response.status === 400) {
+          errorMessage = error.response.data.message || "Yêu cầu không hợp lệ!";
+        }
+      }
+      toast.error(errorMessage);
     } finally {
       setShowRatingModal(false);
       setRating(null);
@@ -207,8 +228,8 @@ const TransferHistory = () => {
                           </Card.Text>
                           <Card.Text className="transfer-status">
                             <strong>Trạng thái:</strong>{" "}
-                            <span className={item.status === "completed" ? "completed" : "canceled"}>
-                              {item.status === "completed" ? "Hoàn thành" : "Hủy"}
+                            <span className={item.status === 1 ? "completed" : "canceled"}>
+                              {item.status === 1 ? "Hoàn thành" : "Hủy"}
                             </span>
                           </Card.Text>
                           {item.rating && (
@@ -231,12 +252,9 @@ const TransferHistory = () => {
                               Thông tin người mượn
                             </Button>
                           </div>
-                          {item.status === "completed" && !item.rating && (
+                          {item.status === 1 && !item.rating && (
                             <div className="rating-actions">
-                              <Button
-                                variant="primary"
-                                onClick={() => handleRateBorrower(item.id)}
-                              >
+                              <Button variant="primary" onClick={() => handleRateBorrower(item.id)}>
                                 Đánh giá người mượn
                               </Button>
                             </div>
@@ -273,9 +291,9 @@ const TransferHistory = () => {
                 className="rounded-circle mb-3"
                 style={{ width: "100px", height: "100px" }}
               />
-              <p><strong>Tên hiển thị:</strong> {profileData.displayName}</p>
-              <p><strong>Tuổi:</strong> {profileData.age}</p>
-              <p><strong>Địa chỉ:</strong> {profileData.address}</p>
+              <p><strong>Tên hiển thị:</strong> {profileData.displayName || "Không có tên"}</p>
+              <p><strong>Tuổi:</strong> {profileData.age || "Không có thông tin"}</p>
+              <p><strong>Địa chỉ:</strong> {profileData.address || "Không có thông tin"}</p>
               <p><strong>Đánh giá:</strong> {profileData.rating ? profileData.rating.toFixed(2) : "Chưa có đánh giá"}</p>
             </div>
           ) : (
