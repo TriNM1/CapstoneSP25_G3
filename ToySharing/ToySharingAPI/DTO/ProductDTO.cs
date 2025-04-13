@@ -4,7 +4,8 @@
     {
         public int ProductId { get; set; }
         public int UserId { get; set; } 
-        public string Name { get; set; } = null!; 
+        public string Name { get; set; } = null!;
+        public string OwnerAvatar { get; set; }
         public string? CategoryName { get; set; } 
         public int Available { get; set; } 
         public string? Description { get; set; } 

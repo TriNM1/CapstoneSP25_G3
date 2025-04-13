@@ -8,6 +8,12 @@ using ToySharingAPI.DTO;
 using ToySharingAPI.Models;
 using System.Net.Http;
 using System.Text.Json;
+using Microsoft.Extensions.Options;
+using ToySharingAPI.Service;
+using Amazon.S3;
+using Amazon.Runtime;
+using Amazon;
+using Amazon.S3.Transfer;
 using Microsoft.AspNetCore.Identity;
 
 namespace ToySharingAPI.Controllers
@@ -17,14 +23,21 @@ namespace ToySharingAPI.Controllers
     public class UserController : ControllerBase
     {
         private readonly ToySharingVer3Context _context;
-        private readonly IHttpClientFactory _httpClientFactory;
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly AwsSettings _awsSettings;
+        private readonly IAmazonS3 _s3Client;
 
-        public UserController(ToySharingVer3Context context, IHttpClientFactory httpClientFactory, UserManager<IdentityUser> userManager)
+        public UserController(ToySharingVer3Context context, IHttpClientFactory httpClientFactory, IOptions<AwsSettings> awsSettings,
+            UserManager<IdentityUser> userManager)
         {
             _context = context;
-            _httpClientFactory = httpClientFactory;
             _userManager = userManager;
+            _httpClientFactory = httpClientFactory;
+            _awsSettings = awsSettings.Value;
+            var credentials = new BasicAWSCredentials(_awsSettings.AccessKey, _awsSettings.SecretKey);
+            _s3Client = new AmazonS3Client(credentials, RegionEndpoint.GetBySystemName(_awsSettings.Region));
+
         }
         
         private async Task<int> GetAuthenticatedUserId()
@@ -99,7 +112,7 @@ namespace ToySharingAPI.Controllers
                     ProductStatus = p.ProductStatus,
                     Price = p.Price,
                     SuitableAge = p.SuitableAge,
-                    CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
+                    CreatedAt = p.CreatedAt ?? DateTime.Now,
                     ImagePaths = p.Images.Select(i => i.Path).ToList()
                 })
                 .ToListAsync();
@@ -117,7 +130,7 @@ namespace ToySharingAPI.Controllers
                 {
                     UserInfo = new UserInfo
                     {
-                        Name = u.Name,
+                        DisplayName = u.DisplayName,
                         Age = u.Age ?? 0,
                         Address = u.Address,
                         Avatar = u.Avatar,
@@ -369,6 +382,46 @@ namespace ToySharingAPI.Controllers
             return Ok(logs);
         }
 
+        // Hàm upload ảnh lên AWS S3
+        private async Task<string> UploadImageToS3(IFormFile file)
+        {
+            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+            var key = $"avatars/{fileName}";
+            var uploadRequest = new TransferUtilityUploadRequest
+            {
+                InputStream = file.OpenReadStream(),
+                Key = key,
+                BucketName = _awsSettings.BucketName,
+                ContentType = file.ContentType
+            };
+
+            var transferUtility = new TransferUtility(_s3Client);
+            await transferUtility.UploadAsync(uploadRequest);
+
+            return $"https://{_awsSettings.BucketName}.s3.{_awsSettings.Region}.amazonaws.com/{key}";
+        }
+
+        // Endpoint cập nhật avatar
+        [HttpPost("upload-avatar")]
+        [Authorize]
+        public async Task<IActionResult> UploadAvatar(IFormFile file)
+        {
+            var mainUserId = await GetAuthenticatedUserId();
+            var user = await _context.Users.FindAsync(mainUserId);
+            if (user == null)
+                return NotFound("Không tìm thấy người dùng.");
+
+            if (file == null || file.Length == 0)
+                return BadRequest("Không có file được tải lên.");
+
+            // Upload ảnh lên S3
+            var imageUrl = await UploadImageToS3(file);
+            user.Avatar = imageUrl;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { avatarUrl = imageUrl });
+        }
+        
         [HttpGet("role/user")]
         //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllUsersWithUserRole()
@@ -384,7 +437,7 @@ namespace ToySharingAPI.Controllers
                     var roleStr = roles.FirstOrDefault() ?? string.Empty;
                     var mainUser = await _context.Users
                         .FirstOrDefaultAsync(u => u.AuthUserId == authUserGuid);
-
+                    
                     if (mainUser != null)
                     {
                         result.Add(new ListUserDTO

@@ -69,13 +69,15 @@ namespace ToySharingAPI.Controllers
                     OtherUser = new OtherUserDTO
                     {
                         Id = opponent.Id,
-                        Name = opponent.Name,
+                        Name = opponent.DisplayName,
                         Avatar = opponent.Avatar
                     },
                     LastMessageContent = lastMessage != null ? lastMessage.Content : string.Empty,
                     LastMessageAt = lastMessage != null
                                     ? lastMessage.SentAt.GetValueOrDefault()
-                                    : conv.LastMessageAt.GetValueOrDefault()
+                                    : conv.LastMessageAt.GetValueOrDefault(),
+                    IsRead = lastMessage != null ? lastMessage.IsRead.GetValueOrDefault() : true,
+                    LastSenderId = lastMessage != null ? lastMessage.SenderId.GetValueOrDefault() : 0
                 });
             }
 
@@ -173,8 +175,8 @@ namespace ToySharingAPI.Controllers
             {
                 User1Id = User1Id,
                 User2Id = request.User2Id,
-                CreatedAt = DateTime.UtcNow,
-                LastMessageAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now,
+                LastMessageAt = DateTime.Now
             };
 
             _context.Conversations.Add(conversation);

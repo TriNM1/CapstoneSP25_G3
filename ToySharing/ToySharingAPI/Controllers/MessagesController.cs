@@ -97,12 +97,12 @@ namespace ToySharingAPI.Controllers
                 ConversationId = conversationId,
                 SenderId = mainUserId,
                 Content = request.Content,
-                SentAt = DateTime.UtcNow,
+                SentAt = DateTime.Now,
                 IsRead = false
             };
 
             _context.Messages.Add(message);
-            conversation.LastMessageAt = DateTime.UtcNow;
+            conversation.LastMessageAt = DateTime.Now;
             await _context.SaveChangesAsync();
 
             // Xác định receiverId (integer Id từ bảng Users)

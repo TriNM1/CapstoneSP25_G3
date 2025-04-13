@@ -28,7 +28,7 @@ const Login = () => {
       const data = await response.json();
       console.log("📥 Phản hồi từ API:", data);
       if (response.ok) {
-        const { jwtToken, userId } = data;
+        const { jwtToken, userId, isProfileCompleted, role} = data;
         if (!jwtToken || !userId) {
           setError("Không nhận được token hoặc userId từ server!");
           return;
@@ -38,16 +38,24 @@ const Login = () => {
           localStorage.clear();
           localStorage.setItem("token", jwtToken);
           localStorage.setItem("userId", userId);
+          localStorage.setItem("isProfileCompleted", isProfileCompleted);
+          localStorage.setItem("role", role);
           console.log("Token lưu vào localStorage:", localStorage.getItem("token"));
           console.log("UserId lưu vào localStorage:", localStorage.getItem("userId"));
+          console.log("IsProfileCompleted lưu vào localStorage:", localStorage.getItem("isProfileCompleted"));
+          console.log("Role lưu vào localStorage:", localStorage.getItem("role"));
         } else {
           localStorage.clear();
           sessionStorage.setItem("token", jwtToken);
           sessionStorage.setItem("userId", userId);
+          sessionStorage.setItem("isProfileCompleted", isProfileCompleted);
+          sessionStorage.setItem("role", role);
           console.log("Token lưu vào sessionStorage:", sessionStorage.getItem("token"));
           console.log("UserId lưu vào sessionStorage:", sessionStorage.getItem("userId"));
+          console.log("IsProfileCompleted lưu vào sessionStorage:", sessionStorage.getItem("isProfileCompleted"));
+          console.log("role lưu vào sessionStorage:", sessionStorage.getItem("role"));
         }
-        console.log("✅ Đăng nhập thành công! Token:", jwtToken, "UserId:", userId);
+        console.log("✅ Đăng nhập thành công! Token:", jwtToken, "UserId:", userId, "isProfileCompleted:", isProfileCompleted, "role:", role);
         navigate("/home");
       } else {
         setError(data.message || "Đăng nhập thất bại! Vui lòng kiểm tra lại email hoặc mật khẩu.");

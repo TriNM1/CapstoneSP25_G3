@@ -21,7 +21,6 @@ const MyToy = () => {
   const navigate = useNavigate();
   const [activeLink, setActiveLink] = useState("mytoy");
   const sideMenuItems = [
-    { id: 1, label: "Đăng Tải Đồ Chơi Mới", link: "/addtoy" },
     { id: 2, label: "Danh sách đồ chơi của tôi", link: "/mytoy" },
     { id: 3, label: "Đang cho mượn", link: "/inlending" },
     { id: 4, label: "Danh sách yêu cầu mượn", link: "/listborrowrequests" },
@@ -48,12 +47,14 @@ const MyToy = () => {
   const [editToyData, setEditToyData] = useState({
     id: null,
     imagePaths: [],
+    files: [],
     name: "",
     categoryName: "",
     productStatus: "",
     suitableAge: "",
     price: "",
     description: "",
+    available: 0,
   });
 
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -127,43 +128,20 @@ const MyToy = () => {
     fetchCategories();
   }, []);
 
-  const handleImageUpload = async (file) => {
-    const token = getAuthToken();
-    if (!token) {
-      toast.error("Vui lòng đăng nhập để upload ảnh!");
-      return null;
-    }
-
-    const formData = new FormData();
-    formData.append("image", file);
-
-    try {
-      const response = await axios.post(`${API_BASE_URL}/Products/upload-image`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      return response.data.imageUrl;
-    } catch (error) {
-      console.error("Lỗi khi upload ảnh:", error);
-      toast.error("Không thể upload ảnh!");
-      return null;
-    }
-  };
-
   const handleEdit = (id) => {
     const toyToEdit = toys.find((toy) => toy.id === id);
     if (toyToEdit) {
       setEditToyData({
         id: toyToEdit.id,
-        imagePaths: toyToEdit.image ? [toyToEdit.image] : [],
+        imagePaths: [toyToEdit.image],
+        files: [],
         name: toyToEdit.name || "",
         categoryName: toyToEdit.categoryName || "",
         productStatus: toyToEdit.productStatus || "",
         suitableAge: toyToEdit.suitableAge ? String(toyToEdit.suitableAge) : "",
         price: toyToEdit.price ? toyToEdit.price.replace(" VND", "") : "",
         description: toyToEdit.description || "",
+        available: toyToEdit.status === "Sẵn sàng cho mượn" ? 0 : 1,
       });
       setShowEditModal(true);
     }
@@ -174,15 +152,12 @@ const MyToy = () => {
     setEditToyData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleEditImageChange = async (e) => {
-    if (e.target.files && e.target.files[0]) {
-      const imageUrl = await handleImageUpload(e.target.files[0]);
-      if (imageUrl) {
-        setEditToyData((prev) => ({
-          ...prev,
-          imagePaths: [imageUrl],
-        }));
-      }
+  const handleEditImageChange = (e) => {
+    if (e.target.files) {
+      setEditToyData((prev) => ({
+        ...prev,
+        files: Array.from(e.target.files), // Lưu tất cả các tệp được chọn
+      }));
     }
   };
 
@@ -192,12 +167,12 @@ const MyToy = () => {
       return;
     }
     const suitableAge = parseInt(editToyData.suitableAge);
-    if (isNaN(suitableAge) || suitableAge < 0 || suitableAge > 100) {
-      toast.error("Độ tuổi phù hợp phải là số từ 0 đến 100!");
+    if (isNaN(suitableAge) || suitableAge < 0 || suitableAge > 50) {
+      toast.error("Độ tuổi phù hợp phải là số từ 0 đến 50!");
       return;
     }
     const price = parseFloat(editToyData.price.replace(/[^0-9.]/g, ""));
-    if (isNaN(price) || price < 0) {
+    if (isNaN(price) || price < -1) {
       toast.error("Phí mượn đồ chơi phải là một số không âm!");
       return;
     }
@@ -209,30 +184,32 @@ const MyToy = () => {
         return;
       }
 
-      const toyToEdit = toys.find((toy) => toy.id === editToyData.id);
+      // Map string productStatus to integer
+      const productStatusMap = {
+        "New": 0,
+        "Used": 1,
+        "": 0 // Default to 0 if empty
+      };
+      const productStatus = productStatusMap[editToyData.productStatus] || 0;
 
-      const updatedFields = {};
-      if (editToyData.name !== toyToEdit.name) updatedFields.name = editToyData.name;
-      if (editToyData.categoryName !== toyToEdit.categoryName) updatedFields.categoryName = editToyData.categoryName || null;
-      if (editToyData.productStatus !== toyToEdit.productStatus) updatedFields.productStatus = editToyData.productStatus || null;
-      if (suitableAge !== toyToEdit.suitableAge) updatedFields.suitableAge = suitableAge;
-      if (price !== parseFloat(toyToEdit.price.replace(/[^0-9.]/g, ""))) updatedFields.price = price;
-      if (editToyData.description !== toyToEdit.description) updatedFields.description = editToyData.description || null;
+      const formData = new FormData();
+      formData.append("Name", editToyData.name);
+      formData.append("CategoryName", editToyData.categoryName || "");
+      formData.append("ProductStatus", productStatus); // Send as integer
+      formData.append("SuitableAge", suitableAge);
+      formData.append("Price", price);
+      formData.append("Description", editToyData.description || "");
+      formData.append("Available", editToyData.available || 0);
 
-      if (editToyData.imagePaths.length > 0 && editToyData.imagePaths[0] !== toyToEdit.image) {
-        updatedFields.imagePaths = editToyData.imagePaths;
+      // Chỉ gửi Files nếu có ảnh mới
+      if (editToyData.files.length > 0) {
+        editToyData.files.forEach((file) => formData.append("Files", file));
       }
 
-      if (Object.keys(updatedFields).length === 0) {
-        toast.info("Không có thay đổi nào để cập nhật!");
-        setShowEditModal(false);
-        return;
-      }
-
-      await axios.put(`${API_BASE_URL}/Products/${editToyData.id}`, updatedFields, {
+      const response = await axios.put(`${API_BASE_URL}/Products/${editToyData.id}`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          "Content-Type": "multipart/form-data",
         },
       });
 
@@ -240,15 +217,16 @@ const MyToy = () => {
         prevToys.map((toy) =>
           toy.id === editToyData.id
             ? {
-                ...toy,
-                image: updatedFields.imagePaths ? updatedFields.imagePaths[0] : toy.image,
-                name: updatedFields.name || toy.name,
-                categoryName: updatedFields.categoryName !== undefined ? updatedFields.categoryName : toy.categoryName,
-                productStatus: updatedFields.productStatus !== undefined ? updatedFields.productStatus : toy.productStatus,
-                suitableAge: updatedFields.suitableAge !== undefined ? updatedFields.suitableAge : toy.suitableAge,
-                price: updatedFields.price !== undefined ? `${updatedFields.price.toLocaleString("vi-VN")} VND` : toy.price,
-                description: updatedFields.description !== undefined ? updatedFields.description : toy.description,
-              }
+              ...toy,
+              image: response.data.imagePaths[0] || toy.image,
+              name: response.data.name,
+              categoryName: response.data.categoryName,
+              productStatus: response.data.productStatus,
+              suitableAge: response.data.suitableAge,
+              price: `${response.data.price.toLocaleString("vi-VN")} VND`,
+              description: response.data.description,
+              status: response.data.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
+            }
             : toy
         )
       );
@@ -288,8 +266,7 @@ const MyToy = () => {
     } catch (error) {
       console.error("Lỗi khi xóa đồ chơi:", error);
       if (error.response) {
-        const errorMessage = error.response.data.message || "Có lỗi xảy ra khi xóa đồ chơi!";
-        toast.error(errorMessage);
+        toast.error(error.response.data.message || "Có lỗi xảy ra khi xóa đồ chơi!");
       } else {
         toast.error("Không thể kết nối đến server!");
       }
@@ -310,6 +287,10 @@ const MyToy = () => {
     setVisibleItems((prev) => prev + 3);
   };
 
+  const handleAddToy = () => {
+    navigate("/addtoy");
+  };
+  
   const visibleToys = toys.slice(0, visibleItems);
 
   return (
@@ -329,14 +310,20 @@ const MyToy = () => {
           </Col>
 
           <Col xs={12} md={10} className="main-content">
-            <FilterPanel
-              showFilter={showFilter}
-              onToggle={() => setShowFilter(!showFilter)}
-              onSubmit={(e) => e.preventDefault()}
-              filterValues={filterValues}
-              onChange={(e) => setFilterValues({ ...filterValues, [e.target.name]: e.target.value })}
-            />
-
+          <div className="d-flex align-items-center mb-3">
+              <div className="filter-panel-wrapper flex-grow-1">
+                <FilterPanel
+                  showFilter={showFilter}
+                  onToggle={() => setShowFilter(!showFilter)}
+                  onSubmit={(e) => e.preventDefault()}
+                  filterValues={filterValues}
+                  onChange={(e) => setFilterValues({ ...filterValues, [e.target.name]: e.target.value })}
+                />
+              </div>
+              <Button variant="primary" className="add-toy-btn ms-3" onClick={handleAddToy}>
+                Đăng đồ chơi mới
+              </Button>
+            </div>
             {toys.length === 0 ? (
               <div className="text-center mt-5">
                 <h5>Không có đồ chơi nào</h5>
@@ -400,17 +387,24 @@ const MyToy = () => {
         </Modal.Header>
         <Modal.Body>
           <Form>
-            <Form.Group controlId="editToyImage" className="mb-3">
-              <Form.Label>Upload ảnh</Form.Label>
-              <Form.Control type="file" onChange={handleEditImageChange} />
-              {editToyData.imagePaths.length > 0 && (
-                <img
-                  src={editToyData.imagePaths[0]}
-                  alt="Preview"
-                  className="preview-image mt-2"
-                  style={{ width: "100px", height: "100px", objectFit: "cover" }}
-                />
+            <Form.Group controlId="editToyOldImages" className="mb-3">
+              <Form.Label>Ảnh hiện tại</Form.Label>
+              {editToyData.imagePaths.length > 0 ? (
+                editToyData.imagePaths.map((path, index) => (
+                  <img
+                    key={index}
+                    src={path}
+                    alt={`Old image ${index}`}
+                    style={{ width: "100px", height: "100px", objectFit: "cover", marginRight: "10px" }}
+                  />
+                ))
+              ) : (
+                <p>Chưa có ảnh</p>
               )}
+            </Form.Group>
+            <Form.Group controlId="editToyImage" className="mb-3">
+              <Form.Label>Upload ảnh mới(nếu bạn muốn thay đổi ảnh)</Form.Label>
+              <Form.Control type="file" multiple onChange={handleEditImageChange} />
             </Form.Group>
             <Form.Group controlId="editToyName" className="mb-3">
               <Form.Label>Tên đồ chơi <span className="text-danger">*</span></Form.Label>
@@ -446,9 +440,8 @@ const MyToy = () => {
                 value={editToyData.productStatus}
                 onChange={handleEditChange}
               >
-                <option value="">Chọn tình trạng</option>
-                <option value="New">Mới</option>
-                <option value="Used">Cũ</option>
+                <option value="0">Mới</option>
+                <option value="1">Cũ</option>
               </Form.Control>
             </Form.Group>
             <Form.Group controlId="editAgeGroup" className="mb-3">
@@ -459,7 +452,7 @@ const MyToy = () => {
                 value={editToyData.suitableAge}
                 onChange={handleEditChange}
                 min="0"
-                max="100"
+                max="50"
                 required
               />
             </Form.Group>

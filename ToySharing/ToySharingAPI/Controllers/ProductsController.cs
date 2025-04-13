@@ -267,7 +267,7 @@ namespace ToySharingAPI.Controllers
                 if (file.Length > 5 * 1024 * 1024)
                     return BadRequest("File size exceeds 5MB.");
 
-                var imageUrl = await UploadImageToS3(file); 
+                var imageUrl = await UploadImageToS3(file);
                 imagePaths.Add(imageUrl);
             }
 
@@ -280,15 +280,15 @@ namespace ToySharingAPI.Controllers
                 SuitableAge = model.SuitableAge,
                 Price = model.Price,
                 Available = 0,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
             };
 
             // Gán ảnh
             product.Images = imagePaths.Select(path => new Image
             {
                 Path = path.Trim(),
-                CreateTime = DateTime.UtcNow
+                CreateTime = DateTime.Now
             }).ToList();
 
             // Xử lý danh mục
@@ -318,7 +318,7 @@ namespace ToySharingAPI.Controllers
                 Price = product.Price,
                 Description = product.Description,
                 Available = product.Available ?? 0,
-                CreatedAt = product.CreatedAt ?? DateTime.UtcNow,
+                CreatedAt = product.CreatedAt ?? DateTime.Now,
                 ImagePaths = imagePaths
             };
 
@@ -326,95 +326,74 @@ namespace ToySharingAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<ProductDTO>> UpdateProduct(int id, [FromBody] ProductDTO productDto)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<ProductDTO>> UpdateProduct(int id, [FromForm] ProductUpdateModelDTO model)
         {
             var mainUserId = await GetAuthenticatedUserId();
             if (mainUserId == -1)
                 return Unauthorized("Không thể xác thực người dùng.");
-            if (productDto == null)
-            {
-                return BadRequest("Product data is required.");
-            }
 
             var product = await _context.Products
                 .Include(p => p.Images)
                 .FirstOrDefaultAsync(p => p.ProductId == id);
             if (product == null)
-            {
                 return NotFound("Product not found.");
-            }
 
             if (product.UserId != mainUserId)
-            {
                 return Forbid("You are not authorized to update this product.");
-            }
 
-            if (string.IsNullOrWhiteSpace(productDto.Name))
-            {
+            // Validate input
+            if (string.IsNullOrWhiteSpace(model.Name))
                 return BadRequest("Product name is required and cannot be empty or whitespace.");
-            }
-            if (productDto.SuitableAge < 0 || productDto.SuitableAge > 50)
-            {
+            if (model.SuitableAge < 0 || model.SuitableAge > 50)
                 return BadRequest("Suitable age must be between 0 and 50.");
-            }
-
-            if (!string.IsNullOrEmpty(productDto.Description) && productDto.Description.Length > 500)
-            {
+            if (!string.IsNullOrEmpty(model.Description) && model.Description.Length > 500)
                 return BadRequest("Description cannot exceed 500 characters.");
-            }
 
-            if (productDto.Available != product.Available)
-            {
-                var activeRequest = await _context.RentRequests
-                    .FirstOrDefaultAsync(r => r.ProductId == id && r.Status == 1);
-                if (activeRequest != null && productDto.Available != 1)
-                {
-                    return BadRequest("Cannot change availability while product is being rented.");
-                }
-            }
 
-            product.Name = productDto.Name.Trim();
-            if (!string.IsNullOrWhiteSpace(productDto.CategoryName))
+            // Update product details
+            product.Name = model.Name.Trim();
+            if (!string.IsNullOrWhiteSpace(model.CategoryName))
             {
                 var category = await _context.Categories
-                    .FirstOrDefaultAsync(c => c.CategoryName == productDto.CategoryName.Trim());
+                    .FirstOrDefaultAsync(c => c.CategoryName == model.CategoryName.Trim());
                 if (category == null)
                 {
-                    category = new Category
-                    {
-                        CategoryName = productDto.CategoryName.Trim()
-                    };
+                    category = new Category { CategoryName = model.CategoryName.Trim() };
                     _context.Categories.Add(category);
                     await _context.SaveChangesAsync();
                 }
                 product.CategoryId = category.CategoryId;
             }
-            product.Available = productDto.Available;
-            product.Description = productDto.Description?.Trim();
-            product.ProductStatus = productDto.ProductStatus;
-            product.Price = productDto.Price;
-            product.SuitableAge = productDto.SuitableAge;
+            product.Description = model.Description?.Trim();
+            product.ProductStatus = model.ProductStatus;
+            product.Price = model.Price;
+            product.SuitableAge = model.SuitableAge;
             product.UpdatedAt = DateTime.Now;
 
-            if (productDto.ImagePaths != null)
+            // Handle new image uploads
+            if (model.Files != null && model.Files.Count > 0)
             {
-                if (productDto.ImagePaths.Count > 10)
-                {
+                if (model.Files.Count > 10)
                     return BadRequest("Maximum 10 images are allowed.");
-                }
-                foreach (var path in productDto.ImagePaths)
+
+                var imagePaths = new List<string>();
+                foreach (var file in model.Files)
                 {
-                    if (string.IsNullOrWhiteSpace(path))
+                    if (file.Length > 0)
                     {
-                        return BadRequest("Image path cannot be empty.");
-                    }
-                    if (path.Length > 255)
-                    {
-                        return BadRequest("Image path cannot exceed 255 characters.");
+                        if (!file.ContentType.StartsWith("image/"))
+                            return BadRequest("Only image files are allowed.");
+                        if (file.Length > 5 * 1024 * 1024) 
+                            return BadRequest("File size exceeds 5MB.");
+
+                        var imageUrl = await UploadImageToS3(file);
+                        imagePaths.Add(imageUrl);
                     }
                 }
+
                 product.Images.Clear();
-                product.Images = productDto.ImagePaths.Select(path => new Image
+                product.Images = imagePaths.Select(path => new Image
                 {
                     Path = path.Trim(),
                     CreateTime = DateTime.Now
@@ -424,7 +403,20 @@ namespace ToySharingAPI.Controllers
             try
             {
                 await _context.SaveChangesAsync();
-                return Ok(productDto);
+                var updatedProductDto = new ProductDTO
+                {
+                    ProductId = product.ProductId,
+                    UserId = product.UserId,
+                    Name = product.Name,
+                    CategoryName = product.Category?.CategoryName,
+                    Description = product.Description,
+                    ProductStatus = product.ProductStatus,
+                    Price = product.Price,
+                    SuitableAge = product.SuitableAge,
+                    CreatedAt = product.CreatedAt ?? DateTime.UtcNow,
+                    ImagePaths = product.Images.Select(i => i.Path).ToList()
+                };
+                return Ok(updatedProductDto);
             }
             catch (DbUpdateException ex)
             {
@@ -535,12 +527,14 @@ namespace ToySharingAPI.Controllers
             var recommendations = await _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Images)
+                .Include(p => p.User)
                 .Where(p => (p.Available ?? 0) == 0 && p.UserId != mainUserId)
                 .Select(p => new ProductDTO
                 {
                     ProductId = p.ProductId,
                     UserId = p.UserId,
                     Name = p.Name,
+                    OwnerAvatar = p.User.Avatar,
                     CategoryName = p.Category != null ? p.Category.CategoryName : null,
                     Available = p.Available ?? 0,
                     Description = p.Description,

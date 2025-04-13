@@ -10,7 +10,6 @@ import {
 } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { FaStar, FaPaperPlane } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Header from "../../../components/Header";
 import SideMenu from "../../../components/SideMenu";
@@ -26,7 +25,6 @@ const InLending = () => {
   const [activeLink, setActiveLink] = useState("lending");
 
   const sideMenuItems = [
-    { id: 1, label: "Đăng Tải Đồ Chơi Mới", link: "/addtoy" },
     { id: 2, label: "Danh sách đồ chơi của tôi", link: "/mytoy" },
     { id: 3, label: "Đang cho mượn", link: "/lending" },
     { id: 4, label: "Danh sách yêu cầu mượn", link: "/listborrowrequests" },
@@ -36,41 +34,12 @@ const InLending = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [lendings, setLendings] = useState([]);
   const [visibleItems, setVisibleItems] = useState(4);
-  const [currentUserId, setCurrentUserId] = useState(null);
-
-  const [showRatingModal, setShowRatingModal] = useState(false);
-  const [rating, setRating] = useState(null);
-  const [hoverRating, setHoverRating] = useState(0);
-  const [reviewText, setReviewText] = useState("");
-  const [selectedLendingId, setSelectedLendingId] = useState(null);
-
-  const [showReportModal, setShowReportModal] = useState(false);
-  const [reportReason, setReportReason] = useState("");
-  const [selectedReportId, setSelectedReportId] = useState(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileData, setProfileData] = useState(null);
 
   const API_BASE_URL = "https://localhost:7128/api";
 
   useEffect(() => {
-    const fetchCurrentUserId = async () => {
-      try {
-        const localToken = localStorage.getItem("token");
-        const sessionToken = sessionStorage.getItem("token");
-        const token = sessionToken || localToken;
-        if (!token) {
-          console.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
-          return;
-        }
-        const response = await axios.get(`${API_BASE_URL}/Users/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setCurrentUserId(response.data.id);
-      } catch (error) {
-        console.error("Error fetching current user ID:", error);
-      }
-    };
-
     const fetchLendings = async () => {
       try {
         const localToken = localStorage.getItem("token");
@@ -78,6 +47,7 @@ const InLending = () => {
         const token = sessionToken || localToken;
         if (!token) {
           toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
+          navigate("/login");
           return;
         }
         const response = await axios.get(`${API_BASE_URL}/Requests/borrowing`, {
@@ -86,7 +56,7 @@ const InLending = () => {
           },
         });
         const filteredLendings = response.data
-          .filter((req) => req.requestStatus === "Accepted")
+          .filter((req) => req.requestStatus === "Accepted" || req.requestStatus === "PickedUp")
           .map((req) => ({
             id: req.requestId,
             image: req.image || toy1,
@@ -95,12 +65,14 @@ const InLending = () => {
             returnDate: new Date(req.returnDate).toISOString().split("T")[0],
             lenderId: req.userId,
             lenderAvatar: req.borrowerAvatar || user,
+            status: req.requestStatus,
           }));
         setLendings(filteredLendings);
       } catch (error) {
-        console.error("Error fetching lendings:", error);
+        console.error("Lỗi khi lấy danh sách đồ chơi đang cho mượn:", error);
         if (error.response && error.response.status === 401) {
           toast.error("Token không hợp lệ hoặc đã hết hạn! Vui lòng đăng nhập lại.");
+          navigate("/login");
         } else {
           toast.error("Không thể tải dữ liệu từ API!");
         }
@@ -108,97 +80,33 @@ const InLending = () => {
       }
     };
 
-    fetchCurrentUserId();
     fetchLendings();
-  }, []);
-
-  const handleReturn = (id) => {
-    setSelectedLendingId(id);
-    setShowRatingModal(true);
-  };
-
-  const handleSendRating = async () => {
-    try {
-      const localToken = localStorage.getItem("token");
-      const sessionToken = sessionStorage.getItem("token");
-      const token = sessionToken || localToken;
-      if (!token) {
-        toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
-        return;
-      }
-      const response = await axios.put(
-        `${API_BASE_URL}/Requests/history/${selectedLendingId}/complete`,
-        {
-          rating: rating,
-          message: reviewText || null,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      setLendings((prev) => prev.filter((item) => item.id !== selectedLendingId));
-      toast.success("Đã hoàn thành yêu cầu thành công!");
-    } catch (error) {
-      console.error("Error completing request:", error);
-      toast.error("Có lỗi xảy ra khi hoàn thành yêu cầu! Chỉ xóa cục bộ.");
-      setLendings((prev) => prev.filter((item) => item.id !== selectedLendingId));
-    } finally {
-      setShowRatingModal(false);
-      setRating(null);
-      setHoverRating(0);
-      setReviewText("");
-      setSelectedLendingId(null);
-    }
-  };
-
-  const handleReport = (id) => {
-    setSelectedReportId(id);
-    setShowReportModal(true);
-  };
-
-  const handleSendReport = async () => {
-    try {
-      const localToken = localStorage.getItem("token");
-      const sessionToken = sessionStorage.getItem("token");
-      const token = sessionToken || localToken;
-      if (!token) {
-        toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
-        return;
-      }
-      await axios.put(
-        `${API_BASE_URL}/Requests/${selectedReportId}/cancel`,
-        {
-          reason: reportReason,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      setLendings((prev) => prev.filter((item) => item.id !== selectedReportId));
-      toast.success("Đã hủy yêu cầu và gán 1 sao cho người mượn!");
-    } catch (error) {
-      console.error("Error canceling request:", error);
-      toast.error("Có lỗi xảy ra khi hủy yêu cầu! Chỉ xóa cục bộ.");
-      setLendings((prev) => prev.filter((item) => item.id !== selectedReportId));
-    } finally {
-      setShowReportModal(false);
-      setReportReason("");
-      setSelectedReportId(null);
-    }
-  };
+  }, [navigate]);
 
   const handleMessage = (lenderId) => {
     toast.info("Chức năng nhắn tin đang chờ API tạo conversation!");
   };
 
-  const handleViewProfile = (lenderId) => {
-    navigate(`/user-info/${lenderId}`);
+  const handleViewProfile = async (lenderId) => {
+    try {
+      const localToken = localStorage.getItem("token");
+      const sessionToken = sessionStorage.getItem("token");
+      const token = sessionToken || localToken;
+      if (!token) {
+        toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
+        return;
+      }
+      const response = await axios.get(`${API_BASE_URL}/User/profile/${lenderId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setProfileData(response.data.userInfo);
+      setShowProfileModal(true);
+    } catch (error) {
+      console.error("Lỗi khi lấy thông tin người mượn:", error);
+      toast.error("Không thể tải thông tin người mượn!");
+    }
   };
 
   const handleLoadMore = () => {
@@ -227,7 +135,7 @@ const InLending = () => {
           <Col xs={12} md={2}>
             <SideMenu menuItems={sideMenuItems} activeItem={3} />
           </Col>
-          <Col xs={12} md={10} className="main-content">
+          <Col xs={12} md={10} className={`main-content ${lendings.length === 0 ? 'empty' : ''}`}>
             <Form.Group controlId="selectDate" className="mb-3">
               <Form.Label>Chọn ngày mượn</Form.Label>
               <DatePicker
@@ -239,7 +147,7 @@ const InLending = () => {
               />
             </Form.Group>
             {visibleLendings.length === 0 ? (
-              <div className="text-center mt-5">
+              <div className="text-center">
                 <h5>Không có đồ chơi nào trong trạng thái đang cho mượn</h5>
               </div>
             ) : (
@@ -259,29 +167,25 @@ const InLending = () => {
                           </Card.Text>
                           <Card.Text className="lending-status">
                             <strong>Trạng thái:</strong>{" "}
-                            <span className="in-progress">Đang cho mượn</span>
+                            <span className="in-progress">
+                              {item.status === "Accepted" ? "Đã chấp nhận" : "Đã lấy"}
+                            </span>
                           </Card.Text>
                           <div className="lender-info">
-                            <img src={item.lenderAvatar} alt="Avatar" className="lender-avatar" />
+                            <img src={item.lenderAvatar} alt="Ảnh đại diện người mượn" className="lender-avatar" />
                             <span>
                               <Button
                                 variant="link"
                                 className="p-0 text-decoration-none"
                                 onClick={() => handleViewProfile(item.lenderId)}
                               >
-                                Trang cá nhân người mượn
+                                Thông tin người mượn
                               </Button>
                             </span>
                           </div>
                           <div className="card-actions">
                             <Button className="btn-message" onClick={() => handleMessage(item.lenderId)}>
                               Nhắn tin
-                            </Button>
-                            <Button className="btn-return" onClick={() => handleReturn(item.id)}>
-                              Đã trả
-                            </Button>
-                            <Button className="btn-cancel" onClick={() => handleReport(item.id)}>
-                              Hủy yêu cầu
                             </Button>
                           </div>
                         </Card.Body>
@@ -302,79 +206,31 @@ const InLending = () => {
         </Row>
       </Container>
 
-      <Modal show={showRatingModal} onHide={() => setShowRatingModal(false)} centered>
+      <Modal show={showProfileModal} onHide={() => setShowProfileModal(false)} centered>
         <Modal.Header closeButton>
-          <Modal.Title>Đánh giá người mượn (Tùy chọn)</Modal.Title>
+          <Modal.Title>Thông tin người mượn</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form>
-            <Form.Group controlId="ratingStars" className="mb-3">
-              <Form.Label>Đánh giá sao (Tùy chọn)</Form.Label>
-              <div className="rating-stars">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <span
-                    key={star}
-                    onClick={() => setRating(star)}
-                    onMouseEnter={() => setHoverRating(star)}
-                    onMouseLeave={() => setHoverRating(0)}
-                    style={{
-                      cursor: "pointer",
-                      color: star <= (hoverRating || (rating || 0)) ? "#ffc107" : "#ddd",
-                      fontSize: "1.5rem",
-                      marginRight: "5px",
-                    }}
-                  >
-                    <FaStar />
-                  </span>
-                ))}
-              </div>
-            </Form.Group>
-            <Form.Group controlId="reviewText">
-              <Form.Label>Đánh giá (Tùy chọn)</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                placeholder="Nhập đánh giá của bạn"
-                value={reviewText}
-                onChange={(e) => setReviewText(e.target.value)}
+          {profileData ? (
+            <div>
+              <img
+                src={profileData.avatar || user}
+                alt="Ảnh đại diện"
+                className="rounded-circle mb-3"
+                style={{ width: "100px", height: "100px" }}
               />
-            </Form.Group>
-          </Form>
+              <p><strong>Tên hiển thị:</strong> {profileData.displayName}</p>
+              <p><strong>Tuổi:</strong> {profileData.age}</p>
+              <p><strong>Địa chỉ:</strong> {profileData.address}</p>
+              <p><strong>Đánh giá:</strong> {profileData.rating ? profileData.rating.toFixed(2) : "Chưa có đánh giá"}</p>
+            </div>
+          ) : (
+            <p>Đang tải thông tin...</p>
+          )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowRatingModal(false)}>
-            Hủy
-          </Button>
-          <Button variant="primary" onClick={handleSendRating}>
-            <FaPaperPlane className="me-2" /> Xác nhận hoàn thành
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      <Modal show={showReportModal} onHide={() => setShowReportModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Hủy yêu cầu cho mượn</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group controlId="reportReason" className="mb-3">
-              <Form.Label>Nhập lý do hủy</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                placeholder="Nhập lý do hủy yêu cầu"
-                value={reportReason}
-                onChange={(e) => setReportReason(e.target.value)}
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowReportModal(false)}>
-            Hủy
-          </Button>
-          <Button variant="primary" onClick={handleSendReport}>
-            <FaPaperPlane className="me-2" /> Gửi
+          <Button variant="secondary" onClick={() => setShowProfileModal(false)}>
+            Đóng
           </Button>
         </Modal.Footer>
       </Modal>

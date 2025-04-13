@@ -13,7 +13,6 @@ const AddToy = () => {
   const [activeLink, setActiveLink] = useState("add-toy");
 
   const sideMenuItems = [
-    { id: 1, label: "Đăng Tải Đồ Chơi Mới", link: "/addtoy" },
     { id: 2, label: "Danh sách đồ chơi của tôi", link: "/mytoy" },
     { id: 3, label: "Đang cho mượn", link: "/inlending" },
     { id: 4, label: "Danh sách yêu cầu mượn", link: "/listborrowrequests" },
@@ -88,7 +87,7 @@ const AddToy = () => {
       toast.error("Độ tuổi phù hợp là bắt buộc!");
       return;
     }
-    if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
+    if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= -1) {
       toast.error("Phí cho mượn phải là một số lớn hơn 0!");
       return;
     }
@@ -108,7 +107,6 @@ const AddToy = () => {
       const formData = new FormData();
       formData.append("Name", toyName);
       formData.append("CategoryName", category);
-      // Gửi ProductStatus dưới dạng số: 0 = New, 1 = Used
       formData.append("ProductStatus", condition === "new" ? "0" : "1");
       formData.append("SuitableAge", parseInt(ageGroup.split("-")[0], 10));
       formData.append("Price", parseFloat(price));
@@ -128,6 +126,8 @@ const AddToy = () => {
       });
 
       toast.success("Đăng tải đồ chơi thành công!");
+      navigate("/mytoy");
+      // Reset form
       setPreviewImage(null);
       setImageFile(null);
       setToyName("");
@@ -136,6 +136,9 @@ const AddToy = () => {
       setAgeGroup("");
       setPrice("");
       setDescription("");
+
+      // Chuyển hướng đến trang "Danh sách đồ chơi của tôi"
+      navigate("/mytoy");
     } catch (error) {
       console.error("Error creating product:", error);
       const errorMessage = error.response?.data?.message || "Có lỗi xảy ra khi gửi yêu cầu!";
@@ -162,9 +165,6 @@ const AddToy = () => {
 
           <Col xs={12} md={10} className="main-content">
             <h2 className="page-title">Đăng Tải Đồ Chơi Mới</h2>
-            <div className="required-notice">
-              <span>Dấu (*) màu đỏ là những trường bắt buộc phải nhập</span>
-            </div>
             <Form onSubmit={handleSubmit}>
               <Form.Group controlId="toyImage" className="mb-3">
                 <Form.Label>

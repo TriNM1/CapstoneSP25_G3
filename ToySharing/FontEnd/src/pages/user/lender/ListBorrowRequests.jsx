@@ -61,7 +61,7 @@ const ListBorrowRequests = () => {
         borrowDate: new Date(req.rentDate).toISOString().split("T")[0],
         returnDate: new Date(req.returnDate).toISOString().split("T")[0],
         requesterId: req.userId,
-        requesterAvatar: req.borrowerAvatar || "https://via.placeholder.com/35",
+        requesterAvatar: req.borrowerAvatar,
         message: req.message,
       }));
 
@@ -76,12 +76,11 @@ const ListBorrowRequests = () => {
   useEffect(() => {
     fetchRequests();
 
-    // Làm mới dữ liệu sau 2 giây để đảm bảo dữ liệu được đồng bộ
     const timer = setTimeout(() => {
       fetchRequests();
     }, 2000);
 
-    return () => clearTimeout(timer); // Dọn dẹp timer khi component unmount
+    return () => clearTimeout(timer);
   }, [navigate]);
 
   const handleLoadMore = () => {
@@ -145,21 +144,21 @@ const ListBorrowRequests = () => {
     }
   };
 
-  const handleViewProfile = async (requesterId) => {
+  const handleViewProfile = async (userId) => {
     try {
       const localToken = localStorage.getItem("token");
       const sessionToken = sessionStorage.getItem("token");
       const token = sessionToken || localToken;
-      const response = await axios.get(`${API_BASE_URL}/Users/profile/${requesterId}`, {
+      const response = await axios.get(`${API_BASE_URL}/User/profile/${userId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      setProfileData(response.data.userInfo);
+      setProfileData(response.data.userInfo); // Truy cập vào userInfo
       setShowProfileModal(true);
     } catch (error) {
-      console.error("Lỗi khi lấy thông tin người dùng:", error);
-      toast.error("Không thể tải thông tin người dùng!");
+      console.error("Lỗi khi lấy thông tin người mượn:", error);
+      toast.error("Không thể tải thông tin người mượn!");
     }
   };
 
@@ -178,7 +177,6 @@ const ListBorrowRequests = () => {
           <Col xs={12} md={2}>
             <SideMenu
               menuItems={[
-                { id: 1, label: "Đăng tải đồ chơi mới", link: "/addtoy" },
                 { id: 2, label: "Danh sách đồ chơi của tôi", link: "/mytoy" },
                 { id: 3, label: "Đang cho mượn", link: "/inlending" },
                 { id: 4, label: "Danh sách yêu cầu mượn", link: "/listborrowrequests" },
@@ -224,14 +222,14 @@ const ListBorrowRequests = () => {
                             <strong>Ngày trả:</strong> {request.returnDate}
                           </Card.Text>
                           <div className="lender-info">
-                            <img src={request.requesterAvatar} alt="Requester Avatar" className="requester-avatar" />
+                            <img src={request.requesterAvatar} alt="Ảnh đại diện người mượn" className="requester-avatar" />
                             <span>
                               <Button
                                 variant="link"
                                 className="p-0 text-decoration-none"
                                 onClick={() => handleViewProfile(request.requesterId)}
                               >
-                                Trang cá nhân người muốn mượn
+                                Thông tin người mượn
                               </Button>
                             </span>
                           </div>
@@ -305,15 +303,15 @@ const ListBorrowRequests = () => {
           {profileData ? (
             <div>
               <img
-                src={profileData.avatar || "https://via.placeholder.com/100"}
-                alt="Avatar"
+                src={profileData.avatar}
+                alt="Ảnh đại diện"
                 className="rounded-circle mb-3"
                 style={{ width: "100px", height: "100px" }}
               />
-              <p><strong>Tên:</strong> {profileData.name}</p>
+              <p><strong>Tên:</strong> {profileData.displayName}</p>
               <p><strong>Tuổi:</strong> {profileData.age}</p>
               <p><strong>Địa chỉ:</strong> {profileData.address}</p>
-              <p><strong>Đánh giá:</strong> {profileData.rating.toFixed(2)}</p>
+              <p><strong>Đánh giá:</strong> {profileData.rating ? profileData.rating.toFixed(2) : "Chưa có đánh giá"}</p>
             </div>
           ) : (
             <p>Đang tải thông tin...</p>
