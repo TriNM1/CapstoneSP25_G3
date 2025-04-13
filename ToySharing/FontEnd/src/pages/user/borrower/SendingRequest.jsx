@@ -10,7 +10,6 @@ import {
 } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { FaStar, FaPaperPlane } from "react-icons/fa";
 import Header from "../../../components/Header";
 import SideMenu from "../../../components/SideMenu";
 import "./SendingRequest.scss";
@@ -31,9 +30,6 @@ const SendingRequest = () => {
   const [profileData, setProfileData] = useState(null);
   const [showPickedUpModal, setShowPickedUpModal] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
-  const [rating, setRating] = useState(null);
-  const [hoverRating, setHoverRating] = useState(0);
-  const [reviewText, setReviewText] = useState("");
 
   const API_BASE_URL = "https://localhost:7128/api";
 
@@ -59,20 +55,19 @@ const SendingRequest = () => {
           },
         });
 
-        // Map API response to frontend format
         const formattedRequests = response.data.map((req) => ({
           requestId: req.requestId,
           productId: req.productId,
           productName: req.productName,
           ownerId: req.ownerId || null,
           ownerName: req.ownerName || "Không xác định",
-          ownerAvatar: req.ownerAvatar || "https://via.placeholder.com/50?text=Avatar",
+          ownerAvatar: req.ownerAvatar,
           borrowDate: req.borrowDate,
           returnDate: req.returnDate,
           requestDate: req.requestDate || new Date().toISOString(),
           message: req.message,
           status: req.status,
-          image: req.image || "https://via.placeholder.com/300x200?text=No+Image",
+          image: req.image,
         }));
 
         setRequests(formattedRequests);
@@ -130,7 +125,7 @@ const SendingRequest = () => {
         return;
       }
 
-      const response = await axios.put(
+      await axios.put(
         `${API_BASE_URL}/Requests/${selectedRequestId}/picked-up`,
         {},
         {
@@ -150,14 +145,7 @@ const SendingRequest = () => {
       setShowPickedUpModal(false);
       setSelectedRequestId(null);
     } catch (error) {
-      console.error("Lỗi khi đánh dấu đã lấy:", {
-        message: error.message,
-        response: error.response ? {
-          status: error.response.status,
-          data: error.response.data,
-        } : "No response",
-        requestId: selectedRequestId,
-      });
+      console.error("Lỗi khi đánh dấu đã lấy:", error);
       let errorMessage = "Không thể đánh dấu đã lấy!";
       if (error.response) {
         errorMessage = error.response.data.message || errorMessage;
@@ -170,8 +158,6 @@ const SendingRequest = () => {
           errorMessage = "Yêu cầu không tồn tại!";
         } else if (error.response.status === 400) {
           errorMessage = error.response.data.message || "Yêu cầu không hợp lệ!";
-        } else if (error.response.status === 500) {
-          errorMessage = error.response.data.error || "Lỗi server, vui lòng thử lại sau!";
         }
       }
       toast.error(errorMessage);
@@ -181,8 +167,15 @@ const SendingRequest = () => {
   const handleConfirmComplete = async () => {
     try {
       const token = sessionStorage.getItem("token") || localStorage.getItem("token");
+      if (!token) {
+        toast.error("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!");
+        navigate("/login");
+        return;
+      }
+
       await axios.put(
         `${API_BASE_URL}/Requests/history/${selectedRequestId}/complete`,
+        {},
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -190,18 +183,30 @@ const SendingRequest = () => {
           },
         }
       );
+
       setRequests((prev) =>
         prev.filter((req) => req.requestId !== selectedRequestId)
       );
       toast.success("Đã hoàn thành yêu cầu thành công!");
       setShowCompleteModal(false);
-      setRating(null);
-      setHoverRating(0);
-      setReviewText("");
       setSelectedRequestId(null);
     } catch (error) {
       console.error("Lỗi khi hoàn thành yêu cầu:", error);
-      toast.error("Không thể hoàn thành yêu cầu!");
+      let errorMessage = "Không thể hoàn thành yêu cầu!";
+      if (error.response) {
+        errorMessage = error.response.data.message || errorMessage;
+        if (error.response.status === 401) {
+          errorMessage = "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!";
+          navigate("/login");
+        } else if (error.response.status === 403) {
+          errorMessage = "Bạn không có quyền thực hiện hành động này!";
+        } else if (error.response.status === 404) {
+          errorMessage = "Yêu cầu hoặc lịch sử không tồn tại!";
+        } else if (error.response.status === 400) {
+          errorMessage = error.response.data.message || "Yêu cầu không hợp lệ!";
+        }
+      }
+      toast.error(errorMessage);
     }
   };
 
@@ -241,14 +246,14 @@ const SendingRequest = () => {
 
   const filteredRequests = selectedDate
     ? requests.filter((request) => {
-      const requestDate = new Date(request.borrowDate);
-      return (
-        (request.status === 1 || request.status === 2) &&
-        requestDate.getDate() === selectedDate.getDate() &&
-        requestDate.getMonth() === selectedDate.getMonth() &&
-        requestDate.getFullYear() === selectedDate.getFullYear()
-      );
-    })
+        const requestDate = new Date(request.borrowDate);
+        return (
+          (request.status === 1 || request.status === 2) &&
+          requestDate.getDate() === selectedDate.getDate() &&
+          requestDate.getMonth() === selectedDate.getMonth() &&
+          requestDate.getFullYear() === selectedDate.getFullYear()
+        );
+      })
     : requests.filter((request) => request.status === 1 || request.status === 2);
 
   return (
@@ -426,49 +431,17 @@ const SendingRequest = () => {
         centered
       >
         <Modal.Header closeButton>
-          <Modal.Title>Đánh giá người cho mượn (Tùy chọn)</Modal.Title>
+          <Modal.Title>Xác nhận hoàn thành</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form>
-            <Form.Group controlId="ratingStars" className="mb-3">
-              <Form.Label>Đánh giá sao (Tùy chọn)</Form.Label>
-              <div className="rating-stars">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <span
-                    key={star}
-                    onClick={() => setRating(star)}
-                    onMouseEnter={() => setHoverRating(star)}
-                    onMouseLeave={() => setHoverRating(0)}
-                    style={{
-                      cursor: "pointer",
-                      color: star <= (hoverRating || (rating || 0)) ? "#ffc107" : "#ddd",
-                      fontSize: "1.5rem",
-                      marginRight: "5px",
-                    }}
-                  >
-                    <FaStar />
-                  </span>
-                ))}
-              </div>
-            </Form.Group>
-            <Form.Group controlId="reviewText">
-              <Form.Label>Đánh giá (Tùy chọn)</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                placeholder="Nhập đánh giá của bạn"
-                value={reviewText}
-                onChange={(e) => setReviewText(e.target.value)}
-              />
-            </Form.Group>
-          </Form>
+          <p>Bạn có chắc chắn đã trả đồ chơi này không?</p>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowCompleteModal(false)}>
             Hủy
           </Button>
           <Button variant="primary" onClick={handleConfirmComplete}>
-            <FaPaperPlane className="me-2" /> Xác nhận hoàn thành
+            Xác nhận
           </Button>
         </Modal.Footer>
       </Modal>
@@ -490,9 +463,9 @@ const SendingRequest = () => {
                 className="rounded-circle mb-3"
                 style={{ width: "100px", height: "100px" }}
               />
-              <p><strong>Tên hiển thị:</strong> {profileData.displayName}</p>
-              <p><strong>Tuổi:</strong> {profileData.age}</p>
-              <p><strong>Địa chỉ:</strong> {profileData.address}</p>
+              <p><strong>Tên hiển thị:</strong> {profileData.displayName || "Không có tên"}</p>
+              <p><strong>Tuổi:</strong> {profileData.age || "Không có thông tin"}</p>
+              <p><strong>Địa chỉ:</strong> {profileData.address || "Không có thông tin"}</p>
               <p><strong>Đánh giá:</strong> {profileData.rating ? profileData.rating.toFixed(2) : "Chưa có đánh giá"}</p>
             </div>
           ) : (
