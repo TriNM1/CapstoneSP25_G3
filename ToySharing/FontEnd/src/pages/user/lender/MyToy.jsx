@@ -90,7 +90,7 @@ const MyToy = () => {
           borrowCount: toy.borrowCount || 0,
           status: toy.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
           categoryName: toy.categoryName,
-          productStatus: toy.productStatus,
+          productStatus: toy.productStatus === 0 ? "Mới" : toy.productStatus === 1 ? "Cũ" : "Không xác định",
           suitableAge: toy.suitableAge,
           price: `${toy.price.toLocaleString("vi-VN")} VND`,
           description: toy.description,
@@ -128,7 +128,8 @@ const MyToy = () => {
     fetchCategories();
   }, []);
 
-  const handleEdit = (id) => {
+  const handleEdit = (e, id) => {
+    e.stopPropagation();
     const toyToEdit = toys.find((toy) => toy.id === id);
     if (toyToEdit) {
       setEditToyData({
@@ -156,7 +157,7 @@ const MyToy = () => {
     if (e.target.files) {
       setEditToyData((prev) => ({
         ...prev,
-        files: Array.from(e.target.files), // Lưu tất cả các tệp được chọn
+        files: Array.from(e.target.files),
       }));
     }
   };
@@ -184,24 +185,22 @@ const MyToy = () => {
         return;
       }
 
-      // Map string productStatus to integer
       const productStatusMap = {
         "New": 0,
         "Used": 1,
-        "": 0 // Default to 0 if empty
+        "": 0,
       };
       const productStatus = productStatusMap[editToyData.productStatus] || 0;
 
       const formData = new FormData();
       formData.append("Name", editToyData.name);
       formData.append("CategoryName", editToyData.categoryName || "");
-      formData.append("ProductStatus", productStatus); // Send as integer
+      formData.append("ProductStatus", productStatus);
       formData.append("SuitableAge", suitableAge);
       formData.append("Price", price);
       formData.append("Description", editToyData.description || "");
       formData.append("Available", editToyData.available || 0);
 
-      // Chỉ gửi Files nếu có ảnh mới
       if (editToyData.files.length > 0) {
         editToyData.files.forEach((file) => formData.append("Files", file));
       }
@@ -217,16 +216,16 @@ const MyToy = () => {
         prevToys.map((toy) =>
           toy.id === editToyData.id
             ? {
-              ...toy,
-              image: response.data.imagePaths[0] || toy.image,
-              name: response.data.name,
-              categoryName: response.data.categoryName,
-              productStatus: response.data.productStatus,
-              suitableAge: response.data.suitableAge,
-              price: `${response.data.price.toLocaleString("vi-VN")} VND`,
-              description: response.data.description,
-              status: response.data.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
-            }
+                ...toy,
+                image: response.data.imagePaths[0] || toy.image,
+                name: response.data.name,
+                categoryName: response.data.categoryName,
+                productStatus: response.data.productStatus,
+                suitableAge: response.data.suitableAge,
+                price: `${response.data.price.toLocaleString("vi-VN")} VND`,
+                description: response.data.description,
+                status: response.data.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
+              }
             : toy
         )
       );
@@ -243,7 +242,8 @@ const MyToy = () => {
     }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (e, id) => {
+    e.stopPropagation();
     setConfirmAction("delete");
     setSelectedToyId(id);
     setShowConfirmModal(true);
@@ -290,7 +290,7 @@ const MyToy = () => {
   const handleAddToy = () => {
     navigate("/addtoy");
   };
-  
+
   const visibleToys = toys.slice(0, visibleItems);
 
   return (
@@ -302,15 +302,13 @@ const MyToy = () => {
         unreadMessages={0}
         notificationCount={0}
       />
-
       <Container fluid className="mt-4">
         <Row>
           <Col xs={12} md={2}>
             <SideMenu menuItems={sideMenuItems} activeItem={2} />
           </Col>
-
           <Col xs={12} md={10} className="main-content">
-          <div className="d-flex align-items-center mb-3">
+            <div className="d-flex align-items-center mb-3">
               <div className="filter-panel-wrapper flex-grow-1">
                 <FilterPanel
                   showFilter={showFilter}
@@ -333,7 +331,11 @@ const MyToy = () => {
                 <Row className="toy-items-section">
                   {visibleToys.map((toy) => (
                     <Col key={toy.id} xs={12} md={6} className="mb-4">
-                      <Card className="toy-card">
+                      <Card
+                        className="toy-card"
+                        onClick={() => handleViewDetail(toy.id)}
+                        style={{ cursor: "pointer" }}
+                      >
                         <Card.Img variant="top" src={toy.image} className="toy-image" />
                         <Card.Body className="card-body">
                           <Card.Title className="toy-name">{toy.name}</Card.Title>
@@ -350,14 +352,11 @@ const MyToy = () => {
                             </span>
                           </Card.Text>
                           <div className="card-actions">
-                            <Button className="btn-view" onClick={() => handleViewDetail(toy.id)}>
-                              Xem
-                            </Button>
-                            <Button className="btn-edit" onClick={() => handleEdit(toy.id)}>
+                            <Button className="btn-edit" onClick={(e) => handleEdit(e, toy.id)}>
                               Sửa
                             </Button>
                             {toy.status === "Sẵn sàng cho mượn" && (
-                              <Button className="btn-delete" onClick={() => handleDelete(toy.id)}>
+                              <Button className="btn-delete" onClick={(e) => handleDelete(e, toy.id)}>
                                 Xóa
                               </Button>
                             )}
@@ -379,8 +378,6 @@ const MyToy = () => {
           </Col>
         </Row>
       </Container>
-
-      {/* Modal chỉnh sửa */}
       <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Chỉnh sửa đồ chơi</Modal.Title>
@@ -403,7 +400,7 @@ const MyToy = () => {
               )}
             </Form.Group>
             <Form.Group controlId="editToyImage" className="mb-3">
-              <Form.Label>Upload ảnh mới(nếu bạn muốn thay đổi ảnh)</Form.Label>
+              <Form.Label>Upload ảnh mới (nếu muốn thay đổi)</Form.Label>
               <Form.Control type="file" multiple onChange={handleEditImageChange} />
             </Form.Group>
             <Form.Group controlId="editToyName" className="mb-3">
@@ -488,8 +485,6 @@ const MyToy = () => {
           </Button>
         </Modal.Footer>
       </Modal>
-
-      {/* Modal chi tiết */}
       <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Chi tiết đồ chơi</Modal.Title>
@@ -520,8 +515,6 @@ const MyToy = () => {
           </Button>
         </Modal.Footer>
       </Modal>
-
-      {/* Modal xác nhận xóa */}
       <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Xác nhận</Modal.Title>
@@ -536,7 +529,6 @@ const MyToy = () => {
           </Button>
         </Modal.Footer>
       </Modal>
-
       <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
