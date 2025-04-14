@@ -31,7 +31,7 @@ import Statistic from "./pages/admin/Statistic";
 
 // Route wrappers
 // import RouteProtected from "./components/ProtectedRoute"
-
+// import Admin from "./components/ProtectedRoute"
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 
@@ -59,11 +59,11 @@ function App() {
           path="/lending/listborrowrequests"
           element={<ListBorrowRequests />}
         />
-        <Route path="/lending/inlending" element={<InLending />} />
+        <Route path="/inlending" element={<InLending />} />
 
         <Route path="/searchtoy" element={<SearchToy />} />
         <Route path="/borrowing" element={<SearchToy />} />
-        <Route path="/borrowing/searchtoy" element={<SearchToy />} />
+        <Route path="/searchtoy" element={<SearchToy />} />
         <Route path="/sendingrequest" element={<SendingRequest />} />
         <Route path="/borrowhistory" element={<BorrowHistory />} />
         <Route path="/message" element={<Message />} />

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Container, Navbar, Nav, Badge, Dropdown } from "react-bootstrap";
 import { FaEnvelope, FaBell } from "react-icons/fa";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom"; // Add useLocation
 import axios from "axios";
 import logo from "../assets/logo.png";
 import user from "../assets/user.png";
@@ -23,8 +23,21 @@ const Header = ({
   const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
   const token = localStorage.getItem("token") || sessionStorage.getItem("token");
   const navigate = useNavigate();
+  const location = useLocation(); // Use the useLocation hook
 
   useEffect(() => {
+    const path = location.pathname;
+    if (path === "/home") {
+      setActiveLink("home");
+    } else if (path === "/mytoy" || path === "/inlending" || path === "/listborrowrequests" || path === "/transferhistory" || path === "/addtoy") {
+      setActiveLink("Lender");
+    } else if (path === "/searchtoy" || path === "/sendingrequest" || path === "/borrowhistory") {
+      setActiveLink("Borrow");
+    } else if (path === "/policy") {
+      setActiveLink("policy");
+    } else if (path === "/userguide") {
+      setActiveLink("userguide");
+    }
     const fetchNotifications = async () => {
       if (!isLoggedIn || !token) {
         setNotifications([]);
@@ -44,7 +57,7 @@ const Header = ({
       }
     };
     fetchNotifications();
-  }, [isLoggedIn, token]);
+  }, [location.pathname, setActiveLink, isLoggedIn, token]);
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -143,17 +156,17 @@ const Header = ({
             </Nav.Link>
             <Nav.Link
               as={Link}
-              to="/lending/listBorrowRequests"
-              onClick={() => setActiveLink("listBorrowRequests")}
-              className={activeLink === "listBorrowRequests" ? "active" : ""}
+              to="/mytoy"
+              onClick={() => setActiveLink("Lender")}
+              className={activeLink === "Lender" ? "active" : ""}
             >
               Cho mượn đồ
             </Nav.Link>
             <Nav.Link
               as={Link}
-              to="/borrowing/searchtoy"
-              onClick={() => setActiveLink("searchtoy")}
-              className={activeLink === "searchtoy" ? "active" : ""}
+              to="/searchtoy"
+              onClick={() => setActiveLink("Borrow")}
+              className={activeLink === "Borrow" ? "active" : ""}
             >
               Mượn đồ chơi
             </Nav.Link>
