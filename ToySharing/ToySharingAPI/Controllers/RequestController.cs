@@ -95,8 +95,8 @@ namespace ToySharingAPI.Controllers
 
                 var ownerId = product.UserId;
                 var borrower = await _context.Users.FindAsync(mainUserId);
-                var borrowerName = borrower?.Name ?? "Không xác định";
-                await CreateNotification(ownerId, $"{borrowerName} has requested to rent your product '{product.Name}'.");
+                var borrowerName = borrower?.DisplayName ?? "Không xác định";
+                await CreateNotification(ownerId, $"{borrowerName} đã gửi yêu cầu mượn '{product.Name}' của bạn .");
 
                 var response = new RequestDTO
                 {
@@ -109,7 +109,7 @@ namespace ToySharingAPI.Controllers
                     BorrowerName = borrowerName,
                     BorrowerAvatar = borrower?.Avatar,
                     OwnerId = product.UserId,
-                    OwnerName = product.User.Name,
+                    OwnerName = product.User.DisplayName,
                     OwnerAvatar = product.User.Avatar, // Thêm OwnerAvatar
                     Status = request.Status
                 };
@@ -194,7 +194,7 @@ namespace ToySharingAPI.Controllers
 
                     var borrowerId = request.UserId;
                     var productName = request.Product.Name;
-                    await CreateNotification(borrowerId, $"Your request to rent '{productName}' has been rejected.");
+                    await CreateNotification(borrowerId, $"Yêu cầu mượn '{productName}' của bạn đã bị từ chối.");
                 }
                 else
                 {
@@ -642,7 +642,7 @@ namespace ToySharingAPI.Controllers
 
             try
             {
-                var borrowerName = request.User?.Name ?? "Không xác định";
+                var borrowerName = request.User?.DisplayName ?? "Không xác định";
 
                 request.Status = 3; // Completed
                 history.Status = 1; // Completed
@@ -771,7 +771,7 @@ namespace ToySharingAPI.Controllers
                 await _context.SaveChangesAsync();
 
                 var borrower = await _context.Users.FindAsync(history.UserId);
-                var borrowerName = borrower?.Name ?? "Không xác định";
+                var borrowerName = borrower?.DisplayName ?? "Không xác định";
                 var productName = history.Product?.Name ?? "Sản phẩm không xác định";
                 await CreateNotification(
                     history.UserId,

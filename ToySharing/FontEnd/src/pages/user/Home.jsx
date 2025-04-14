@@ -267,9 +267,9 @@ const Home = () => {
 
   return (
     <div className="home-wrapper">
-      <div className="side-banner left-banner">
+      {/* <div className="side-banner left-banner">
         <img src={banner_test} alt="Left Banner" />
-      </div>
+      </div> */}
       <div className="home-page">
         <Header
           activeLink={activeLink}
@@ -418,9 +418,9 @@ const Home = () => {
         </Modal>
         <ToastContainer position="top-right" autoClose={3000} />
       </div>
-      <div className="side-banner right-banner">
+      {/* <div className="side-banner right-banner">
         <img src={banner_test2} alt="Right Banner" />
-      </div>
+      </div> */}
     </div>
   );
 };
