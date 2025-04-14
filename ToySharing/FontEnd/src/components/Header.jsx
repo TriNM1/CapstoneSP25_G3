@@ -20,6 +20,7 @@ const Header = ({
   const [notificationCount, setNotificationCount] = useState(initialNotificationCount || 0);
   const [conversations, setConversations] = useState([]);
   const [unreadMessages, setUnreadMessages] = useState(initialUnreadMessages || 0);
+  const [userAvatar, setUserAvatar] = useState(user);
   const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
   const token = localStorage.getItem("token") || sessionStorage.getItem("token");
   const navigate = useNavigate();
@@ -82,6 +83,26 @@ const Header = ({
       }
     };
     fetchConversations();
+  }, [isLoggedIn, token, userId]);
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!isLoggedIn || !token || !userId) {
+        setUserAvatar(user);
+        return;
+      }
+      try {
+        const response = await axios.get(`https://localhost:7128/api/User/profile/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const avatarUrl = response.data.userInfo.avatar;
+        setUserAvatar(avatarUrl || user); 
+      } catch (error) {
+        console.error("Lỗi khi lấy thông tin người dùng:", error);
+        setUserAvatar(user); 
+      }
+    };
+    fetchUserProfile();
   }, [isLoggedIn, token, userId]);
 
   const handleMarkNotificationAsRead = async (notificationId) => {
@@ -251,7 +272,7 @@ const Header = ({
                 </Dropdown>
                 <Dropdown align="end">
                   <Dropdown.Toggle variant="link" id="dropdown-user" className="p-0">
-                    <img src={user} alt="Avatar" className="user-avatar" />
+                    <img src={userAvatar} alt="Avatar" className="user-avatar" />
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
                     <Dropdown.Item
