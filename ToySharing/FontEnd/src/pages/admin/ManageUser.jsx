@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Row,
@@ -21,9 +21,8 @@ const ManageUser = () => {
   const menuItems = [
     { id: 1, label: "Trang chủ", link: "/adminpage" },
     { id: 2, label: "Quản lý người dùng", link: "/manageuser" },
-    { id: 3, label: "Duyệt bài đăng", link: "/checkingpost" },
-    { id: 4, label: "Quản lý vi phạm", link: "/managefeedback" },
-    { id: 5, label: "Thống kê", link: "/statistic" },
+    { id: 3, label: "Quản lý bài đăng", link: "/managepost" },
+    { id: 4, label: "Thống kê", link: "/statistic" },
   ];
 
   // Các trạng thái tìm kiếm
@@ -31,115 +30,36 @@ const ManageUser = () => {
   const [filterStatus, setFilterStatus] = useState("");
   const [filterDate, setFilterDate] = useState(null);
 
-  // Dữ liệu mẫu cho người dùng (10 dòng)
-  const initialUsers = [
-    {
-      id: 1,
-      name: "Nguyễn Văn A",
-      gender: "Nam",
-      childAge: 5,
-      status: "active",
-      role: "user",
-      createdAt: "2023-07-01",
-    },
-    {
-      id: 2,
-      name: "Trần Thị B",
-      gender: "Nữ",
-      childAge: 3,
-      status: "locked",
-      role: "user",
-      createdAt: "2023-07-02",
-    },
-    {
-      id: 3,
-      name: "Lê Văn C",
-      gender: "Nam",
-      childAge: 4,
-      status: "active",
-      role: "admin",
-      createdAt: "2023-07-03",
-    },
-    {
-      id: 4,
-      name: "Phạm Thị D",
-      gender: "Nữ",
-      childAge: 6,
-      status: "active",
-      role: "user",
-      createdAt: "2023-07-04",
-    },
-    {
-      id: 5,
-      name: "Hoàng Văn E",
-      gender: "Nam",
-      childAge: 2,
-      status: "locked",
-      role: "user",
-      createdAt: "2023-07-05",
-    },
-    {
-      id: 6,
-      name: "Đặng Thị F",
-      gender: "Nữ",
-      childAge: 5,
-      status: "active",
-      role: "user",
-      createdAt: "2023-07-06",
-    },
-    {
-      id: 7,
-      name: "Nguyễn Thị G",
-      gender: "Nữ",
-      childAge: 3,
-      status: "active",
-      role: "admin",
-      createdAt: "2023-07-07",
-    },
-    {
-      id: 8,
-      name: "Lê Thị H",
-      gender: "Nữ",
-      childAge: 4,
-      status: "locked",
-      role: "user",
-      createdAt: "2023-07-08",
-    },
-    {
-      id: 9,
-      name: "Trần Văn I",
-      gender: "Nam",
-      childAge: 6,
-      status: "active",
-      role: "user",
-      createdAt: "2023-07-09",
-    },
-    {
-      id: 10,
-      name: "Phạm Văn J",
-      gender: "Nam",
-      childAge: 5,
-      status: "active",
-      role: "user",
-      createdAt: "2023-07-10",
-    },
-  ];
+  // Khởi tạo state users rỗng. API sẽ cung cấp dữ liệu
+  const [users, setUsers] = useState([]);
 
-  const [users, setUsers] = useState(initialUsers);
-
-  // Phân trang
+  // Phân trang (có thể vẫn giữ nếu API trả về nhiều dữ liệu)
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 10;
 
-  // Lọc dữ liệu người dùng theo từ khóa, trạng thái và ngày (createdAt)
+  // Gọi API để lấy danh sách user có role "user"
+  useEffect(() => {
+    fetch("https://localhost:7128/api/User/role/user")
+      .then((response) => response.json())
+      .then((data) => {
+        // Nếu API trả về 1 đối tượng (không phải mảng), bọc nó thành mảng
+        const usersData = Array.isArray(data) ? data : [data];
+        setUsers(usersData);
+      })
+      .catch((error) => console.error("Error fetching users:", error));
+  }, []);
+
+  // Lọc danh sách người dùng theo tìm kiếm và trạng thái
+  // Lưu ý: Nếu API không trả về createdAt, có thể loại bỏ bộ lọc DatePicker
   const filteredUsers = users.filter((user) => {
-    const matchesKeyword = user.name
+    const matchesKeyword = (user.displayName || "")
       .toLowerCase()
       .includes(searchKeyword.toLowerCase());
-    const matchesStatus = filterStatus ? user.status === filterStatus : true;
-    const matchesDate = filterDate
-      ? user.createdAt === filterDate.toISOString().split("T")[0]
-      : true;
+    // Chuyển trạng thái số thành text để so sánh: 1 -> "active", 0 -> "banned"
+    const statusText = user.status === 1 ? "active" : "banned";
+    const matchesStatus = filterStatus ? statusText === filterStatus : true;
+    // Nếu không có createdAt từ API, có thể bỏ qua bộ lọc ngày
+    const matchesDate = filterDate ? false : true;
     return matchesKeyword && matchesStatus && matchesDate;
   });
 
@@ -150,27 +70,61 @@ const ManageUser = () => {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  // Hành động thay đổi trạng thái: nếu active -> khóa, nếu locked -> mở khóa
-  const handleToggleStatus = (id) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((user) =>
-        user.id === id
-          ? { ...user, status: user.status === "active" ? "locked" : "active" }
-          : user
-      )
-    );
-    toast.success("Cập nhật trạng thái thành công!");
+  // Hàm xử lý ban/unban tích hợp gọi API
+  const handleToggleStatus = (id, currentStatus) => {
+    // Nếu status hiện tại là 1 (active) thì gọi API ban, ngược lại gọi API unban
+    const apiUrl =
+      currentStatus === 1
+        ? "https://localhost:7128/api/User/ban"
+        : "https://localhost:7128/api/User/unban";
+
+    const payload = {
+      userId: id,
+      reason:
+        currentStatus === 1
+          ? "Vi phạm điều khoản sử dụng"
+          : "Xem xét lại và mở khóa",
+    };
+
+    fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    })
+      .then((response) => {
+        if (response.ok) {
+          // Update trạng thái user trong state
+          setUsers((prevUsers) =>
+            prevUsers.map((user) =>
+              user.id === id ? { ...user, status: currentStatus === 1 ? 0 : 1 } : user
+            )
+          );
+          toast.success(
+            currentStatus === 1
+              ? "User đã bị khóa thành công!"
+              : "User đã được mở khóa thành công!"
+          );
+        } else {
+          toast.error("Không thể thực hiện thay đổi trạng thái!");
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        toast.error("Có lỗi xảy ra khi kết nối API!");
+      });
   };
 
   // Hành động thay đổi role
-  const handleRoleChange = (id, newRole) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((user) =>
-        user.id === id ? { ...user, role: newRole } : user
-      )
-    );
-    toast.success("Cập nhật role thành công!");
-  };
+  // const handleRoleChange = (id, newRole) => {
+  //   setUsers((prevUsers) =>
+  //     prevUsers.map((user) =>
+  //       user.id === id ? { ...user, role: newRole } : user
+  //     )
+  //   );
+  //   toast.success("Cập nhật role thành công!");
+  // };
 
   return (
     <div className="manage-user-page home-page">
@@ -180,10 +134,10 @@ const ManageUser = () => {
           <Col xs={12} md={2}>
             <AdminSideMenu menuItems={menuItems} activeItem={2} />
           </Col>
-          {/* Main Content với chiều rộng 70vw */}
+          {/* Main Content */}
           <Col xs={12} md={10} className="main-content">
             {/* Thanh tìm kiếm */}
-            <Form className="mb-4">
+            <Form className="mb-4" onSubmit={(e) => e.preventDefault()}>
               <Row>
                 <Col xs={12} md={4} className="mb-3">
                   <Form.Control
@@ -200,21 +154,22 @@ const ManageUser = () => {
                   >
                     <option value="">Chọn trạng thái</option>
                     <option value="active">Active</option>
-                    <option value="locked">Khóa</option>
+                    <option value="banned">Banned</option>
                   </Form.Select>
                 </Col>
                 <Col xs={12} md={4} className="mb-3">
-                  <DatePicker
+                  {/* Nếu API không chứa createdAt, bạn có thể xóa DatePicker đi */}
+                  {/* <DatePicker
                     selected={filterDate}
                     onChange={(date) => setFilterDate(date)}
                     dateFormat="yyyy-MM-dd"
                     className="form-control"
                     placeholderText="Chọn ngày"
-                  />
+                  /> */}
                 </Col>
               </Row>
               <Button variant="primary" type="submit">
-                Áp dụng
+                Tìm kiếm
               </Button>
             </Form>
             {/* Bảng danh sách người dùng */}
@@ -224,29 +179,25 @@ const ManageUser = () => {
                   <th>ID</th>
                   <th>Tên</th>
                   <th>Giới tính</th>
-                  <th>Tuổi bé</th>
                   <th>Trạng thái</th>
                   <th>Action</th>
-                  <th>Role</th>
+                  {/* <th>Role</th> */}
                 </tr>
               </thead>
               <tbody>
                 {currentUsers.map((user) => (
                   <tr key={user.id}>
                     <td>{user.id}</td>
-                    <td>{user.name}</td>
-                    <td>{user.gender}</td>
-                    <td>{user.childAge}</td>
-                    <td>{user.status === "active" ? "Active" : "Khóa"}</td>
+                    <td>{user.displayName}</td>
+                    <td>{user.gender ? "Nam" : "Nữ"}</td>
+                    <td>{user.status === 1 ? "Active" : "Banned"}</td>
                     <td>
                       <Button
-                        variant={
-                          user.status === "active" ? "danger" : "success"
-                        }
+                        variant={user.status === 1 ? "danger" : "success"}
                         size="sm"
-                        onClick={() => handleToggleStatus(user.id)}
+                        onClick={() => handleToggleStatus(user.id, user.status)}
                       >
-                        {user.status === "active" ? (
+                        {user.status === 1 ? (
                           <>
                             <FaLock className="me-1" /> Khóa
                           </>
@@ -257,17 +208,17 @@ const ManageUser = () => {
                         )}
                       </Button>
                     </td>
-                    <td>
+                    {/* <td>
                       <Form.Select
                         value={user.role}
                         onChange={(e) =>
                           handleRoleChange(user.id, e.target.value)
                         }
                       >
-                        <option value="user">User</option>
-                        <option value="admin">Admin</option>
+                        <option value="User">User</option>
+                        <option value="Admin">Admin</option>
                       </Form.Select>
-                    </td>
+                    </td> */}
                   </tr>
                 ))}
               </tbody>
@@ -280,7 +231,9 @@ const ManageUser = () => {
                   disabled={currentPage === 1}
                 />
                 <Pagination.Prev
-                  onClick={() => currentPage > 1 && paginate(currentPage - 1)}
+                  onClick={() =>
+                    currentPage > 1 && paginate(currentPage - 1)
+                  }
                 />
                 {Array.from({ length: totalPages }, (_, i) => (
                   <Pagination.Item

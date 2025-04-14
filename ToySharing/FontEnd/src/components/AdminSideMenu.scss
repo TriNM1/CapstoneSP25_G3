@@ -20,6 +20,12 @@
         object-fit: contain;
       }
     }
+    .user-avatar {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
 
     .icons {
       display: flex;

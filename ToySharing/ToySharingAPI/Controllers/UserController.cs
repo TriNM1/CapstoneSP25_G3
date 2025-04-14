@@ -39,6 +39,7 @@ namespace ToySharingAPI.Controllers
             _s3Client = new AmazonS3Client(credentials, RegionEndpoint.GetBySystemName(_awsSettings.Region));
 
         }
+        
         private async Task<int> GetAuthenticatedUserId()
         {
             // Kiểm tra xem User có được xác thực không
@@ -321,7 +322,7 @@ namespace ToySharingAPI.Controllers
         }
 
         [HttpPost("ban")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> BanUser([FromBody] BanUnbanRequestDTO request)
         {
             var user = await _context.Users.FindAsync(request.UserId);
@@ -344,7 +345,7 @@ namespace ToySharingAPI.Controllers
         }
 
         [HttpPost("unban")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> UnbanUser([FromBody] BanUnbanRequestDTO request)
         {
             var user = await _context.Users.FindAsync(request.UserId);

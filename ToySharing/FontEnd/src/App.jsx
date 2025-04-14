@@ -25,14 +25,14 @@ import ToyDetail from "./pages/user/generate/ToyDetail";
 //admin
 import AdminPage from "./pages/admin/AdminPage";
 import ManageUser from "./pages/admin/ManageUser";
-import CheckingPost from "./pages/admin/CheckingPost";
-import ManageFeedback from "./pages/admin/ManageFeedback";
 import Statistic from "./pages/admin/Statistic";
-
+import ManagePost from "./pages/admin/ManagePost";
 // Route wrappers
 // import RouteProtected from "./components/ProtectedRoute"
 // import Admin from "./components/ProtectedRoute"
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import AdminProfile from "./pages/admin/AdminProfile";
+
 
 
 function App() {
@@ -74,17 +74,17 @@ function App() {
         <Route path="/inlending" element={<InLending />} />
         <Route path="/transferhistory" element={<TransferHistory />} />
 
+        <Route path="/adminprofile" element={<AdminProfile/>} />
         <Route path="/adminpage" element={<AdminPage />} />
         <Route path="/manageuser" element={<ManageUser />} />
-        <Route path="/checkingpost" element={<CheckingPost />} />
-        <Route path="/managefeedback" element={<ManageFeedback />} />
-        <Route path="/statistic" element={<Statistic />} />
+        <Route path="/managepost" element={<ManagePost />} />
+        <Route path="/statistic" element={<Statistic />} /> 
 
         {/* Route ToyDetail */}
         <Route path="/toydetail/:toyId" element={<ToyDetail />} />
 
         {/* Route mặc định nếu không khớp */}
-        <Route path="*" element={<Home />} />
+        <Route path="*" element={<AdminPage />} />
       </Routes>
     </BrowserRouter>
   );

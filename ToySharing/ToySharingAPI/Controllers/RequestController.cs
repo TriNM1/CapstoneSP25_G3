@@ -525,6 +525,7 @@ namespace ToySharingAPI.Controllers
             return Ok(requests);
         }
 
+        // Update borrow-history to ensure correct status mapping
         [HttpGet("borrow-history")]
         [Authorize(Roles = "User")]
         public async Task<ActionResult<IEnumerable<BorrowHistoryDTO>>> GetBorrowHistory()
@@ -738,7 +739,57 @@ namespace ToySharingAPI.Controllers
                 });
             }
         }
+        [HttpPut("history/{requestId}/rate")]
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> RateHistory(int requestId, [FromBody] CompleteRequestDTO rateDto)
+        {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
 
+            var history = await _context.Histories
+                .Include(h => h.Product)
+                .ThenInclude(p => p.User)
+                .FirstOrDefaultAsync(h => h.RequestId == requestId);
+
+            if (history == null)
+                return NotFound("Bản ghi lịch sử không tồn tại.");
+
+            if (history.Product.UserId != mainUserId)
+                return Forbid("Bạn không có quyền đánh giá lịch sử này.");
+
+            if (history.Status != 1)
+                return BadRequest("Chỉ có thể đánh giá lịch sử đã hoàn thành (status = 1).");
+
+            if (history.Rating.HasValue)
+                return BadRequest("Lịch sử này đã được đánh giá.");
+
+            try
+            {
+                history.Rating = rateDto.Rating;
+                history.Message = rateDto.Message?.Trim();
+                await _context.SaveChangesAsync();
+
+                var borrower = await _context.Users.FindAsync(history.UserId);
+                var borrowerName = borrower?.Name ?? "Không xác định";
+                var productName = history.Product?.Name ?? "Sản phẩm không xác định";
+                await CreateNotification(
+                    history.UserId,
+                    $"Bạn đã nhận được đánh giá từ chủ sở hữu '{productName}'."
+                );
+
+                return Ok(new { message = "Đánh giá đã được gửi thành công." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "Lỗi khi gửi đánh giá.",
+                    error = ex.Message,
+                    requestId
+                });
+            }
+        }
         public class CancelRequestDTO
         {
             public string Reason { get; set; }

@@ -4,9 +4,10 @@ import { Link, useLocation } from "react-router-dom";
 import { FaEnvelope, FaBell } from "react-icons/fa";
 import userIcon from "../assets/user.png";
 import logo from "../assets/logo.png";
+import user from "../assets/user.png";
 import "./AdminSideMenu.scss";
 
-const AdminSideMenu = ({ menuItems }) => {
+const AdminSideMenu = ({ menuItems, activelink, setActiveLink }) => {
   const location = useLocation();
   const currentPath = location.pathname;
 
@@ -16,28 +17,32 @@ const AdminSideMenu = ({ menuItems }) => {
         <div className="logo-container">
           <img src={logo} alt="Logo" className="logo" />
         </div>
-        <div className="icons">
-          <Link to="/message" className="icon-link">
-            <FaEnvelope size={20} />
-          </Link>
-          <Dropdown align="end" className="notification-dropdown">
-            <Dropdown.Toggle
-              variant="link"
-              id="dropdown-notifications"
-              className="p-0"
+        <Dropdown className="icons">
+          <Dropdown.Toggle variant="link" id="dropdown-user" className="p-0">
+            <img src={user} alt="Avatar" className="user-avatar" />
+          </Dropdown.Toggle>
+          <Dropdown.Menu>
+            <Dropdown.Item
+              as={Link}
+              to={"/adminprofile"}
+              onClick={() => setActiveLink("profile")}
             >
-              <FaBell size={20} />
-            </Dropdown.Toggle>
-            <Dropdown.Menu className="notification-menu">
-              <Dropdown.Item>Thông báo 1</Dropdown.Item>
-              <Dropdown.Item>Thông báo 2</Dropdown.Item>
-              <Dropdown.Item>Thông báo 3</Dropdown.Item>
-            </Dropdown.Menu>
-          </Dropdown>
+              Thông tin cá nhân
+            </Dropdown.Item>
+            <Dropdown.Item
+              as={Link}
+              to="/logout"
+              onClick={() => setActiveLink("logout")}
+            >
+              Đăng xuất
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
+        {/* <div className="icons">
           <Link to="/adminprofile" className="icon-link">
             <img src={userIcon} alt="User" className="user-icon" />
           </Link>
-        </div>
+        </div> */}
       </div>
       <Nav className="flex-column menu-links">
         {menuItems.map((item) => (
