@@ -83,8 +83,63 @@ const InLending = () => {
     fetchLendings();
   }, [navigate]);
 
-  const handleMessage = (lenderId) => {
-    toast.info("Chức năng nhắn tin đang chờ API tạo conversation!");
+  const handleMessage = async (lenderId) => {
+    try {
+      const localToken = localStorage.getItem("token");
+      const sessionToken = sessionStorage.getItem("token");
+      const token = sessionToken || localToken;
+      if (!token) {
+        toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
+        navigate("/login");
+        return;
+      }
+
+      const response = await axios.get(`${API_BASE_URL}/Conversations`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const conversations = response.data;
+      console.log("Danh sách cuộc trò chuyện:", conversations);
+
+      const existingConversation = conversations.find(
+        (convo) =>
+          (convo.user1Id === lenderId && convo.user2Id === parseInt(localStorage.getItem("userId") || sessionStorage.getItem("userId"))) ||
+          (convo.user2Id === lenderId && convo.user1Id === parseInt(localStorage.getItem("userId") || sessionStorage.getItem("userId")))
+      );
+
+      let conversationId;
+
+      if (existingConversation) {
+        // Nếu đã có cuộc trò chuyện, lấy conversationId
+        conversationId = existingConversation.conversationId;
+        console.log("Cuộc trò chuyện đã tồn tại, ID:", conversationId);
+      } else {
+        // Nếu chưa có, tạo mới cuộc trò chuyện
+        const createResponse = await axios.post(
+          `${API_BASE_URL}/Conversations`,
+          { user2Id: lenderId },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        conversationId = createResponse.data.conversationId;
+        console.log("Cuộc trò chuyện mới được tạo, ID:", conversationId);
+      }
+
+      navigate("/message", { state: { activeConversationId: conversationId } });
+    } catch (error) {
+      console.error("Lỗi khi xử lý nhắn tin:", error);
+      if (error.response && error.response.status === 401) {
+        toast.error("Token không hợp lệ hoặc đã hết hạn! Vui lòng đăng nhập lại.");
+        navigate("/login");
+      } else {
+        toast.error(error.response?.data?.message || "Không thể bắt đầu cuộc trò chuyện!");
+      }
+    }
   };
 
   const handleViewProfile = async (lenderId) => {

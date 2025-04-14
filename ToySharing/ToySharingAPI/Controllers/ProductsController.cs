@@ -413,7 +413,7 @@ namespace ToySharingAPI.Controllers
                     ProductStatus = product.ProductStatus,
                     Price = product.Price,
                     SuitableAge = product.SuitableAge,
-                    CreatedAt = product.CreatedAt ?? DateTime.UtcNow,
+                    CreatedAt = product.CreatedAt ?? DateTime.Now,
                     ImagePaths = product.Images.Select(i => i.Path).ToList()
                 };
                 return Ok(updatedProductDto);

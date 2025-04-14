@@ -1,26 +1,22 @@
-import React from "react";
+import React, { useState } from "react"; // Thêm useState
 import { Container, Row, Col, Button } from "react-bootstrap";
 import Header from "../../../components/Header";
 import "./Policy.scss";
-import illustration from "../../../assets/toy1.jpg"; // Ảnh minh họa, thay đổi theo nhu cầu
+import illustration from "../../../assets/toy1.jpg";
 import Footer from "../../../components/footer";
 
-const Policy = ({
-  activeLink,
-  setActiveLink,
-  isLoggedIn,
-  unreadMessages,
-  notificationCount,
-}) => {
+const Policy = () => {
+  const [activeLink, setActiveLink] = useState("policy"); // Quản lý activeLink trong Policy
+
   return (
     <div className="policy-page">
       {/* Header dùng chung */}
       <Header
-        activeLink="policy"
+        activeLink={activeLink}
         setActiveLink={setActiveLink}
-        isLoggedIn={isLoggedIn}
-        unreadMessages={unreadMessages}
-        notificationCount={notificationCount}
+        isLoggedIn={true} // Giả định người dùng đã đăng nhập, thay đổi theo logic thực tế
+        unreadMessages={0} // Giá trị mặc định, thay đổi nếu cần
+        notificationCount={0} // Giá trị mặc định, thay đổi nếu cần
       />
       <Container className="policy-content">
         <h1>Chính Sách Website</h1>
@@ -86,7 +82,7 @@ const Policy = ({
             Xem thêm
           </Button>
         </div>
-        <Footer/>
+        <Footer />
       </Container>
     </div>
   );

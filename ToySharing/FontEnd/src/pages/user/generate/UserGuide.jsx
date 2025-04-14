@@ -1,14 +1,17 @@
-import React from "react";
+import React, { useState } from "react"; // Thêm useState
 import { Container, Row, Col } from "react-bootstrap";
 import Header from "../../../components/Header";
 import "./UserGuide.scss";
 import Footer from "../../../components/footer";
 
 const UserGuide = () => {
+  const [activeLink, setActiveLink] = useState("userguide");
+
   return (
     <div className="user-guide-page home-page">
       <Header
-        activeLink="guide"
+        activeLink={activeLink}
+        setActiveLink={setActiveLink}
         isLoggedIn={true}
         unreadMessages={0}
         notificationCount={0}
@@ -56,7 +59,7 @@ const UserGuide = () => {
             </div>
           </Col>
         </Row>
-        <Footer/>
+        <Footer />
       </Container>
     </div>
   );

@@ -4,7 +4,10 @@
     background: #f0f2f5;
     min-height: 100vh;
     padding-bottom: 2rem;
-  
+    .logo {
+      width: 120px !important; /* Đồng bộ với các trang khác */
+      height: auto !important;
+    }
     .policy-content {
       margin-top: 20px;
       padding: 2rem;

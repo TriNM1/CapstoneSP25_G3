@@ -198,7 +198,7 @@ namespace ToySharingAPI.Controllers
                 }
                 else
                 {
-                    return BadRequest("Invalid status value. Status must be 1 (Accepted) or 2 (Rejected).");
+                    return BadRequest("Invalid status value. Status must be 1 (Accepted) or 4 (Rejected).");
                 }
 
                 return Ok(new { message = "Request status updated successfully" });
