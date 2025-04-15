@@ -21,9 +21,17 @@ public partial class RentRequest
 
     public DateTime ReturnDate { get; set; }
 
+    public decimal DepositAmount { get; set; }
+
+    public decimal RentalFee { get; set; }
+
+    public byte ConfirmReturn { get; set; }
+
     public virtual History? History { get; set; }
 
     public virtual Product Product { get; set; } = null!;
+
+    public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
 
     public virtual User User { get; set; } = null!;
 }

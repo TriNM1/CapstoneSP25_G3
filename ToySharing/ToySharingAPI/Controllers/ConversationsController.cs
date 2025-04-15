@@ -69,7 +69,7 @@ namespace ToySharingAPI.Controllers
                     OtherUser = new OtherUserDTO
                     {
                         Id = opponent.Id,
-                        Name = opponent.DisplayName,
+                        Name = opponent.Displayname,
                         Avatar = opponent.Avatar
                     },
                     LastMessageContent = lastMessage != null ? lastMessage.Content : string.Empty,

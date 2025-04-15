@@ -95,7 +95,7 @@ namespace ToySharingAPI.Controllers
 
                 var ownerId = product.UserId;
                 var borrower = await _context.Users.FindAsync(mainUserId);
-                var borrowerName = borrower?.DisplayName ?? "Không xác định";
+                var borrowerName = borrower?.Displayname ?? "Không xác định";
                 await CreateNotification(ownerId, $"{borrowerName} đã gửi yêu cầu mượn '{product.Name}' của bạn .");
 
                 var response = new RequestDTO
@@ -109,7 +109,7 @@ namespace ToySharingAPI.Controllers
                     BorrowerName = borrowerName,
                     BorrowerAvatar = borrower?.Avatar,
                     OwnerId = product.UserId,
-                    OwnerName = product.User.DisplayName,
+                    OwnerName = product.User.Displayname,
                     OwnerAvatar = product.User.Avatar, // Thêm OwnerAvatar
                     Status = request.Status
                 };
@@ -642,7 +642,7 @@ namespace ToySharingAPI.Controllers
 
             try
             {
-                var borrowerName = request.User?.DisplayName ?? "Không xác định";
+                var borrowerName = request.User?.Displayname ?? "Không xác định";
 
                 request.Status = 3; // Completed
                 history.Status = 1; // Completed
@@ -771,7 +771,7 @@ namespace ToySharingAPI.Controllers
                 await _context.SaveChangesAsync();
 
                 var borrower = await _context.Users.FindAsync(history.UserId);
-                var borrowerName = borrower?.DisplayName ?? "Không xác định";
+                var borrowerName = borrower?.Displayname ?? "Không xác định";
                 var productName = history.Product?.Name ?? "Sản phẩm không xác định";
                 await CreateNotification(
                     history.UserId,

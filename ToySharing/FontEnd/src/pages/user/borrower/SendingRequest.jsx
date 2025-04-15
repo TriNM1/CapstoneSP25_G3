@@ -30,6 +30,8 @@ const SendingRequest = () => {
   const [profileData, setProfileData] = useState(null);
   const [showPickedUpModal, setShowPickedUpModal] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [mainUserId, setMainUserId] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const API_BASE_URL = "https://localhost:7128/api";
 
@@ -39,10 +41,29 @@ const SendingRequest = () => {
     { id: 3, label: "Lịch sử trao đổi", link: "/borrowhistory" },
   ];
 
+  const getAuthToken = () => {
+    return sessionStorage.getItem("token") || localStorage.getItem("token");
+  };
+
+  useEffect(() => {
+    const token = getAuthToken();
+    setIsLoggedIn(!!token);
+    const getMainUserId = () => {
+      let userId = sessionStorage.getItem("userId");
+      if (!userId) userId = localStorage.getItem("userId");
+      if (userId) {
+        setMainUserId(parseInt(userId));
+      } else {
+        navigate("/login");
+      }
+    };
+    getMainUserId();
+  }, [navigate]);
+
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const token = sessionStorage.getItem("token") || localStorage.getItem("token");
+        const token = getAuthToken();
         if (!token) {
           toast.error("Vui lòng đăng nhập để xem danh sách yêu cầu!");
           navigate("/login");
@@ -87,17 +108,91 @@ const SendingRequest = () => {
       return;
     }
     try {
-      const token = sessionStorage.getItem("token") || localStorage.getItem("token");
+      const token = getAuthToken();
       const response = await axios.get(`${API_BASE_URL}/User/profile/${ownerId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      setProfileData(response.data.userInfo);
+      // console.log("Dữ liệu profile:", response.data); // Debug API response
+      const userInfo = response.data.userInfo || response.data;
+      setProfileData({ ...userInfo, userId: ownerId }); 
       setShowProfileModal(true);
     } catch (error) {
       console.error("Lỗi khi lấy thông tin người cho mượn:", error);
       toast.error("Không thể tải thông tin người cho mượn!");
+    }
+  };
+
+  const handleMessage = async (ownerId) => {
+    try {
+      // console.log("ownerId gửi đến handleMessage:", ownerId); // Debug ownerId
+      const token = getAuthToken();
+      if (!token) {
+        toast.error("Vui lòng đăng nhập để nhắn tin!");
+        navigate("/login");
+        return;
+      }
+
+      if (!ownerId || isNaN(ownerId)) {
+        toast.error("ID người dùng không hợp lệ!");
+        return;
+      }
+
+      if (ownerId === mainUserId) {
+        toast.error("Bạn không thể nhắn tin cho chính mình!");
+        return;
+      }
+
+      const response = await axios.get(`${API_BASE_URL}/Conversations`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const conversations = response.data;
+      console.log("Danh sách cuộc trò chuyện:", conversations);
+
+      const existingConversation = conversations.find(
+        (convo) =>
+          (convo.user1Id === ownerId && convo.user2Id === mainUserId) ||
+          (convo.user2Id === ownerId && convo.user1Id === mainUserId)
+      );
+
+      let conversationId;
+
+      if (existingConversation) {
+        conversationId = existingConversation.conversationId;
+        console.log("Cuộc trò chuyện đã tồn tại, ID:", conversationId);
+      } else {
+        const createResponse = await axios.post(
+          `${API_BASE_URL}/Conversations`,
+          { user2Id: ownerId },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        conversationId = createResponse.data.conversationId;
+        console.log("Cuộc trò chuyện mới được tạo, ID:", conversationId);
+      }
+
+      navigate("/message", { state: { activeConversationId: conversationId } });
+    } catch (error) {
+      console.error("Lỗi khi xử lý nhắn tin:", error);
+      if (error.response && error.response.status === 401) {
+        toast.error("Token không hợp lệ hoặc đã hết hạn! Vui lòng đăng nhập lại.");
+        navigate("/login");
+      } else if (error.response && error.response.status === 500) {
+        toast.error(
+          error.response.data?.message || "Lỗi server khi tạo cuộc trò chuyện!"
+        );
+      } else {
+        toast.error(
+          error.response?.data?.message || "Không thể bắt đầu cuộc trò chuyện!"
+        );
+      }
     }
   };
 
@@ -118,7 +213,7 @@ const SendingRequest = () => {
 
   const handleConfirmPickedUp = async () => {
     try {
-      const token = sessionStorage.getItem("token") || localStorage.getItem("token");
+      const token = getAuthToken();
       if (!token) {
         toast.error("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!");
         navigate("/login");
@@ -166,7 +261,7 @@ const SendingRequest = () => {
 
   const handleConfirmComplete = async () => {
     try {
-      const token = sessionStorage.getItem("token") || localStorage.getItem("token");
+      const token = getAuthToken();
       if (!token) {
         toast.error("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!");
         navigate("/login");
@@ -217,7 +312,7 @@ const SendingRequest = () => {
     }
 
     try {
-      const token = sessionStorage.getItem("token") || localStorage.getItem("token");
+      const token = getAuthToken();
       await axios.put(
         `${API_BASE_URL}/Requests/${selectedRequestId}/cancel`,
         { reason: cancelReason },
@@ -261,7 +356,7 @@ const SendingRequest = () => {
       <Header
         activeLink={activeLink}
         setActiveLink={setActiveLink}
-        isLoggedIn={true}
+        isLoggedIn={isLoggedIn}
         unreadMessages={3}
         notificationCount={2}
       />
@@ -475,6 +570,13 @@ const SendingRequest = () => {
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowProfileModal(false)}>
             Đóng
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => handleMessage(profileData?.userId)}
+            disabled={!profileData || !isLoggedIn || !profileData?.userId || profileData?.userId === mainUserId}
+          >
+            Nhắn tin
           </Button>
         </Modal.Footer>
       </Modal>

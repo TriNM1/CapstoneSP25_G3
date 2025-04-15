@@ -110,8 +110,6 @@ const SearchingToy = () => {
       }
     } catch (error) {
       console.error("Lỗi khi lấy địa chỉ từ database:", error);
-      setUserAddress(null);
-      setUserLocation(null);
       toast.error("Không thể lấy địa chỉ từ hồ sơ người dùng.");
     }
   };
@@ -376,11 +374,90 @@ const SearchingToy = () => {
       const response = await axios.get(`${API_BASE_URL}/User/profile/${ownerId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setProfileData(response.data.userInfo);
+      console.log("Dữ liệu profile:", response.data); // Debug API response
+      const userInfo = response.data.userInfo || response.data;
+      setProfileData({ ...userInfo, userId: ownerId }); // Lưu ownerId vào profileData
       setShowProfileModal(true);
     } catch (error) {
       console.error("Lỗi khi lấy thông tin người cho mượn:", error);
       toast.error("Không thể tải thông tin người cho mượn!");
+    }
+  };
+
+  const handleMessage = async (ownerId) => {
+    try {
+      console.log("ownerId gửi đến handleMessage:", ownerId); // Debug ownerId
+      const token = getAuthToken();
+      if (!token) {
+        toast.error("Vui lòng đăng nhập để nhắn tin!");
+        navigate("/login");
+        return;
+      }
+
+      if (!ownerId || isNaN(ownerId)) {
+        toast.error("ID người dùng không hợp lệ!");
+        return;
+      }
+
+      if (ownerId === mainUserId) {
+        toast.error("Bạn không thể nhắn tin cho chính mình!");
+        return;
+      }
+
+      // Lấy danh sách cuộc trò chuyện
+      const response = await axios.get(`${API_BASE_URL}/Conversations`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const conversations = response.data;
+      console.log("Danh sách cuộc trò chuyện:", conversations);
+
+      // Tìm cuộc trò chuyện với ownerId
+      const existingConversation = conversations.find(
+        (convo) =>
+          (convo.user1Id === ownerId && convo.user2Id === mainUserId) ||
+          (convo.user2Id === ownerId && convo.user1Id === mainUserId)
+      );
+
+      let conversationId;
+
+      if (existingConversation) {
+        // Nếu đã có cuộc trò chuyện, lấy conversationId
+        conversationId = existingConversation.conversationId;
+        console.log("Cuộc trò chuyện đã tồn tại, ID:", conversationId);
+      } else {
+        // Nếu chưa có, tạo mới cuộc trò chuyện
+        const createResponse = await axios.post(
+          `${API_BASE_URL}/Conversations`,
+          { user2Id: ownerId },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        conversationId = createResponse.data.conversationId;
+        console.log("Cuộc trò chuyện mới được tạo, ID:", conversationId);
+      }
+
+      // Chuyển hướng đến trang /message với conversationId
+      navigate("/message", { state: { activeConversationId: conversationId } });
+    } catch (error) {
+      console.error("Lỗi khi xử lý nhắn tin:", error);
+      if (error.response && error.response.status === 401) {
+        toast.error("Token không hợp lệ hoặc đã hết hạn! Vui lòng đăng nhập lại.");
+        navigate("/login");
+      } else if (error.response && error.response.status === 500) {
+        toast.error(
+          error.response.data?.message || "Lỗi server khi tạo cuộc trò chuyện!"
+        );
+      } else {
+        toast.error(
+          error.response?.data?.message || "Không thể bắt đầu cuộc trò chuyện!"
+        );
+      }
     }
   };
 
@@ -691,6 +768,13 @@ const SearchingToy = () => {
             onClick={() => setShowProfileModal(false)}
           >
             Đóng
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => handleMessage(profileData?.userId)}
+            disabled={!profileData || !isLoggedIn || !profileData?.userId || profileData?.userId === mainUserId}
+          >
+            Nhắn tin
           </Button>
         </Modal.Footer>
       </Modal>
