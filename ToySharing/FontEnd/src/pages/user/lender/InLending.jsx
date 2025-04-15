@@ -110,11 +110,9 @@ const InLending = () => {
       let conversationId;
 
       if (existingConversation) {
-        // Nếu đã có cuộc trò chuyện, lấy conversationId
         conversationId = existingConversation.conversationId;
         console.log("Cuộc trò chuyện đã tồn tại, ID:", conversationId);
       } else {
-        // Nếu chưa có, tạo mới cuộc trò chuyện
         const createResponse = await axios.post(
           `${API_BASE_URL}/Conversations`,
           { user2Id: lenderId },
