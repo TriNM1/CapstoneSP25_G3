@@ -29,9 +29,15 @@ public partial class User
 
     public double? Rating { get; set; }
 
-    public string? DisplayName { get; set; }
+    public string? Displayname { get; set; }
 
     public string? Phone { get; set; }
+
+    public string? BankName { get; set; }
+
+    public string? BankAccount { get; set; }
+
+    public string? BankAccountName { get; set; }
 
     public virtual ICollection<BanLog> BanLogs { get; set; } = new List<BanLog>();
 

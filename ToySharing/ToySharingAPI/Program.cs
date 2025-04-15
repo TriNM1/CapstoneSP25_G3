@@ -192,7 +192,7 @@ using (var scope = app.Services.CreateScope())
             AuthUserId = Guid.Parse(adminUser.Id),
             Name = adminEmail,
             CreatedAt = DateTime.Now,
-            DisplayName = "Administrator",
+            Displayname = "Administrator",
         };
         mainContext.Users.Add(mainAdmin);
         await mainContext.SaveChangesAsync();

@@ -68,7 +68,7 @@ namespace ToySharingAPI.Controllers
                 .Select(u => new UserDTO
                 {
                     Name = u.Name,
-                    DisplayName = u.DisplayName,
+                    DisplayName = u.Displayname,
                     Phone = u.Phone,
                     Address = u.Address,
                     Status = u.Status,
@@ -130,7 +130,7 @@ namespace ToySharingAPI.Controllers
                 {
                     UserInfo = new UserInfo
                     {
-                        DisplayName = u.DisplayName,
+                        DisplayName = u.Displayname,
                         Age = u.Age ?? 0,
                         Address = u.Address,
                         Avatar = u.Avatar,
@@ -163,7 +163,7 @@ namespace ToySharingAPI.Controllers
             }
 
             existingUser.Name = userDto.Name;
-            existingUser.DisplayName = userDto.DisplayName;
+            existingUser.Displayname = userDto.DisplayName;
             existingUser.Phone = userDto.Phone;
             existingUser.Address = userDto.Address;
             existingUser.Status = userDto.Status;
@@ -444,7 +444,7 @@ namespace ToySharingAPI.Controllers
                         {
                             Id = mainUser.Id,
                             Email = mainUser.Name,
-                            DisplayName = mainUser.DisplayName,
+                            DisplayName = mainUser.Displayname,
                             Gender = mainUser.Gender,
                             Status = mainUser.Status,
                             Role = roleStr,
