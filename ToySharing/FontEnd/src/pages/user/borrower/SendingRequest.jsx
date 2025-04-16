@@ -248,13 +248,13 @@ const SendingRequest = () => {
     ? requests.filter((request) => {
         const requestDate = new Date(request.borrowDate);
         return (
-          (request.status === 1 || request.status === 2) &&
+          (request.status === 0 || request.status === 1 || request.status === 2) &&
           requestDate.getDate() === selectedDate.getDate() &&
           requestDate.getMonth() === selectedDate.getMonth() &&
           requestDate.getFullYear() === selectedDate.getFullYear()
         );
       })
-    : requests.filter((request) => request.status === 1 || request.status === 2);
+    : requests.filter((request) => request.status === 0 || request.status === 1 || request.status === 2);
 
   return (
     <div className="sending-request-page home-page">
@@ -287,8 +287,9 @@ const SendingRequest = () => {
                   <Card className="request-card">
                     <Card.Img
                       variant="top"
-                      src={request.image}
+                      src={request.image || "https://via.placeholder.com/300x200?text=No+Image"}
                       className="toy-image"
+                      onError={(e) => (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")}
                     />
                     <Card.Body>
                       <Card.Title className="toy-name">{request.productName}</Card.Title>
@@ -308,25 +309,38 @@ const SendingRequest = () => {
                       </Card.Text>
                       <Card.Text className="status">
                         <strong>Trạng thái:</strong>{" "}
-                        <span>
-                          {request.status === 1 ? "Chấp nhận, chưa lấy" : "Đã lấy"}
+                        <span className={
+                          request.status === 0 ? "pending" :
+                          request.status === 1 ? "accepted" : "picked-up"
+                        }>
+                          {request.status === 0 ? "Đang chờ chấp nhận" :
+                           request.status === 1 ? "Chấp nhận, chưa lấy" : "Đã lấy"}
                         </span>
                       </Card.Text>
                       <div className="lender-info d-flex align-items-center mb-2">
                         <img
-                          src={request.ownerAvatar}
+                          src={request.ownerAvatar || "https://via.placeholder.com/50?text=Avatar"}
                           alt="Ảnh đại diện người cho mượn"
                           className="lender-avatar"
+                          onError={(e) => (e.target.src = "https://via.placeholder.com/50?text=Avatar")}
                         />
                         <Button
                           variant="link"
-                          className="ms-2 lender-link p-0 text-decoration-none"
+                          className="lender-link p-0 text-decoration-none"
                           onClick={() => handleViewProfile(request.ownerId)}
                         >
-                          Thông tin người cho mượn
+                          {request.ownerName}
                         </Button>
                       </div>
                       <div className="request-actions text-center">
+                        {request.status === 0 && (
+                          <Button
+                            variant="danger"
+                            onClick={() => handleCancelClick(request.requestId)}
+                          >
+                            Hủy yêu cầu
+                          </Button>
+                        )}
                         {request.status === 1 && (
                           <>
                             <Button
@@ -458,10 +472,11 @@ const SendingRequest = () => {
           {profileData ? (
             <div>
               <img
-                src={profileData.avatar || "https://via.placeholder.com/100"}
+                src={profileData.avatar || "https://via.placeholder.com/100?text=Avatar"}
                 alt="Ảnh đại diện"
                 className="rounded-circle mb-3"
-                style={{ width: "100px", height: "100px" }}
+                style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                onError={(e) => (e.target.src = "https://via.placeholder.com/100?text=Avatar")}
               />
               <p><strong>Tên hiển thị:</strong> {profileData.displayName || "Không có tên"}</p>
               <p><strong>Tuổi:</strong> {profileData.age || "Không có thông tin"}</p>

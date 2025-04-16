@@ -1,0 +1,74 @@
+/* Common styles for images and containers across all components */
+
+/* Toy images */
+.toy-image {
+    height: 200px;
+    object-fit: cover;
+    width: 100%;
+  }
+  
+  /* Avatars */
+  .lender-avatar, .partner-avatar, .requester-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #ddd;
+  }
+  
+  /* Profile avatars */
+  .rounded-circle {
+    border-radius: 50%;
+  }
+  
+  /* Card containers */
+  .request-card, .toy-card, .borrow-request-card, .transfer-card {
+    background-color: #fff;
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+    margin-bottom: 20px;
+  
+    &:hover {
+      transform: translateY(-5px);
+    }
+  }
+  
+  /* Info sections */
+  .lender-info, .partner-info, .requester-info {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Avatar spacing */
+  .lender-link, .partner-link, .requester-link {
+    margin-left: 8px;
+  }
+  
+  /* Status colors */
+  .status {
+    .pending {
+      color: #ffa500;
+      font-weight: 500;
+    }
+    .accepted {
+      color: #28a745;
+      font-weight: 500;
+    }
+    .picked-up {
+      color: #17a2b8;
+      font-weight: 500;
+    }
+    .completed {
+      color: #28a745;
+      font-weight: 500;
+    }
+    .canceled {
+      color: #dc3545;
+      font-weight: 500;
+    }
+  }

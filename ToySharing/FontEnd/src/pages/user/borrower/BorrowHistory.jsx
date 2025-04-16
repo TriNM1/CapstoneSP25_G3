@@ -85,13 +85,13 @@ const BorrowHistory = () => {
     ? histories.filter((history) => {
         const returnDate = new Date(history.returnDate);
         return (
-          (history.status === 3 || history.status === 4) &&
+          (history.status === 1 || history.status === 2) &&
           returnDate.getDate() === selectedDate.getDate() &&
           returnDate.getMonth() === selectedDate.getMonth() &&
           returnDate.getFullYear() === selectedDate.getFullYear()
         );
       })
-    : histories;
+    : histories.filter((history) => history.status === 1 || history.status === 2);
 
   const handleLoadMore = () => {
     toast.info("Đã hiển thị tất cả lịch sử!");
@@ -132,6 +132,7 @@ const BorrowHistory = () => {
                       variant="top"
                       src={history.image || "https://via.placeholder.com/300x200?text=No+Image"}
                       className="toy-image"
+                      onError={(e) => (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")}
                     />
                     <Card.Body>
                       <Card.Title className="toy-name">{history.productName}</Card.Title>
@@ -158,18 +159,21 @@ const BorrowHistory = () => {
                       <div className="lender-info d-flex align-items-center mb-2">
                         <img
                           src={
-                            history.borrowerAvatar ||
+                            history.ownerAvatar ||
                             "https://via.placeholder.com/50?text=Avatar"
                           }
                           alt="Ảnh đại diện người cho mượn"
                           className="lender-avatar"
+                          onError={(e) => {
+                            e.target.src = "https://via.placeholder.com/50?text=Avatar";
+                          }}
                         />
                         <Button
                           variant="link"
-                          className="ms-2 lender-link p-0 text-decoration-none"
+                          className="lender-link p-0 text-decoration-none"
                           onClick={() => handleViewProfile(history.userId)}
                         >
-                          Thông tin người cho mượn
+                          {history.ownerName}
                         </Button>
                       </div>
                     </Card.Body>
@@ -200,10 +204,11 @@ const BorrowHistory = () => {
           {profileData ? (
             <div>
               <img
-                src={profileData.avatar || "https://via.placeholder.com/100"}
+                src={profileData.avatar || "https://via.placeholder.com/100?text=Avatar"}
                 alt="Ảnh đại diện"
                 className="rounded-circle mb-3"
-                style={{ width: "100px", height: "100px" }}
+                style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                onError={(e) => (e.target.src = "https://via.placeholder.com/100?text=Avatar")}
               />
               <p><strong>Tên hiển thị:</strong> {profileData.displayName}</p>
               <p><strong>Tuổi:</strong> {profileData.age}</p>

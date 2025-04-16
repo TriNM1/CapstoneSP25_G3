@@ -1,7 +1,6 @@
 @use '../../../styles/ToyCard' as toyCard;
-
-// Các kiểu dáng khác (nếu có)
 @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto&display=swap');
+@import './../../../styles/CommonStyle.scss';
 
 $primary-color: #ff6f61;
 $success-color: #28a745;
@@ -12,6 +11,16 @@ $danger-color: #dc3545;
   font-family: 'Roboto', sans-serif;
   color: #333;
   padding-bottom: 40px;
+
+  .container-fluid {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .row {
+    flex: 1;
+  }
 
   .side-menu {
     background: #fff;
@@ -73,107 +82,69 @@ $danger-color: #dc3545;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
-  .date-filter {
-    margin-bottom: 1.5rem;
-
-    label {
-      font-weight: bold;
-      margin-bottom: 0.5rem;
-      display: block;
-      font-size: 1.1rem;
-      color: #333;
-    }
-
-    .date-picker-input {
-      width: 100%;
-      padding: 0.5rem;
-      font-size: 1rem;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      color: #333;
-      background: #fff;
-    }
+  .date-picker-input {
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    color: #333;
+    background: #fff;
   }
 
   .transfer-items-section {
-    .transfer-card {
-      background-color: #fff;
-      border: none;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      transition: transform 0.2s;
-      margin-bottom: 20px;
+    .toy-name {
+      font-family: 'Noto Sans', cursive;
+      font-size: 1.5rem;
+      color: $primary-color;
+      margin-bottom: 10px;
+    }
 
-      &:hover {
-        transform: translateY(-5px);
+    .transfer-date,
+    .transfer-status,
+    .transfer-price,
+    .transfer-rating,
+    .transfer-message {
+      font-size: 1rem;
+      margin-bottom: 5px;
+      color: #333;
+    }
+
+    .transfer-status {
+      strong {
+        font-weight: bold;
       }
 
-      .toy-image {
-        height: 200px;
-        object-fit: cover;
+      .completed {
+        color: $success-color;
       }
 
-      .toy-name {
-        font-family: 'Fredoka One', cursive;
-        font-size: 1.5rem;
-        color: $primary-color;
-        margin-bottom: 10px;
+      .canceled {
+        color: $danger-color;
       }
+    }
 
-      .toy-price,
-      .transfer-date,
-      .transfer-status {
-        font-size: 1rem;
-        margin-bottom: 5px;
-        color: #333;
-      }
+    .card-actions {
+      margin-top: 15px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
 
-      .transfer-status {
-        strong {
-          font-weight: bold;
-        }
-        .completed {
-          color: $success-color;
-        }
-        .pending {
-          color: $danger-color;
-        }
-      }
+      .btn-rate {
+        background-color: $primary-color;
+        color: #fff;
 
-      .partner-info {
-        margin-top: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        .partner-avatar {
-          width: 35px;
-          height: 35px;
-          border-radius: 50%;
-          object-fit: cover;
-          border: 1px solid #ddd;
-        }
-
-        .partner-link {
-          margin-left: 8px;
-          font-size: 1rem;
-          color: #333;
-          text-decoration: underline;
-          transition: color 0.3s;
-
-          &:hover {
-            color: $primary-color;
-          }
+        &:hover {
+          background-color: darken($primary-color, 10%);
         }
       }
     }
-  }
 
-  .view-more-btn {
-    margin-top: 1rem;
-    font-size: 1rem;
-    padding: 10px 20px;
-    border-radius: 8px;
+    .view-more-btn {
+      margin-top: 1rem;
+      font-size: 1rem;
+      padding: 10px 20px;
+      border-radius: 8px;
+    }
   }
 }

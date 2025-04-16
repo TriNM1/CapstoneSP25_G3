@@ -238,9 +238,9 @@ const SearchingToy = () => {
               image:
                 toy.imagePaths && toy.imagePaths.length > 0
                   ? toy.imagePaths[0]
-                  : "https://placehold.co/300x200?text=No+Image",
+                  : "https://via.placeholder.com/300x200?text=No+Image",
               name: toy.name,
-              ownerAvatar: toy.ownerAvatar || "https://placehold.co/50x50?text=No+Avatar",
+              ownerAvatar: toy.ownerAvatar || "https://via.placeholder.com/50?text=Avatar",
               createdAt: new Date(toy.createdAt).toISOString().split("T")[0],
               categoryName: toy.categoryName,
               productStatus: toy.productStatus === 0 ? "Mới" : toy.productStatus === 1 ? "Cũ" : "Không xác định",
@@ -349,7 +349,7 @@ const SearchingToy = () => {
         image:
           response.data.imagePaths && response.data.imagePaths.length > 0
             ? response.data.imagePaths[0]
-            : "https://placehold.co/200x200?text=No+Image",
+            : "https://via.placeholder.com/300x200?text=No+Image",
         name: response.data.name,
         categoryName: response.data.categoryName,
         productStatus: response.data.productStatus === 0 ? "Mới" : response.data.productStatus === 1 ? "Cũ" : "Không xác định",
@@ -437,6 +437,7 @@ const SearchingToy = () => {
                           variant="top"
                           src={toy.image}
                           className="toy-image"
+                          onError={(e) => (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")}
                         />
                         <Card.Body>
                           <Card.Title className="toy-name">
@@ -474,12 +475,12 @@ const SearchingToy = () => {
                               className="lender-avatar"
                               onError={(e) =>
                                 (e.target.src =
-                                  "https://placehold.co/50x50?text=No+Avatar")
+                                  "https://via.placeholder.com/50?text=Avatar")
                               }
                             />
                             <Button
                               variant="link"
-                              className="ms-2 lender-link p-0 text-decoration-none"
+                              className="lender-link p-0 text-decoration-none"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleViewProfile(toy.ownerId);
@@ -541,6 +542,7 @@ const SearchingToy = () => {
                   maxHeight: "200px",
                   objectFit: "cover",
                 }}
+                onError={(e) => (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")}
               />
               <h5 className="mt-3">{selectedToy.name}</h5>
               <p>
@@ -656,11 +658,12 @@ const SearchingToy = () => {
               <img
                 src={
                   profileData.avatar ||
-                  "https://placehold.co/100x100?text=No+Avatar"
+                  "https://via.placeholder.com/100?text=Avatar"
                 }
                 alt="Ảnh đại diện"
                 className="rounded-circle mb-3"
-                style={{ width: "100px", height: "100px" }}
+                style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                onError={(e) => (e.target.src = "https://via.placeholder.com/100?text=Avatar")}
               />
               <p>
                 <strong>Tên hiển thị:</strong>{" "}

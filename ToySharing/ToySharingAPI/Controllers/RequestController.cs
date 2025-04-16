@@ -345,7 +345,6 @@ namespace ToySharingAPI.Controllers
 
             return Ok(requests);
         }
-
         [HttpGet("history")]
         [Authorize(Roles = "User")]
         public async Task<ActionResult<IEnumerable<HistoryDTO>>> GetRequestHistory()
@@ -360,27 +359,21 @@ namespace ToySharingAPI.Controllers
                 .Include(h => h.Product)
                 .ThenInclude(p => p.User)
                 .Where(h => h.UserId == mainUserId)
-                .Select(h => new
+                .Select(h => new HistoryDTO
                 {
-                    History = h,
-                    BorrowerName = _context.RentRequests
-                        .Where(r => r.RequestId == h.RequestId)
-                        .Include(r => r.User)
-                        .Select(r => r.User.Name)
-                        .FirstOrDefault() ?? "Không xác định"
-                })
-                .Select(x => new HistoryDTO
-                {
-                    RequestId = x.History.RequestId,
-                    UserId = x.History.UserId,
-                    BorrowerName = x.BorrowerName,
-                    ProductId = x.History.ProductId,
-                    ProductName = x.History.Product.Name,
-                    Status = x.History.Status,
-                    Rating = x.History.Rating,
-                    Message = x.History.Message,
-                    ReturnDate = x.History.ReturnDate,
-                    Image = x.History.Product.Images.FirstOrDefault() != null ? x.History.Product.Images.FirstOrDefault().Path : null
+                    RequestId = h.RequestId,
+                    UserId = h.Product.UserId, // Owner's UserId
+                    BorrowerName = null, 
+                    BorrowerAvatar = null, 
+                    ProductId = h.ProductId,
+                    ProductName = h.Product.Name,
+                    Status = h.Status,
+                    Rating = h.Rating,
+                    Message = h.Message,
+                    OwnerName = h.Product.User.DisplayName ?? "Không xác định",
+                    OwnerAvatar = h.Product.User.Avatar,
+                    ReturnDate = h.ReturnDate,
+                    Image = h.Product.Images.FirstOrDefault() != null ? h.Product.Images.FirstOrDefault().Path : null
                 })
                 .ToListAsync();
 
@@ -715,7 +708,7 @@ namespace ToySharingAPI.Controllers
 
             try
             {
-                request.Status = 5; // Changed to 5 for Canceled
+                request.Status = 5; 
                 history.Status = 2; // Canceled
                 history.Message = formData.Reason;
                 history.ReturnDate = DateTime.Now;
