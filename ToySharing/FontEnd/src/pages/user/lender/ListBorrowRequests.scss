@@ -1,203 +1,158 @@
 @use '../../../styles/ToyCard' as toyCard;
-
-// Các kiểu dáng khác (nếu có)
 @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto&display=swap');
+@import './../../../styles/CommonStyle.scss';
 
 $primary-color: #ff6f61;
 $success-color: #28a745;
 $danger-color: #dc3545;
 
 .list-borrow-requests-page {
-  background-color: #f7f9fc;
-  font-family: 'Roboto', sans-serif;
-  color: #333;
-  padding-bottom: 40px;
-
-  .side-menu {
-    background: #fff;
-    padding: 1rem;
-    border-right: 1px solid #ddd;
-    height: 100vh;
-    margin-top: 1rem;
-
-    ul {
-      list-style: none;
-      padding: 0;
-
-      li {
-        margin-bottom: 1rem;
-
-        a {
-          text-decoration: none;
-          color: #333;
-          font-size: 1.1rem;
-          transition: color 0.3s;
-
-          &:hover {
-            color: $primary-color;
-          }
-        }
-
-        &.active a {
-          color: $primary-color;
-          font-weight: bold;
-        }
-      }
-    }
-    .menu-icon {
-      display: none;
-    }
-
-    @media (max-width: 768px) {
-      width: 50px;
-      padding: 0.5rem;
-
-      ul {
-        display: none;
-      }
-
-      .menu-icon {
-        display: block;
-        font-size: 1.8rem;
-        text-align: center;
-        color: #333;
-      }
-    }
-  }
-
   .main-content {
-    background-color: #fff;
-    border-radius: 12px;
-    padding: 30px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  .date-picker-input {
-    width: 100%;
-    padding: 0.5rem;
-    font-size: 1rem;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    color: #333;
-    background: #fff;
+    padding: 0 15px;
   }
 
   .lending-items-section {
-    .borrow-request-card {
-      background-color: #fff;
-      border: none;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      transition: transform 0.2s;
-      margin-bottom: 20px;
+    margin-bottom: 20px;
+  }
 
-      &:hover {
-        transform: translateY(-5px);
-      }
+  .borrow-request-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
 
-      .toy-image {
-        height: 200px;
-        object-fit: cover;
-      }
+    .toy-image {
+      height: 200px;
+      object-fit: cover;
+      width: 100%;
+    }
+
+    .card-body {
+      padding: 15px;
 
       .toy-name {
-        font-family: 'Fredoka One', cursive;
-        font-size: 1.5rem;
-        color: $primary-color;
+        font-size: 1.25rem;
+        font-weight: 600;
         margin-bottom: 10px;
       }
 
-      .toy-price,
+      .toy-price {
+        color: #e91e63;
+        font-weight: 500;
+        margin-bottom: 10px;
+      }
+
       .request-date,
       .borrow-date,
       .return-date {
-        font-size: 1rem;
         margin-bottom: 5px;
-        color: #333;
       }
 
       .lender-info {
-        margin-top: 10px;
         display: flex;
         align-items: center;
-        justify-content: center;
+        margin-top: 10px;
 
         .requester-avatar {
           width: 35px;
           height: 35px;
           border-radius: 50%;
-          object-fit: cover;
           border: 1px solid #ddd;
+          margin-right: 10px;
         }
 
-        span {
-          margin-left: 8px;
-          font-size: 1rem;
-          color: #333;
-
-          button {
-            font-size: 1rem;
-            color: #333;
-            text-decoration: underline;
-            transition: color 0.3s;
-
-            &:hover {
-              color: $primary-color;
-            }
-          }
+        .requester-link {
+          color: #007bff;
+          font-size: 0.9rem;
         }
       }
 
-      .request-actions {
+      .card-actions {
         margin-top: 15px;
         display: flex;
-        justify-content: center;
-        gap: 10px;
+        flex-direction: column;
+        align-items: center;
+
+        .d-flex {
+          flex-wrap: nowrap !important; // Đảm bảo không xuống dòng
+        }
 
         button {
-          font-size: 1rem;
-          padding: 10px 20px;
-          border-radius: 8px;
-          border: none;
-          cursor: pointer;
-          transition: background-color 0.3s;
-
-          &:nth-child(1) {
-            background-color: #17a2b8;
-            color: #fff;
-
-            &:hover {
-              background-color: #138496;
-            }
-          }
-
-          &:nth-child(2) {
-            background-color: $success-color;
-            color: #fff;
-
-            &:hover {
-              background-color: #218838;
-            }
-          }
-
-          &:nth-child(3) {
-            background-color: $danger-color;
-            color: #fff;
-
-            &:hover {
-              background-color: #c82333;
-            }
-          }
+          font-size: 0.9rem;
+          padding: 8px 16px;
+          border-radius: 4px;
         }
       }
     }
+
+
+    .view-more-btn {
+      margin-top: 20px;
+    }
+
+    .date-picker-input {
+      width: 200px;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+    }
   }
 
-  .view-more-btn {
-    margin-top: 1rem;
-    font-size: 1rem;
-    padding: 10px 20px;
-    border-radius: 8px;
+  .lending-items-section {
+    .toy-name {
+      font-family: 'Noto Sans', cursive;
+      font-size: 1.5rem;
+      color: $primary-color;
+      margin-bottom: 10px;
+    }
+
+    .borrow-date,
+    .return-date,
+    .lending-status {
+      font-size: 1rem;
+      margin-bottom: 5px;
+      color: #333;
+    }
+
+    .lending-status {
+      strong {
+        font-weight: bold;
+      }
+
+      .pending {
+        color: #ffa500;
+      }
+    }
+
+    .card-actions {
+      margin-top: 15px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+
+      .btn-accept {
+        background-color: $success-color;
+        color: #fff;
+
+        &:hover {
+          background-color: darken($success-color, 10%);
+        }
+      }
+
+      .btn-reject {
+        background-color: $danger-color;
+        color: #fff;
+
+        &:hover {
+          background-color: darken($danger-color, 10%);
+        }
+      }
+    }
+
+    .view-more-btn {
+      margin-top: 1rem;
+      font-size: 1rem;
+      padding: 10px 20px;
+      border-radius: 8px;
+    }
   }
 }
