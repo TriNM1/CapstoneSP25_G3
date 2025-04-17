@@ -72,16 +72,16 @@ const ManageUser = () => {
 
   // Hàm xử lý ban/unban tích hợp gọi API
   const handleToggleStatus = (id, currentStatus) => {
-    // Nếu status hiện tại là 1 (active) thì gọi API ban, ngược lại gọi API unban
+    // Nếu status hiện tại là 0 (active) thì gọi API ban, ngược lại gọi API unban
     const apiUrl =
-      currentStatus === 1
+      currentStatus === 0
         ? "https://localhost:7128/api/User/ban"
         : "https://localhost:7128/api/User/unban";
 
     const payload = {
       userId: id,
       reason:
-        currentStatus === 1
+        currentStatus === 0
           ? "Vi phạm điều khoản sử dụng"
           : "Xem xét lại và mở khóa",
     };
@@ -98,11 +98,11 @@ const ManageUser = () => {
           // Update trạng thái user trong state
           setUsers((prevUsers) =>
             prevUsers.map((user) =>
-              user.id === id ? { ...user, status: currentStatus === 1 ? 0 : 1 } : user
+              user.id === id ? { ...user, status: currentStatus === 0 ? 1 : 0 } : user
             )
           );
           toast.success(
-            currentStatus === 1
+            currentStatus === 0
               ? "User đã bị khóa thành công!"
               : "User đã được mở khóa thành công!"
           );
@@ -190,14 +190,14 @@ const ManageUser = () => {
                     <td>{user.id}</td>
                     <td>{user.displayName}</td>
                     <td>{user.gender ? "Nam" : "Nữ"}</td>
-                    <td>{user.status === 1 ? "Active" : "Banned"}</td>
+                    <td>{user.status === 0 ? "Active" : "Banned"}</td>
                     <td>
                       <Button
-                        variant={user.status === 1 ? "danger" : "success"}
+                        variant={user.status === 0 ? "danger" : "success"}
                         size="sm"
                         onClick={() => handleToggleStatus(user.id, user.status)}
                       >
-                        {user.status === 1 ? (
+                        {user.status === 0 ? (
                           <>
                             <FaLock className="me-1" /> Khóa
                           </>
