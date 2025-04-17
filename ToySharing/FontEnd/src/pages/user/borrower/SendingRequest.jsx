@@ -233,7 +233,7 @@ const SendingRequest = () => {
 
       setRequests((prev) =>
         prev.map((req) =>
-          req.requestId === selectedRequestId ? { ...req, status: 2 } : req
+          req.requestId === selectedRequestId ? { ...req, status: 3 } : req
         )
       );
       toast.success("Đã đánh dấu yêu cầu là đã lấy!");
@@ -406,10 +406,12 @@ const SendingRequest = () => {
                         <strong>Trạng thái:</strong>{" "}
                         <span className={
                           request.status === 0 ? "pending" :
-                          request.status === 1 ? "accepted" : "picked-up"
+                          request.status === 1 ? "accepted" :
+                          request.status === 2 ? "paid" : "picked-up"
                         }>
                           {request.status === 0 ? "Đang chờ chấp nhận" :
-                           request.status === 1 ? "Chấp nhận, chưa lấy" : "Đã lấy"}
+                           request.status === 1 ? "Chấp nhận, chưa thanh toán" :
+                           request.status === 2 ? "Chấp nhận, đã thanh toán" : "Đã lấy"}
                         </span>
                       </Card.Text>
                       <div className="lender-info d-flex align-items-center mb-2">
@@ -454,6 +456,17 @@ const SendingRequest = () => {
                           </>
                         )}
                         {request.status === 2 && (
+                          <>
+                            <Button
+                              variant="primary"
+                              onClick={() => handlePickedUpClick(request.requestId)}
+                              className="me-2"
+                            >
+                              Đã lấy
+                            </Button>
+                          </>
+                        )}
+                        {request.status === 3 && (
                           <Button
                             variant="success"
                             onClick={() => handleCompleteClick(request.requestId)}

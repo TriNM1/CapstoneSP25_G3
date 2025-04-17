@@ -229,8 +229,8 @@ namespace ToySharingAPI.Controllers
             if (request.UserId != mainUserId)
                 return Forbid("Bạn không có quyền đánh dấu yêu cầu này là đã lấy.");
 
-            if (request.Status != 1)
-                return BadRequest("Chỉ có thể đánh dấu đã lấy từ trạng thái 'đã chấp nhận' (status = 1).");
+            if (request.Status != 2)
+                return BadRequest("Chỉ có thể đánh dấu đã lấy từ trạng thái 'đã chấp nhận' (status = 2).");
 
             if (request.Product == null)
                 return BadRequest($"Sản phẩm với ProductId {request.ProductId} không tồn tại.");
@@ -240,7 +240,7 @@ namespace ToySharingAPI.Controllers
 
             try
             {
-                request.Status = 2;
+                request.Status = 3;
                 await _context.SaveChangesAsync();
 
                 var ownerId = request.Product.UserId;
@@ -280,7 +280,7 @@ namespace ToySharingAPI.Controllers
                 return Unauthorized("Không thể xác thực người dùng.");
 
             var requests = await _context.RentRequests
-                .Where(r => r.UserId == mainUserId && (r.Status == 1 || r.Status == 0 || r.Status == 2))
+                .Where(r => r.UserId == mainUserId && (r.Status == 1 || r.Status == 0 || r.Status == 2 || r.Status == 3))
                 .Include(r => r.User)
                 .Include(r => r.Product)
                 .ThenInclude(p => p.Images)
@@ -469,7 +469,8 @@ namespace ToySharingAPI.Controllers
                 {
                     0 => "Pending",
                     1 => "Accepted",
-                    2 => "PickedUp",
+                    2 => "Paid",
+                    3 => "PickedUp",
                     _ => "Unknown"
                 },
                 r.RequestDate,
@@ -637,7 +638,7 @@ namespace ToySharingAPI.Controllers
             {
                 var borrowerName = request.User?.Displayname ?? "Không xác định";
 
-                request.Status = 3; // Completed
+                request.Status = 4; // Completed
                 history.Status = 1; // Completed
                 history.ReturnDate = DateTime.Now;
                 product.Available = 0; // Product available again
@@ -697,18 +698,31 @@ namespace ToySharingAPI.Controllers
             if (request.UserId != mainUserId)
                 return Forbid("Bạn không có quyền hủy yêu cầu này.");
 
-            if (request.Status != 1 && request.Status != 2)
-                return BadRequest("Chỉ có thể hủy từ trạng thái 'đã chấp nhận' hoặc 'đã lấy'.");
+            if (request.Status != 0 && request.Status != 1)
+                return BadRequest("Chỉ có thể hủy từ trạng thái 'chưa chấp nhận' hoặc 'chưa thanh toán'.");
 
             var history = await _context.Histories
                 .FirstOrDefaultAsync(h => h.RequestId == requestId);
 
             if (history == null)
-                return NotFound("Bản ghi lịch sử không tồn tại.");
+                try
+                {
+                    request.Status = 6;
+                    await _context.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, new
+                    {
+                        message = "Lỗi khi hủy yêu cầu.",
+                        error = ex.Message,
+                        stackTrace = ex.StackTrace
+                    });
+                }
 
             try
             {
-                request.Status = 5; 
+                request.Status = 6; 
                 history.Status = 2; // Canceled
                 history.Message = formData.Reason;
                 history.ReturnDate = DateTime.Now;
