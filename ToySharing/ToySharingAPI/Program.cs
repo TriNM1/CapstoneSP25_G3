@@ -8,6 +8,7 @@ using Microsoft.OpenApi.Models;
 using System.Security.Claims;
 using System.Text;
 using ToySharingAPI.Data;
+using ToySharingAPI.DTO.MoMo;
 using ToySharingAPI.Hubs;
 using ToySharingAPI.Models;
 using ToySharingAPI.Repositories;
@@ -138,6 +139,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 builder.Services.AddSignalR();
 builder.Services.Configure<AwsSettings>(builder.Configuration.GetSection("AWS"));
+builder.Services.Configure<MomoOptionModel>(builder.Configuration.GetSection("MomoAPI"));
+builder.Services.AddScoped<IMomoService, MoMoService>();
 
 builder.Services.AddCors(options =>
 {
