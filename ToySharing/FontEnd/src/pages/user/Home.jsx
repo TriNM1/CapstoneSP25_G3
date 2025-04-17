@@ -74,7 +74,39 @@ const Home = () => {
       return;
     }
 
-    if (navigator.geolocation) {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/User/current/location`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const { address, latitude, longitude } = response.data;
+
+      if (latitude && longitude && !isNaN(latitude) && !isNaN(longitude)) {
+        setUserLocation({ latitude, longitude });
+        setUserAddress(address || "Địa chỉ không được cung cấp");
+        return;
+      }
+
+      if (address) {
+        setUserAddress(address);
+        const coordinates = await getCoordinatesFromAddress(address);
+        if (coordinates) {
+          setUserLocation(coordinates);
+          return;
+        }
+      }
+
+      setUserLocation(null);
+      setUserAddress(null);
+      toast.warn("Vị trí của bạn chưa được xác định trong hồ sơ.");
+    } catch (error) {
+      console.error("Lỗi khi lấy vị trí từ database:", error);
+      setUserLocation(null);
+      setUserAddress(null);
+      toast.warn("Vui lòng cung cấp vị trí để tính khoảng cách.");
+    }
+
+    if (navigator.geolocation && !userLocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setUserLocation({
@@ -83,36 +115,13 @@ const Home = () => {
           });
           setUserAddress(null);
         },
-        async (error) => {
+        (error) => {
           console.error("Lỗi khi lấy vị trí từ Geolocation:", error);
-          await fetchLocationFromDatabase(token);
+          if (!userLocation && !userAddress) {
+            toast.warn("Vui lòng cung cấp vị trí để tính khoảng cách.");
+          }
         }
       );
-    } else {
-      console.error("Trình duyệt không hỗ trợ Geolocation.");
-      await fetchLocationFromDatabase(token);
-    }
-  };
-
-  const fetchLocationFromDatabase = async (token) => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/User/current/location`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.data.address) {
-        setUserAddress(response.data.address);
-        setUserLocation(null);
-      } else {
-        setUserAddress(null);
-        setUserLocation(null);
-        toast.warn("Vị trí của bạn chưa được xác định trong hồ sơ.");
-      }
-    } catch (error) {
-      console.error("Lỗi khi lấy địa chỉ từ database:", error);
-      setUserAddress(null);
-      setUserLocation(null);
-      toast.error("Không thể lấy địa chỉ từ hồ sơ người dùng.");
     }
   };
 
@@ -157,13 +166,31 @@ const Home = () => {
 
       const formattedToys = await Promise.all(
         response.data.map(async (toy) => {
-          console.log("Toy user data:", toy.user, "Avatar:", toy.user?.avatar);
           let distance;
+          let lenderAvatar = toy.user?.avatar || "https://placehold.co/50x50?text=No+Avatar";
+
+          // Nếu không có avatar từ toy.user, thử lấy từ API profile
+          if (!toy.user?.avatar && toy.userId) {
+            try {
+              const profileResponse = await axios.get(
+                `${API_BASE_URL}/User/profile/${toy.userId}`,
+                {
+                  headers: { Authorization: `Bearer ${token}` },
+                }
+              );
+              lenderAvatar =
+                profileResponse.data.userInfo?.avatar ||
+                "https://placehold.co/50x50?text=No+Avatar";
+            } catch (error) {
+              console.error(`Lỗi khi lấy avatar của user ${toy.userId}:`, error);
+            }
+          }
 
           if (!isLoggedIn) {
             distance = "Vui lòng đăng nhập để biết khoảng cách";
           } else {
-            let ownerAddress;
+            let ownerAddress, ownerLatitude, ownerLongitude;
+
             try {
               const ownerLocationResponse = await axios.get(
                 `${API_BASE_URL}/User/${toy.userId}/location`,
@@ -172,90 +199,48 @@ const Home = () => {
                 }
               );
               ownerAddress = ownerLocationResponse.data.address;
+              ownerLatitude = ownerLocationResponse.data.latitude;
+              ownerLongitude = ownerLocationResponse.data.longitude;
             } catch (error) {
-              console.error(
-                `Lỗi khi lấy địa chỉ chủ sở hữu ${toy.userId}:`,
-                error
-              );
+              console.error(`Lỗi khi lấy địa chỉ chủ sở hữu ${toy.userId}:`, error);
               distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
-              return { ...toy, distance };
+              return { ...toy, distance, lenderAvatar };
             }
 
-            if (!ownerAddress) {
-              distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
-            } else {
-              if (
-                userLocation &&
-                userLocation.latitude &&
-                userLocation.longitude
-              ) {
-                try {
-                  const distResponse = await axios.get(
-                    `${API_BASE_URL}/User/distance-to-product/${
-                      toy.productId
-                    }?myLatitude=${userLocation.latitude}&myLongitude=${
-                      userLocation.longitude
-                    }`,
-                    {
-                      headers: { Authorization: `Bearer ${token}` },
-                    }
-                  );
-                  distance =
-                    distResponse.data.distanceKilometers ??
-                    "Không thể tính khoảng cách";
-                } catch (error) {
-                  console.error(
-                    `Lỗi khi tính khoảng cách cho đồ chơi ${toy.productId}:`,
-                    error
-                  );
-                  distance =
-                    error.response?.status === 400
-                      ? "Chưa xác định vị trí của người sở hữu đồ chơi"
-                      : "Không thể tính khoảng cách";
+            if (!ownerLatitude || !ownerLongitude) {
+              if (ownerAddress) {
+                const ownerCoords = await getCoordinatesFromAddress(ownerAddress);
+                if (ownerCoords) {
+                  ownerLatitude = ownerCoords.latitude;
+                  ownerLongitude = ownerCoords.longitude;
+                } else {
+                  distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
+                  return { ...toy, distance, lenderAvatar };
                 }
               } else {
-                if (!userAddress) {
-                  distance = "Chưa xác định vị trí của bạn";
-                } else {
-                  const userCoords = await getCoordinatesFromAddress(
-                    userAddress
-                  );
-                  const ownerCoords = await getCoordinatesFromAddress(
-                    ownerAddress
-                  );
-
-                  if (!userCoords) {
-                    distance = "Chưa xác định vị trí của bạn";
-                  } else if (!ownerCoords) {
-                    distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
-                  } else {
-                    try {
-                      const distResponse = await axios.get(
-                        `${API_BASE_URL}/User/distance-to-product/${
-                          toy.productId
-                        }?myLatitude=${userCoords.latitude}&myLongitude=${
-                          userCoords.longitude
-                        }`,
-                        {
-                          headers: { Authorization: `Bearer ${token}` },
-                        }
-                      );
-                      distance =
-                        distResponse.data.distanceKilometers ??
-                        "Không thể tính khoảng cách";
-                    } catch (error) {
-                      console.error(
-                        `Lỗi khi tính khoảng cách cho đồ chơi ${toy.productId}:`,
-                        error
-                      );
-                      distance =
-                        error.response?.status === 400
-                          ? "Chưa xác định vị trí của người sở hữu đồ chơi"
-                          : "Không thể tính khoảng cách";
-                    }
-                  }
-                }
+                distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
+                return { ...toy, distance, lenderAvatar };
               }
+            }
+
+            if (userLocation && userLocation.latitude && userLocation.longitude) {
+              try {
+                const distResponse = await axios.get(
+                  `${API_BASE_URL}/User/distance-to-product/${toy.productId}?myLatitude=${userLocation.latitude}&myLongitude=${userLocation.longitude}`,
+                  {
+                    headers: { Authorization: `Bearer ${token}` },
+                  }
+                );
+                distance = distResponse.data.distanceKilometers ?? "Không thể tính khoảng cách";
+              } catch (error) {
+                console.error(`Lỗi khi tính khoảng cách cho đồ chơi ${toy.productId}:`, error);
+                distance =
+                  error.response?.status === 400
+                    ? "Chưa xác định vị trí của người sở hữu đồ chơi"
+                    : "Không thể tính khoảng cách";
+              }
+            } else {
+              distance = "Chưa xác định vị trí của bạn";
             }
           }
 
@@ -264,23 +249,22 @@ const Home = () => {
             image:
               toy.imagePaths && toy.imagePaths.length > 0
                 ? toy.imagePaths[0]
-                : toy.user?.avatar || "https://placehold.co/50x50?text=No+Avatar",
-            name: toy.name,
-            price: `${toy.price.toLocaleString("vi-VN")} VND`,
+                : "https://placehold.co/300x200?text=No+Image",
+            name: toy.name || "Không có tên",
+            price: toy.price ? `${toy.price.toLocaleString("vi-VN")} VND` : "Không có giá",
             status: toy.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
             distance,
-            lenderAvatar:
-              toy.user?.avatar || "https://placehold.co/50x50?text=No+Avatar",
+            lenderAvatar,
             lenderId: toy.userId,
-            categoryName: toy.categoryName,
+            categoryName: toy.categoryName || "Không có danh mục",
             productStatus:
               toy.productStatus === 0
                 ? "Mới"
                 : toy.productStatus === 1
                 ? "Cũ"
                 : "Không xác định",
-            suitableAge: toy.suitableAge,
-            description: toy.description,
+            suitableAge: toy.suitableAge || "Không xác định",
+            description: toy.description || "Không có mô tả",
           };
         })
       );
@@ -349,29 +333,46 @@ const Home = () => {
       const response = await axios.get(`${API_BASE_URL}/Products/${toyId}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
+
+      let lenderAvatar = response.data.user?.avatar || "https://placehold.co/50x50?text=No+Avatar";
+      if (!response.data.user?.avatar && response.data.userId) {
+        try {
+          const profileResponse = await axios.get(
+            `${API_BASE_URL}/User/profile/${response.data.userId}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          lenderAvatar =
+            profileResponse.data.userInfo?.avatar ||
+            "https://placehold.co/50x50?text=No+Avatar";
+        } catch (error) {
+          console.error(`Lỗi khi lấy avatar của user ${response.data.userId}:`, error);
+        }
+      }
+
       setSelectedToy({
         id: response.data.productId,
         image:
           response.data.imagePaths && response.data.imagePaths.length > 0
             ? response.data.imagePaths[0]
-            : response.data.user?.avatar ||
-              "https://placehold.co/50x50?text=No+Avatar",
-        name: response.data.name,
-        categoryName: response.data.categoryName,
+            : "https://placehold.co/300x200?text=No+Image",
+        name: response.data.name || "Không có tên",
+        categoryName: response.data.categoryName || "Không có danh mục",
         productStatus:
           response.data.productStatus === 0
             ? "Mới"
             : response.data.productStatus === 1
             ? "Cũ"
             : "Không xác định",
-        suitableAge: response.data.suitableAge,
-        price: `${response.data.price.toLocaleString("vi-VN")} VND`,
-        description: response.data.description,
+        suitableAge: response.data.suitableAge || "Không xác định",
+        price: response.data.price
+          ? `${response.data.price.toLocaleString("vi-VN")} VND`
+          : "Không có giá",
+        description: response.data.description || "Không có mô tả",
         status:
           response.data.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
-        lenderAvatar:
-          response.data.user?.avatar ||
-          "https://placehold.co/50x50?text=No+Avatar",
+        lenderAvatar,
       });
       setShowDetailModal(true);
     } catch (error) {
@@ -458,11 +459,26 @@ const Home = () => {
     }
   };
 
+  const handleUpdateLocation = async (newAddress) => {
+    try {
+      const token = getAuthToken();
+      const response = await axios.put(
+        `${API_BASE_URL}/User/${userId}/location`,
+        { address: newAddress },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      toast.success("Cập nhật vị trí thành công!");
+      fetchUserLocation();
+    } catch (error) {
+      console.error("Lỗi khi cập nhật vị trí:", error);
+      toast.error("Không thể cập nhật vị trí!");
+    }
+  };
+
   return (
     <div className="home-wrapper">
-      {/* <div className="side-banner left-banner">
-        <img src={banner_test} alt="Left Banner" />
-      </div> */}
       <div className="home-page">
         <Header
           activeLink={activeLink}
@@ -479,6 +495,7 @@ const Home = () => {
                   className="d-block w-100 banner-image"
                   src={banner}
                   alt={`Slide ${index + 1}`}
+                  loading="lazy"
                 />
               </Carousel.Item>
             ))}
@@ -486,6 +503,16 @@ const Home = () => {
         </div>
         <Container fluid className="mt-4">
           <h2 className="section-title">Đồ chơi đề xuất</h2>
+          <Button
+            variant="outline-primary"
+            className="mb-3"
+            onClick={() => {
+              const newAddress = prompt("Nhập địa chỉ mới:");
+              if (newAddress) handleUpdateLocation(newAddress);
+            }}
+          >
+            Cập nhật vị trí
+          </Button>
           <Row>
             {toyList.length === 0 ? (
               <Col className="text-center">
@@ -503,7 +530,10 @@ const Home = () => {
                       variant="top"
                       src={toy.image}
                       className="toy-image"
-                      onError={(e) => (e.target.src = toy.lenderAvatar)}
+                      loading="lazy"
+                      onError={(e) =>
+                        (e.target.src = "https://placehold.co/300x200?text=No+Image")
+                      }
                     />
                     <Card.Body>
                       <Card.Title className="toy-name">{toy.name}</Card.Title>
@@ -535,16 +565,10 @@ const Home = () => {
                           src={toy.lenderAvatar}
                           alt="Ảnh đại diện người cho mượn"
                           className="lender-avatar"
-                          onError={(e) => {
-                            console.log(
-                              "Avatar error for toy:",
-                              toy.id,
-                              "URL:",
-                              toy.lenderAvatar
-                            );
-                            e.target.src =
-                              "https://placehold.co/50x50?text=No+Avatar";
-                          }}
+                          loading="lazy"
+                          onError={(e) =>
+                            (e.target.src = "https://placehold.co/50x50?text=No+Avatar")
+                          }
                         />
                         <Button
                           variant="link"
@@ -666,10 +690,9 @@ const Home = () => {
                     maxHeight: "200px",
                     objectFit: "cover",
                   }}
+                  loading="lazy"
                   onError={(e) =>
-                    (e.target.src =
-                      selectedToy.lenderAvatar ||
-                      "https://placehold.co/50x50?text=No+Avatar")
+                    (e.target.src = "https://placehold.co/300x200?text=No+Image")
                   }
                 />
                 <h5 className="mt-3">{selectedToy.name}</h5>
@@ -726,6 +749,7 @@ const Home = () => {
                   alt="Ảnh đại diện"
                   className="rounded-circle mb-3"
                   style={{ width: "100px", height: "100px" }}
+                  loading="lazy"
                 />
                 <p>
                   <strong>Tên:</strong> {profileData.displayName || "Không có"}
@@ -760,9 +784,6 @@ const Home = () => {
         </Modal>
         <ToastContainer position="top-right" autoClose={3000} />
       </div>
-      {/* <div className="side-banner right-banner">
-        <img src={banner_test2} alt="Right Banner" />
-      </div> */}
     </div>
   );
 };

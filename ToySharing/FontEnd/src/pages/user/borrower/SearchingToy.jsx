@@ -74,7 +74,42 @@ const SearchingToy = () => {
       return;
     }
 
-    if (navigator.geolocation) {
+    // Ưu tiên lấy tọa độ từ cơ sở dữ liệu
+    try {
+      const response = await axios.get(`${API_BASE_URL}/User/current/location`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const { address, latitude, longitude } = response.data;
+
+      if (latitude && longitude && !isNaN(latitude) && !isNaN(longitude)) {
+        setUserLocation({ latitude, longitude });
+        setUserAddress(address || "Địa chỉ không được cung cấp");
+        return;
+      }
+
+      if (address) {
+        setUserAddress(address);
+        // Thử lấy tọa độ từ địa chỉ nếu không có trong cơ sở dữ liệu
+        const coordinates = await getCoordinatesFromAddress(address);
+        if (coordinates) {
+          setUserLocation(coordinates);
+          return;
+        }
+      }
+
+      setUserLocation(null);
+      setUserAddress(null);
+      toast.warn("Vị trí của bạn chưa được xác định trong hồ sơ.");
+    } catch (error) {
+      console.error("Lỗi khi lấy vị trí từ database:", error);
+      setUserLocation(null);
+      setUserAddress(null);
+      toast.warn("Vui lòng cung cấp vị trí để tính khoảng cách.");
+    }
+
+    // Nếu không có tọa độ từ cơ sở dữ liệu, thử Geolocation
+    if (navigator.geolocation && !userLocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setUserLocation({
@@ -83,34 +118,13 @@ const SearchingToy = () => {
           });
           setUserAddress(null);
         },
-        async (error) => {
+        (error) => {
           console.error("Lỗi khi lấy vị trí từ Geolocation:", error);
-          await fetchLocationFromDatabase(token);
+          if (!userLocation && !userAddress) {
+            toast.warn("Vui lòng cung cấp vị trí để tính khoảng cách.");
+          }
         }
       );
-    } else {
-      console.error("Trình duyệt không hỗ trợ Geolocation.");
-      await fetchLocationFromDatabase(token);
-    }
-  };
-
-  const fetchLocationFromDatabase = async (token) => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/User/current/location`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.data.address) {
-        setUserAddress(response.data.address);
-        setUserLocation(null);
-      } else {
-        setUserAddress(null);
-        setUserLocation(null);
-        toast.warn("Vị trí của bạn chưa được xác định trong hồ sơ.");
-      }
-    } catch (error) {
-      console.error("Lỗi khi lấy địa chỉ từ database:", error);
-      toast.error("Không thể lấy địa chỉ từ hồ sơ người dùng.");
     }
   };
 
@@ -163,7 +177,9 @@ const SearchingToy = () => {
             if (!isLoggedIn) {
               distance = "Vui lòng đăng nhập để biết khoảng cách";
             } else {
-              let ownerAddress;
+              let ownerAddress, ownerLatitude, ownerLongitude;
+
+              // Lấy thông tin vị trí của chủ sở hữu
               try {
                 const ownerLocationResponse = await axios.get(
                   `${API_BASE_URL}/User/${toy.userId}/location`,
@@ -172,61 +188,50 @@ const SearchingToy = () => {
                   }
                 );
                 ownerAddress = ownerLocationResponse.data.address;
+                ownerLatitude = ownerLocationResponse.data.latitude;
+                ownerLongitude = ownerLocationResponse.data.longitude;
               } catch (error) {
                 console.error(`Lỗi khi lấy địa chỉ chủ sở hữu ${toy.userId}:`, error);
                 distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
                 return { ...toy, distance };
               }
 
-              if (!ownerAddress) {
-                distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
-              } else {
-                if (userLocation && userLocation.latitude && userLocation.longitude) {
-                  try {
-                    const distResponse = await axios.get(
-                      `${API_BASE_URL}/User/distance-to-product/${toy.productId}?myLatitude=${userLocation.latitude}&myLongitude=${userLocation.longitude}`,
-                      {
-                        headers: { Authorization: `Bearer ${token}` },
-                      }
-                    );
-                    distance = distResponse.data.distanceKilometers ?? "Không thể tính khoảng cách";
-                  } catch (error) {
-                    console.error(`Lỗi khi tính khoảng cách cho đồ chơi ${toy.productId}:`, error);
-                    distance =
-                      error.response?.status === 400
-                        ? "Chưa xác định vị trí của người sở hữu đồ chơi"
-                        : "Không thể tính khoảng cách";
+              if (!ownerLatitude || !ownerLongitude) {
+                // Nếu không có tọa độ của chủ sở hữu
+                if (ownerAddress) {
+                  const ownerCoords = await getCoordinatesFromAddress(ownerAddress);
+                  if (ownerCoords) {
+                    ownerLatitude = ownerCoords.latitude;
+                    ownerLongitude = ownerCoords.longitude;
+                  } else {
+                    distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
+                    return { ...toy, distance };
                   }
                 } else {
-                  if (!userAddress) {
-                    distance = "Chưa xác định vị trí của bạn";
-                  } else {
-                    const userCoords = await getCoordinatesFromAddress(userAddress);
-                    const ownerCoords = await getCoordinatesFromAddress(ownerAddress);
-
-                    if (!userCoords) {
-                      distance = "Chưa xác định vị trí của bạn";
-                    } else if (!ownerCoords) {
-                      distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
-                    } else {
-                      try {
-                        const distResponse = await axios.get(
-                          `${API_BASE_URL}/User/distance-to-product/${toy.productId}?myLatitude=${userCoords.latitude}&myLongitude=${userCoords.longitude}`,
-                          {
-                            headers: { Authorization: `Bearer ${token}` },
-                          }
-                        );
-                        distance = distResponse.data.distanceKilometers ?? "Không thể tính khoảng cách";
-                      } catch (error) {
-                        console.error(`Lỗi khi tính khoảng cách cho đồ chơi ${toy.productId}:`, error);
-                        distance =
-                          error.response?.status === 400
-                            ? "Chưa xác định vị trí của người sở hữu đồ chơi"
-                            : "Không thể tính khoảng cách";
-                      }
-                    }
-                  }
+                  distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
+                  return { ...toy, distance };
                 }
+              }
+
+              // Tính khoảng cách nếu có tọa độ của người dùng
+              if (userLocation && userLocation.latitude && userLocation.longitude) {
+                try {
+                  const distResponse = await axios.get(
+                    `${API_BASE_URL}/User/distance-to-product/${toy.productId}?myLatitude=${userLocation.latitude}&myLongitude=${userLocation.longitude}`,
+                    {
+                      headers: { Authorization: `Bearer ${token}` },
+                    }
+                  );
+                  distance = distResponse.data.distanceKilometers ?? "Không thể tính khoảng cách";
+                } catch (error) {
+                  console.error(`Lỗi khi tính khoảng cách cho đồ chơi ${toy.productId}:`, error);
+                  distance =
+                    error.response?.status === 400
+                      ? "Chưa xác định vị trí của người sở hữu đồ chơi"
+                      : "Không thể tính khoảng cách";
+                }
+              } else {
+                distance = "Chưa xác định vị trí của bạn";
               }
             }
 
@@ -374,9 +379,8 @@ const SearchingToy = () => {
       const response = await axios.get(`${API_BASE_URL}/User/profile/${ownerId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log("Dữ liệu profile:", response.data); // Debug API response
       const userInfo = response.data.userInfo || response.data;
-      setProfileData({ ...userInfo, userId: ownerId }); // Lưu ownerId vào profileData
+      setProfileData({ ...userInfo, userId: ownerId });
       setShowProfileModal(true);
     } catch (error) {
       console.error("Lỗi khi lấy thông tin người cho mượn:", error);
@@ -386,7 +390,6 @@ const SearchingToy = () => {
 
   const handleMessage = async (ownerId) => {
     try {
-      console.log("ownerId gửi đến handleMessage:", ownerId); // Debug ownerId
       const token = getAuthToken();
       if (!token) {
         toast.error("Vui lòng đăng nhập để nhắn tin!");
@@ -404,15 +407,11 @@ const SearchingToy = () => {
         return;
       }
 
-      // Lấy danh sách cuộc trò chuyện
       const response = await axios.get(`${API_BASE_URL}/Conversations`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       const conversations = response.data;
-      console.log("Danh sách cuộc trò chuyện:", conversations);
-
-      // Tìm cuộc trò chuyện với ownerId
       const existingConversation = conversations.find(
         (convo) =>
           (convo.user1Id === ownerId && convo.user2Id === mainUserId) ||
@@ -422,11 +421,8 @@ const SearchingToy = () => {
       let conversationId;
 
       if (existingConversation) {
-        // Nếu đã có cuộc trò chuyện, lấy conversationId
         conversationId = existingConversation.conversationId;
-        console.log("Cuộc trò chuyện đã tồn tại, ID:", conversationId);
       } else {
-        // Nếu chưa có, tạo mới cuộc trò chuyện
         const createResponse = await axios.post(
           `${API_BASE_URL}/Conversations`,
           { user2Id: ownerId },
@@ -439,10 +435,8 @@ const SearchingToy = () => {
         );
 
         conversationId = createResponse.data.conversationId;
-        console.log("Cuộc trò chuyện mới được tạo, ID:", conversationId);
       }
 
-      // Chuyển hướng đến trang /message với conversationId
       navigate("/message", { state: { activeConversationId: conversationId } });
     } catch (error) {
       console.error("Lỗi khi xử lý nhắn tin:", error);
@@ -463,6 +457,25 @@ const SearchingToy = () => {
 
   const handleLoadMore = () => {
     toast.info("Đã hiển thị tất cả đồ chơi!");
+  };
+
+  // Hàm cập nhật vị trí (tùy chọn)
+  const handleUpdateLocation = async (newAddress) => {
+    try {
+      const token = getAuthToken();
+      const response = await axios.put(
+        `${API_BASE_URL}/User/${mainUserId}/location`,
+        { address: newAddress },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      toast.success("Cập nhật vị trí thành công!");
+      fetchUserLocation(); // Làm mới vị trí
+    } catch (error) {
+      console.error("Lỗi khi cập nhật vị trí:", error);
+      toast.error("Không thể cập nhật vị trí!");
+    }
   };
 
   return (
@@ -490,6 +503,17 @@ const SearchingToy = () => {
                 placeholderText="Chọn ngày"
               />
             </Form.Group>
+            {/* Nút cập nhật vị trí (tùy chọn) */}
+            <Button
+              variant="outline-primary"
+              className="mb-3"
+              onClick={() => {
+                const newAddress = prompt("Nhập địa chỉ mới:");
+                if (newAddress) handleUpdateLocation(newAddress);
+              }}
+            >
+              Cập nhật vị trí
+            </Button>
             <Row className="request-items-section">
               {filteredToys.length === 0 ? (
                 <Col className="text-center">
