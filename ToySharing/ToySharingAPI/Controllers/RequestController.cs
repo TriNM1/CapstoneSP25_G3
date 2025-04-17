@@ -122,7 +122,7 @@ namespace ToySharingAPI.Controllers
             }
         }
 
-        // Cập nhật trạng thái của một yêu cầu mượn (chấp nhận: status = 1, từ chối: status = 4).
+        // Cập nhật trạng thái của một yêu cầu mượn (chấp nhận: status = 1, từ chối: status = 5).
         [HttpPut("{requestId}/status")]
         [Authorize(Roles = "User")]
         public async Task<IActionResult> UpdateRequestStatus(int requestId, [FromBody] UpdateRequestStatusDTO requestDto)
@@ -172,9 +172,9 @@ namespace ToySharingAPI.Controllers
                     var productName = request.Product.Name;
                     await CreateNotification(borrowerId, $"Your request to rent '{productName}' has been accepted.");
                 }
-                else if (requestDto.NewStatus == 4) // Từ chối yêu cầu
+                else if (requestDto.NewStatus == 5) // Từ chối yêu cầu
                 {
-                    request.Status = 4;
+                    request.Status = 5;
                     request.Product.Available = 0;
 
                     // Tạo bản ghi History với trạng thái canceled (2)
@@ -198,7 +198,7 @@ namespace ToySharingAPI.Controllers
                 }
                 else
                 {
-                    return BadRequest("Invalid status value. Status must be 1 (Accepted) or 4 (Rejected).");
+                    return BadRequest("Invalid status value. Status must be 1 (Accepted) or 5 (Rejected).");
                 }
 
                 return Ok(new { message = "Request status updated successfully" });
@@ -280,7 +280,7 @@ namespace ToySharingAPI.Controllers
                 return Unauthorized("Không thể xác thực người dùng.");
 
             var requests = await _context.RentRequests
-                .Where(r => r.UserId == mainUserId && (r.Status == 1 || r.Status == 2))
+                .Where(r => r.UserId == mainUserId && (r.Status == 1 || r.Status == 0 || r.Status == 2))
                 .Include(r => r.User)
                 .Include(r => r.Product)
                 .ThenInclude(p => p.Images)
@@ -370,7 +370,7 @@ namespace ToySharingAPI.Controllers
                     Status = h.Status,
                     Rating = h.Rating,
                     Message = h.Message,
-                    OwnerName = h.Product.User.DisplayName ?? "Không xác định",
+                    OwnerName = h.Product.User.Displayname ?? "Không xác định",
                     OwnerAvatar = h.Product.User.Avatar,
                     ReturnDate = h.ReturnDate,
                     Image = h.Product.Images.FirstOrDefault() != null ? h.Product.Images.FirstOrDefault().Path : null
