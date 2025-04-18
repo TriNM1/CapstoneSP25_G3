@@ -111,7 +111,9 @@ namespace ToySharingAPI.Controllers
                     OwnerId = product.UserId,
                     OwnerName = product.User.Displayname,
                     OwnerAvatar = product.User.Avatar, // Thêm OwnerAvatar
-                    Status = request.Status
+                    Status = request.Status,
+                    DepositAmount = product.Price,
+                    RetalFee = product.ProductValue
                 };
 
                 return CreatedAtAction(nameof(GetRequestById), new { id = request.RequestId }, response);
