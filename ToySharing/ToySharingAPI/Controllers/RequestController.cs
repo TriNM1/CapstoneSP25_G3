@@ -300,7 +300,10 @@ namespace ToySharingAPI.Controllers
                     requestDate = r.RequestDate,
                     message = r.Message,
                     status = r.Status, // Trả về status trực tiếp
-                    image = r.Product.Images.FirstOrDefault() != null ? r.Product.Images.FirstOrDefault().Path : null
+                    image = r.Product.Images.FirstOrDefault() != null ? r.Product.Images.FirstOrDefault().Path : null,
+                    depositAmount = r.DepositAmount,
+                    rentalFee = r.RentalFee,
+                    name = r.User.Displayname,
                 })
                 .ToListAsync();
 
@@ -370,7 +373,7 @@ namespace ToySharingAPI.Controllers
                     Status = h.Status,
                     Rating = h.Rating,
                     Message = h.Message,
-                    OwnerName = h.Product.User.DisplayName ?? "Không xác định",
+                    OwnerName = h.Product.User.Displayname ?? "Không xác định",
                     OwnerAvatar = h.Product.User.Avatar,
                     ReturnDate = h.ReturnDate,
                     Image = h.Product.Images.FirstOrDefault() != null ? h.Product.Images.FirstOrDefault().Path : null

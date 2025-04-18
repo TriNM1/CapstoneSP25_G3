@@ -21,6 +21,8 @@ import Policy from "./pages/user/generate/Policy";
 import UserGuide from "./pages/user/generate/UserGuide";
 import SendingRequest from "./pages/user/borrower/SendingRequest";
 import ToyDetail from "./pages/user/generate/ToyDetail";
+import PaymentSuccess from "./pages/user/borrower/PaymentSuccess";
+import PaymentError from "./pages/user/borrower/PaymentError";
 
 //admin
 import AdminPage from "./pages/admin/AdminPage";
@@ -65,6 +67,8 @@ function App() {
         <Route path="/borrowing" element={<SearchToy />} />
         <Route path="/searchtoy" element={<SearchToy />} />
         <Route path="/sendingrequest" element={<SendingRequest />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/payment-error" element={<PaymentError />} />
         <Route path="/borrowhistory" element={<BorrowHistory />} />
         <Route path="/message" element={<Message />} />
         <Route path="/user-info/:userId" element={<UserInfor />} />
@@ -84,7 +88,7 @@ function App() {
         <Route path="/toydetail/:toyId" element={<ToyDetail />} />
 
         {/* Route mặc định nếu không khớp */}
-        <Route path="*" element={<Home />} />
+        <Route path="*" element={<Home />} /> 
       </Routes>
     </BrowserRouter>
   );
