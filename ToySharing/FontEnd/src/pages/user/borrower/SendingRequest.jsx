@@ -17,6 +17,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import UserInfor from "../generate/UserInfor";
 
 const SendingRequest = () => {
   const navigate = useNavigate();
@@ -89,6 +90,9 @@ const SendingRequest = () => {
           message: req.message,
           status: req.status,
           image: req.image,
+          depositAmount: req.depositAmount,
+          rentalFee: req.rentalFee,
+          displayName: req.name
         }));
 
         setRequests(formattedRequests);
@@ -102,6 +106,48 @@ const SendingRequest = () => {
     fetchRequests();
   }, [navigate]);
 
+  const handlePaymentClick = async (requestId) => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        toast.error("Vui lòng đăng nhập để thanh toán!");
+        navigate("/login");
+        return;
+      }
+
+      const request = requests.find((req) => req.requestId === requestId);
+      if (!request) {
+        toast.error("Không tìm thấy yêu cầu!");
+        return;
+      }
+
+      const paymentData = {
+        RequestId: request.requestId,
+        Name: request.displayName,
+        OrderInfo: `Thanh toán cho yêu cầu mượn đồ chơi số: ${request.requestId} - ${request.productName}`,
+        DepositAmount: request.depositAmount, 
+        RentalFee: request.rentalFee,
+      };
+
+      const response = await axios.post(`${API_BASE_URL}/Payments/create`, paymentData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const { payUrl } = response.data;
+      if (payUrl) {
+        window.location.href = payUrl; // Chuyển hướng đến trang thanh toán MoMo
+      } else {
+        toast.error("Không thể tạo link thanh toán!");
+      }
+    } catch (error) {
+      console.error("Lỗi khi tạo thanh toán:", error);
+      toast.error("Không thể tạo thanh toán!");
+    }
+  };
+  
   const handleViewProfile = async (ownerId) => {
     if (!ownerId) {
       toast.error("Không có thông tin người cho mượn!");
@@ -442,10 +488,11 @@ const SendingRequest = () => {
                           <>
                             <Button
                               variant="primary"
-                              onClick={() => handlePickedUpClick(request.requestId)}
+                              // onClick={() => handlePickedUpClick(request.requestId)}
+                              onClick={() => handlePaymentClick(request.requestId)}
                               className="me-2"
                             >
-                              Đã lấy
+                              Thanh Toán
                             </Button>
                             <Button
                               variant="danger"
@@ -471,7 +518,7 @@ const SendingRequest = () => {
                             variant="success"
                             onClick={() => handleCompleteClick(request.requestId)}
                           >
-                            Đã trả
+                            Đã lấy
                           </Button>
                         )}
                       </div>

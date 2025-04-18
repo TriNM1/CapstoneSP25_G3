@@ -71,13 +71,20 @@ namespace ToySharingAPI.Service
             queryParams.TryGetValue("amount", out string amount);
             queryParams.TryGetValue("orderInfo", out string orderInfo);
             queryParams.TryGetValue("orderId", out string orderId);
+            var resultCodeStr = queryParams.GetValueOrDefault("errorCode") ?? queryParams.GetValueOrDefault("resultCode");
+            var message = queryParams.GetValueOrDefault("message");
 
-            return new MomoExecuteResponseModel
+            var response = new MomoExecuteResponseModel
             {
                 Amount = amount,
                 OrderId = orderId,
-                OrderInfo = orderInfo
+                OrderInfo = orderInfo,
+                ResultCode = int.TryParse(resultCodeStr, out var code) ? code : -1,
+                Message = message
             };
+            _logger.LogInformation("MomoExecuteResponse: OrderId={OrderId}, ResultCode={ResultCode}, Message={Message}, Amount={Amount}",
+            response.OrderId, response.ResultCode, response.Message, response.Amount);
+            return response;
         }
 
         private string ComputeHmacSha256(string message, string secretKey)

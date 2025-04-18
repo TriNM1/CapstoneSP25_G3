@@ -431,6 +431,9 @@ const Header = ({
                     >
                       Thông tin cá nhân
                     </Dropdown.Item>
+                    <Dropdown.Item as={Link} to="/transaction-history" onClick={() => setActiveLink("transaction-history")}>
+                      Lịch sử giao dịch
+                    </Dropdown.Item>
                     <Dropdown.Item as={Link} to="/logout" onClick={() => setActiveLink("logout")}>
                       Đăng xuất
                     </Dropdown.Item>
