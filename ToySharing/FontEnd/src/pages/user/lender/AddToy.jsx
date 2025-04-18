@@ -27,6 +27,7 @@ const AddToy = () => {
   const [condition, setCondition] = useState("");
   const [ageGroup, setAgeGroup] = useState("");
   const [price, setPrice] = useState("");
+  const [productValue, setProductValue] = useState("");
   const [description, setDescription] = useState("");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
@@ -87,10 +88,44 @@ const AddToy = () => {
       toast.error("Độ tuổi phù hợp là bắt buộc!");
       return;
     }
-    if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= -1) {
-      toast.error("Phí cho mượn phải là một số lớn hơn 0!");
+    // Validation for price
+    if (!price) {
+      toast.error("Phí cho mượn là bắt buộc!");
       return;
     }
+    const priceValue = parseFloat(price);
+    if (isNaN(priceValue)) {
+      toast.error("Phí cho mượn phải là một số!");
+      return;
+    }
+    if (priceValue < 0) {
+      toast.error("Phí cho mượn không thể là số âm!");
+      return;
+    }
+    if (priceValue > 0 && priceValue < 1000) {
+      toast.error("Nếu nhập phí cho mượn lớn hơn 0, nó phải ít nhất là 1000!");
+      return;
+    }
+
+    // Validation for productValue
+    if (!productValue) {
+      toast.error("Giá trị sản phẩm là bắt buộc!");
+      return;
+    }
+    const productValueNum = parseFloat(productValue);
+    if (isNaN(productValueNum)) {
+      toast.error("Giá trị sản phẩm phải là một số!");
+      return;
+    }
+    if (productValueNum < 0) {
+      toast.error("Giá trị sản phẩm không thể là số âm!");
+      return;
+    }
+    if (productValueNum > 0 && productValueNum < 1000) {
+      toast.error("Nếu nhập giá trị sản phẩm lớn hơn 0, nó phải ít nhất là 1000!");
+      return;
+    }
+    
     if (!imageFile) {
       toast.error("Vui lòng chọn một ảnh cho đồ chơi!");
       return;
@@ -110,6 +145,7 @@ const AddToy = () => {
       formData.append("ProductStatus", condition === "new" ? "0" : "1");
       formData.append("SuitableAge", parseInt(ageGroup.split("-")[0], 10));
       formData.append("Price", parseFloat(price));
+      formData.append("ProductValue", parseFloat(productValue));
       formData.append("Description", description || "");
       formData.append("Files", imageFile);
 
@@ -135,6 +171,7 @@ const AddToy = () => {
       setCondition("");
       setAgeGroup("");
       setPrice("");
+      setProductValue("");
       setDescription("");
 
       // Chuyển hướng đến trang "Danh sách đồ chơi của tôi"
@@ -247,6 +284,18 @@ const AddToy = () => {
                   placeholder="Nhập phí cho mượn (ví dụ 10000 sẽ là 10.000VND)"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
+                />
+              </Form.Group>
+
+              <Form.Group controlId="productValue" className="mb-3">
+                <Form.Label>
+                  Giá trị đồ chơi <span className="required-asterisk">*</span>
+                </Form.Label>
+                <Form.Control
+                  type="number"
+                  placeholder="Nhập giá trị của đồ chơi (ví dụ 10000 sẽ là 10.000VND)"
+                  value={productValue}
+                  onChange={(e) => setProductValue(e.target.value)}
                 />
               </Form.Group>
 

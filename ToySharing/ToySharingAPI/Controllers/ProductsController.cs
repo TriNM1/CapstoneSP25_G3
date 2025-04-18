@@ -279,6 +279,7 @@ namespace ToySharingAPI.Controllers
                 ProductStatus = model.ProductStatus,
                 SuitableAge = model.SuitableAge,
                 Price = model.Price,
+                ProductValue = model.ProductValue,
                 Available = 0,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
@@ -316,6 +317,7 @@ namespace ToySharingAPI.Controllers
                 ProductStatus = product.ProductStatus,
                 SuitableAge = product.SuitableAge,
                 Price = product.Price,
+                ProductValue = product.ProductValue,
                 Description = product.Description,
                 Available = product.Available ?? 0,
                 CreatedAt = product.CreatedAt ?? DateTime.Now,

@@ -501,7 +501,7 @@ const MyToy = () => {
               <p><strong>Danh mục:</strong> {selectedToy.categoryName || "Không có"}</p>
               <p><strong>Tình trạng:</strong> {selectedToy.productStatus || "Không có"}</p>
               <p><strong>Độ tuổi phù hợp:</strong> {selectedToy.suitableAge}</p>
-              <p><strong>Giá:</strong> {selectedToy.price}</p>
+              <p><strong>Phí cho mượn:</strong> {selectedToy.price}</p>
               <p><strong>Mô tả:</strong> {selectedToy.description || "Không có"}</p>
               <p><strong>Trạng thái:</strong> {selectedToy.status}</p>
               <p><strong>Lượt mượn:</strong> {selectedToy.borrowCount}</p>
