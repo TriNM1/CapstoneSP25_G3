@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using ToySharingAPI.DTO;
 using ToySharingAPI.DTO.MoMo;
 using ToySharingAPI.Models;
 using ToySharingAPI.Service;
@@ -98,9 +99,8 @@ namespace ToySharingAPI.Controllers
             return Ok(responseDto);
         }
 
-        /// <summary>
+
         /// API callback từ MoMo sau khi thanh toán.
-        /// </summary>
         //[HttpGet("callback")]
         //public async Task<IActionResult> PaymentCallback([FromQuery] Dictionary<string, string> queryParams)
         //{
@@ -134,6 +134,8 @@ namespace ToySharingAPI.Controllers
 
         //    return Redirect("http://localhost:5173/payment-error");
         //}
+
+        /// API callback từ MoMo sau khi thanh toán.
         [HttpGet("callback")]
         public async Task<IActionResult> PaymentCallback([FromQuery] Dictionary<string, string> queryParams)
         {
@@ -172,7 +174,7 @@ namespace ToySharingAPI.Controllers
                     queryParams.GetValueOrDefault("message", "N/A"));
                 if (transaction != null)
                 {
-                    transaction.Status = 2; // 2: Failed/Canceled
+                    transaction.Status = 2; // 2: Failed
                     transaction.UpdatedAt = DateTime.Now;
                     await _mainContext.SaveChangesAsync();
                 }
@@ -207,14 +209,11 @@ namespace ToySharingAPI.Controllers
                 return Redirect(redirectUrl);
             }
 
-            // Nếu không tìm thấy giao dịch
             _logger.LogError("Transaction not found for OrderId: {OrderId}", momoExecuteResponse.OrderId);
             return Redirect($"http://localhost:5173/payment-error?message={Uri.EscapeDataString("Không tìm thấy giao dịch")}");
         }
 
-        /// <summary>
         /// Kiểm tra trạng thái thanh toán theo transaction_id.
-        /// </summary>
         [HttpGet("{transactionId:int}")]
         public async Task<IActionResult> GetPaymentStatus([FromRoute] int transactionId)
         {
@@ -237,9 +236,8 @@ namespace ToySharingAPI.Controllers
             return Ok(result);
         }
 
-        /// <summary>
+
         /// Xem lịch sử giao dịch của người mượn theo borrower_id.
-        /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetPaymentsByBorrower([FromQuery(Name = "borrower_id")] int borrowerId)
         {
@@ -253,6 +251,55 @@ namespace ToySharingAPI.Controllers
             }
 
             return Ok(transactions);
+        }
+
+        // Lấy lịch sử giao dịch thành công của người dùng hiện tại
+        [HttpGet("successful")]
+        public async Task<IActionResult> GetSuccessfulTransactions()
+        {
+            // Lấy Claim NameIdentifier từ JWT token
+            var authUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(authUserIdStr))
+                return Unauthorized();
+
+            if (!Guid.TryParse(authUserIdStr, out Guid authUserId))
+                return Unauthorized("User id không hợp lệ.");
+
+            // Tìm user trong DB chính theo trường auth_user_id
+            var mainUser = await _mainContext.Users.FirstOrDefaultAsync(u => u.AuthUserId == authUserId);
+            if (mainUser == null)
+                return Unauthorized("Không tìm thấy user trong cơ sở dữ liệu.");
+
+            int mainUserId = mainUser.Id;
+
+            // Lấy danh sách giao dịch thành công của user
+            var transactions = await _mainContext.Transactions
+                .Include(t => t.Request) // Bao gồm thông tin yêu cầu mượn
+                .Where(t => t.FromUserId == mainUserId && t.Status == 1) // Chỉ lấy giao dịch thành công
+                .OrderByDescending(t => t.CreatedAt) // Sắp xếp theo thời gian tạo, mới nhất trước
+                .ToListAsync();
+
+            var transactionSummaries = new List<TransactionSummaryDTO>();
+
+            foreach (var transaction in transactions)
+            {
+                transactionSummaries.Add(new TransactionSummaryDTO
+                {
+                    TransactionId = transaction.TransactionId,
+                    MomoTransactionId = transaction.MomoTransactionId,
+                    Amount = transaction.Amount,
+                    RequestId = transaction.RequestId,
+                    CreatedAt = transaction.CreatedAt.GetValueOrDefault(),
+                    UpdatedAt = transaction.UpdatedAt.GetValueOrDefault()
+                });
+            }
+
+            if (!transactionSummaries.Any())
+            {
+                return NotFound(new { Message = "Không tìm thấy giao dịch thành công nào." });
+            }
+
+            return Ok(transactionSummaries);
         }
     }
 }

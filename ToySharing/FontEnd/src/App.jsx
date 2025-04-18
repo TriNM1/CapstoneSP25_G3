@@ -13,6 +13,7 @@ import SearchToy from "./pages/user/borrower/SearchingToy";
 import Message from "./pages/user/generate/Message";
 import UserInfor from "./pages/user/generate/UserInfor";
 import UserDetail from "./pages/user/generate/UserDetail"; 
+import TransactionHistory from "./pages/user/generate/TransactionHistory";
 import AddToy from "./pages/user/lender/AddToy";
 import MyToy from "./pages/user/lender/MyToy";
 import InLending from "./pages/user/lender/InLending";
@@ -53,6 +54,7 @@ function App() {
         <Route path="/inforinput" element={<InforInput />} />
         <Route path="/policy" element={<Policy />} />
         <Route path="/userguide" element={<UserGuide />} />
+        <Route path="/transaction-history" element={<TransactionHistory />} />
 
         <Route path="/listborrowrequests" element={<ListBorrowRequests />} />
         {/* Các route liên quan đến Lending */}
