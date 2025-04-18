@@ -56,7 +56,7 @@ const InLending = () => {
           },
         });
         const filteredLendings = response.data
-          .filter((req) => req.requestStatus === "Accepted" || req.requestStatus === "PickedUp")
+          .filter((req) => req.requestStatus === "Accepted" || req.requestStatus === "Paid" || req.requestStatus === "PickedUp")
           .map((req) => ({
             id: req.requestId,
             image: req.image || toy1,
@@ -233,7 +233,8 @@ const InLending = () => {
                           <Card.Text className="lending-status">
                             <strong>Trạng thái:</strong>{" "}
                             <span className="in-progress">
-                              {item.status === "Accepted" ? "Đã chấp nhận" : "Đã lấy"}
+                              {item.status === "Accepted" ? "Đã chấp nhận" :
+                              item.status === "Paid" ? "Người dùng đã thanh toán" : "Đã lấy"}
                             </span>
                           </Card.Text>
                           <div className="lender-info">
