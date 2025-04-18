@@ -25,7 +25,7 @@ import ToyDetail from "./pages/user/generate/ToyDetail";
 //admin
 import AdminPage from "./pages/admin/AdminPage";
 import ManageUser from "./pages/admin/ManageUser";
-import Statistic from "./pages/admin/Statistic";
+// import Statistic from "./pages/admin/Statistic";
 import ManagePost from "./pages/admin/ManagePost";
 // Route wrappers
 // import RouteProtected from "./components/ProtectedRoute"
@@ -78,8 +78,8 @@ function App() {
         <Route path="/adminpage" element={<AdminPage />} />
         <Route path="/manageuser" element={<ManageUser />} />
         <Route path="/managepost" element={<ManagePost />} />
-        <Route path="/statistic" element={<Statistic />} /> 
-
+        {/* <Route path="/statistic" element={<Statistic />} />  */}
+        
         {/* Route ToyDetail */}
         <Route path="/toydetail/:toyId" element={<ToyDetail />} />
 

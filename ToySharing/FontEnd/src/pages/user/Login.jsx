@@ -122,10 +122,10 @@ const Login = () => {
                 <button type="submit" className="btn login-btn">
                   Đăng Nhập
                 </button>
-                <button type="button" className="btn google-btn" onClick={handleGoogleLogin}>
+                {/* <button type="button" className="btn google-btn" onClick={handleGoogleLogin}>
                   <img src={icon} alt="Google Icon" className="google-icon" />
                   Đăng nhập với Google
-                </button>
+                </button> */}
                 <div className="register-link">
                   <span>Bạn chưa có tài khoản?</span>
                   <a href="/signup">Đăng ký</a>

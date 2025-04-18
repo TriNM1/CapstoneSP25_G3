@@ -85,7 +85,6 @@ const ManagePost = () => {
         if (!res.ok) throw new Error("Lỗi khi lấy dữ liệu danh mục");
         const data = await res.json();
         console.log("Categories data:", data);
-        // Giả sử API trả về mảng chuỗi, ví dụ: ["Gau bong", "Xe oto"]
         setCategories(data);
       } catch (error) {
         console.error(error);
@@ -98,18 +97,14 @@ const ManagePost = () => {
   const filteredProducts = products.filter((product) => {
     const toyName = product.name || "";
     const displayName = userNames[product.userId] || "";
-    // Giả sử product.categoryId là 1-indexed, nên chuyển về 0-indexed dạng chuỗi
-    const productCategoryIndex =
-      product.categoryId !== undefined
-        ? (Number(product.categoryId) - 1).toString()
-        : "";
+    const productCategoryName = product.categoryName || "";
 
     const toyMatch = toyName.toLowerCase().includes(toySearch.toLowerCase());
     const userMatch = displayName
       .toLowerCase()
       .includes(userSearch.toLowerCase());
     const categoryMatch =
-      selectedCategory === "" || productCategoryIndex === selectedCategory;
+      selectedCategory === "" || productCategoryName === selectedCategory;
 
     return toyMatch && userMatch && categoryMatch;
   });
@@ -143,7 +138,7 @@ const ManagePost = () => {
     if (!confirmDelete) return;
     try {
       const res = await fetch(
-        `https://localhost:7128/api/Products/${productId}`,
+        `https://localhost:7128/api/Products/admin/${productId}`,
         {
           method: "DELETE",
           headers: {
@@ -155,6 +150,8 @@ const ManagePost = () => {
       if (!res.ok) {
         if (res.status === 401) {
           alert("Bạn chưa đăng nhập hoặc không có quyền xóa sản phẩm.");
+        } else if (res.status === 400) {
+          alert("Không thể xóa sản phẩm vì sản phẩm đang được cho mượn.");
         } else {
           throw new Error("Lỗi khi xóa sản phẩm");
         }
@@ -171,39 +168,79 @@ const ManagePost = () => {
 
   // Hàm xóa hàng loạt các sản phẩm đã chọn
   const handleDeleteSelectedProducts = async () => {
-    const confirmDelete = window.confirm("Bạn có chắc chắn muốn xóa các sản phẩm đã chọn? Hành động này không thể hoàn tác.");
+    const confirmDelete = window.confirm(
+      "Bạn có chắc chắn muốn xóa các sản phẩm đã chọn? Hành động này không thể hoàn tác."
+    );
     if (!confirmDelete) return;
-  
+
     const token = localStorage.getItem("token");
     if (!token) {
       alert("Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.");
       return;
     }
-  
+
     try {
-      const deletePromises = selectedProducts.map(productId =>
-        fetch(`https://localhost:7128/api/Products/${productId}`, {
+      const deletePromises = selectedProducts.map((productId) =>
+        fetch(`https://localhost:7128/api/Products/admin/${productId}`, {
           method: "DELETE",
           headers: {
-            "Authorization": `Bearer ${token}`, // Thêm token vào header
-            "accept": "*/*"
+            Authorization: `Bearer ${token}`,
+            accept: "*/*",
           },
         })
       );
-  
+
       const results = await Promise.all(deletePromises);
-      const allSuccessful = results.every(res => res.ok);
-  
+      const allSuccessful = results.every((res) => res.ok);
+
       if (allSuccessful) {
-        setProducts(products.filter(p => !selectedProducts.includes(p.productId)));
+        setProducts(
+          products.filter((p) => !selectedProducts.includes(p.productId))
+        );
         setSelectedProducts([]);
         alert("Các sản phẩm đã được xóa thành công.");
       } else {
+        // Log chi tiết lỗi cho từng sản phẩm không xóa được
+        results.forEach((res, index) => {
+          if (!res.ok) {
+            if (res.status === 401) {
+              alert("Bạn chưa đăng nhập hoặc không có quyền xóa sản phẩm.");
+            } else if (res.status === 400) {
+              alert("Không thể xóa sản phẩm vì sản phẩm đang được cho mượn.");
+            }
+            console.error(
+              `Lỗi khi xóa sản phẩm ID ${selectedProducts[index]}: ${res.status} ${res.statusText}`
+            );
+          }
+        });
         throw new Error("Lỗi khi xóa một số sản phẩm");
       }
     } catch (error) {
       console.error(error);
-      alert("Xảy ra lỗi khi xóa sản phẩm. Vui lòng thử lại sau!");
+      // alert("Xảy ra lỗi khi xóa sản phẩm. Vui lòng thử lại sau!");
+    }
+  };
+
+  // Hàm xử lý khi nhấn nút "Chọn tất cả"
+  const handleSelectAll = () => {
+    // Lấy tất cả productId của các sản phẩm hiển thị trên màn hình
+    const allProductIds = currentItems.map((product) => product.productId);
+
+    // Kiểm tra xem tất cả các sản phẩm đã được chọn chưa
+    const allSelected = allProductIds.every((id) =>
+      selectedProducts.includes(id)
+    );
+
+    if (allSelected) {
+      // Nếu tất cả đã được chọn, bỏ chọn tất cả
+      setSelectedProducts(
+        selectedProducts.filter((id) => !allProductIds.includes(id))
+      );
+    } else {
+      // Nếu chưa, thêm tất cả vào danh sách đã chọn
+      setSelectedProducts([
+        ...new Set([...selectedProducts, ...allProductIds]),
+      ]);
     }
   };
 
@@ -217,7 +254,7 @@ const ManagePost = () => {
                 { id: 1, label: "Trang chủ", link: "/adminpage" },
                 { id: 2, label: "Quản lý người dùng", link: "/manageuser" },
                 { id: 3, label: "Quản lý vi phạm", link: "/managepost" },
-                { id: 4, label: "Thống kê", link: "/statistic" },
+                // { id: 4, label: "Thống kê", link: "/statistic" },
               ]}
             />
           </Col>
@@ -257,23 +294,29 @@ const ManagePost = () => {
                   >
                     <option value="">Tất cả</option>
                     {categories.map((catName, index) => (
-                      <option key={index} value={index.toString()}>
+                      <option key={index} value={catName}>
                         {catName}
                       </option>
                     ))}
                   </Form.Control>
                 </Form.Group>
               </Col>
-              {/* <Col md={12} className="mt-2">
-                <Button variant="primary" onClick={() => setCurrentPage(1)}>
-                  Lọc sản phẩm
-                </Button>
-              </Col> */}
             </Row>
 
             {/* Nút xóa hàng loạt */}
             <Row className="mb-4">
               <Col>
+                <Button
+                  variant="primary"
+                  onClick={handleSelectAll}
+                  style={{ marginRight: "10px" }}
+                >
+                  {selectedProducts.length === currentItems.length &&
+                  currentItems.length > 0
+                    ? "Bỏ chọn tất cả"
+                    : "Chọn tất cả"}
+                </Button>
+
                 <Button
                   variant="danger"
                   disabled={selectedProducts.length === 0}
@@ -291,7 +334,6 @@ const ManagePost = () => {
                   <div
                     className="product-card"
                     style={{ cursor: "pointer", position: "relative" }}
-                    onClick={() => handleDetailClick(product)}
                   >
                     <Form.Check
                       type="checkbox"
@@ -322,16 +364,16 @@ const ManagePost = () => {
                       thumbnail
                       alt={product.name}
                     />
-                    <h5 className="mt-2">{product.name}</h5>
+                    <h5
+                      className="mt-2"
+                      onClick={() => handleDetailClick(product)}
+                    >
+                      {product.name}
+                    </h5>
                     <p>
                       Người đăng: {userNames[product.userId] || product.userId}
                     </p>
-                    <p>
-                      Danh mục:{" "}
-                      {product.categoryId !== undefined && categories.length > 0
-                        ? categories[Number(product.categoryId) - 1]
-                        : "No Category"}
-                    </p>
+                    <p>Danh mục: {product.categoryName || "No Category"}</p>
                     <p>
                       Ngày đăng:{" "}
                       {new Date(product.createdAt).toLocaleDateString()}
@@ -342,7 +384,7 @@ const ManagePost = () => {
             </Row>
 
             {/* Phân trang */}
-            <Pagination>
+            {/* <Pagination>
               {[...Array(totalPages).keys()].map((number) => (
                 <Pagination.Item
                   key={number + 1}
@@ -352,7 +394,37 @@ const ManagePost = () => {
                   {number + 1}
                 </Pagination.Item>
               ))}
-            </Pagination>
+            </Pagination> */}
+
+            <div className="pagination-container text-center">
+              <Pagination>
+                <Pagination.First
+                  onClick={() => paginate(1)}
+                  disabled={currentPage === 1}
+                />
+                <Pagination.Prev
+                  onClick={() => currentPage > 1 && paginate(currentPage - 1)}
+                />
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <Pagination.Item
+                    key={i + 1}
+                    active={currentPage === i + 1}
+                    onClick={() => paginate(i + 1)}
+                  >
+                    {i + 1}
+                  </Pagination.Item>
+                ))}
+                <Pagination.Next
+                  onClick={() =>
+                    currentPage < totalPages && paginate(currentPage + 1)
+                  }
+                />
+                <Pagination.Last
+                  onClick={() => paginate(totalPages)}
+                  disabled={currentPage === totalPages}
+                />
+              </Pagination>
+            </div>
           </Col>
         </Row>
       </Container>
@@ -360,7 +432,7 @@ const ManagePost = () => {
       {/* Modal chi tiết sản phẩm */}
       <Modal
         show={showDetailModal}
-        onHide={() => setShowDetailModal(false)} // Đảm bảo dấu ngoặc đóng đúng
+        onHide={() => setShowDetailModal(false)}
         size="lg"
         centered
       >
@@ -373,20 +445,14 @@ const ManagePost = () => {
               <Image
                 src={selectedProduct.imagePaths?.[0] || userPlaceholder}
                 fluid
-                alt={selectedProduct.name} // Đảm bảo dấu phẩy giữa các thuộc tính
+                alt={selectedProduct.name}
               />
               <h4 className="mt-3">{selectedProduct.name}</h4>
               <p>
                 Người đăng:{" "}
                 {userNames[selectedProduct.userId] || selectedProduct.userId}
               </p>
-              <p>
-                Danh mục:{" "}
-                {selectedProduct.categoryId !== undefined &&
-                categories.length > 0
-                  ? categories[Number(selectedProduct.categoryId) - 1]
-                  : "No Category"}
-              </p>
+              <p>Danh mục: {selectedProduct.categoryName || "No Category"}</p>
               <p>
                 Ngày đăng:{" "}
                 {new Date(selectedProduct.createdAt).toLocaleString()}

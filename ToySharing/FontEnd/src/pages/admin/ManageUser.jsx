@@ -22,7 +22,7 @@ const ManageUser = () => {
     { id: 1, label: "Trang chủ", link: "/adminpage" },
     { id: 2, label: "Quản lý người dùng", link: "/manageuser" },
     { id: 3, label: "Quản lý bài đăng", link: "/managepost" },
-    { id: 4, label: "Thống kê", link: "/statistic" },
+    // { id: 4, label: "Thống kê", link: "/statistic" },
   ];
 
   // Các trạng thái tìm kiếm
@@ -55,8 +55,8 @@ const ManageUser = () => {
     const matchesKeyword = (user.displayName || "")
       .toLowerCase()
       .includes(searchKeyword.toLowerCase());
-    // Chuyển trạng thái số thành text để so sánh: 1 -> "active", 0 -> "banned"
-    const statusText = user.status === 1 ? "active" : "banned";
+    // Chuyển trạng thái số thành text để so sánh: 0 -> "active", 1 -> "banned"
+    const statusText = user.status === 0 ? "active" : "banned";
     const matchesStatus = filterStatus ? statusText === filterStatus : true;
     // Nếu không có createdAt từ API, có thể bỏ qua bộ lọc ngày
     const matchesDate = filterDate ? false : true;
@@ -168,9 +168,9 @@ const ManageUser = () => {
                   /> */}
                 </Col>
               </Row>
-              <Button variant="primary" type="submit">
+              {/* <Button variant="primary" type="submit">
                 Tìm kiếm
-              </Button>
+              </Button> */}
             </Form>
             {/* Bảng danh sách người dùng */}
             <Table striped bordered hover responsive>
