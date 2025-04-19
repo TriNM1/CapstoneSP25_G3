@@ -272,11 +272,10 @@ namespace ToySharingAPI.Controllers
 
             int mainUserId = mainUser.Id;
 
-            // Lấy danh sách giao dịch thành công của user
             var transactions = await _mainContext.Transactions
-                .Include(t => t.Request) // Bao gồm thông tin yêu cầu mượn
-                .Where(t => t.FromUserId == mainUserId && t.Status == 1) // Chỉ lấy giao dịch thành công
-                .OrderByDescending(t => t.CreatedAt) // Sắp xếp theo thời gian tạo, mới nhất trước
+                .Include(t => t.Request)
+                .Where(t => t.FromUserId == mainUserId && t.Status == 1) 
+                .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
 
             var transactionSummaries = new List<TransactionSummaryDTO>();
@@ -287,6 +286,7 @@ namespace ToySharingAPI.Controllers
                 {
                     TransactionId = transaction.TransactionId,
                     MomoTransactionId = transaction.MomoTransactionId,
+                    TransactionType = transaction.TransactionType,
                     Amount = transaction.Amount,
                     RequestId = transaction.RequestId,
                     CreatedAt = transaction.CreatedAt.GetValueOrDefault(),
