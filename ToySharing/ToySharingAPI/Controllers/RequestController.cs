@@ -54,7 +54,78 @@ namespace ToySharingAPI.Controllers
 
             return mainUser.Id;
         }
+        [HttpPut("{requestId}/owner-confirm-return")]
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> OwnerConfirmReturn(int requestId)
+        {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
 
+            var request = await _context.RentRequests
+                .Include(r => r.Product)
+                .ThenInclude(p => p.User)
+                .Include(r => r.User)
+                .Include(r => r.History)
+                .FirstOrDefaultAsync(r => r.RequestId == requestId);
+
+            if (request == null)
+                return NotFound("Yêu cầu không tồn tại.");
+
+            if (request.Product.UserId != mainUserId)
+                return Forbid("Bạn không có quyền xác nhận trả cho yêu cầu này.");
+
+            if (request.Status != 3)
+                return BadRequest("Chỉ có thể xác nhận trả từ trạng thái 'đã lấy' (status = 3).");
+
+            if (request.ConfirmReturn == 2 || request.ConfirmReturn == 3)
+                return BadRequest("Bạn đã xác nhận trả trước đó.");
+
+            try
+            {
+                if (request.ConfirmReturn == 1)
+                {
+                    // Người mượn đã xác nhận trước, hoàn thành yêu cầu
+                    request.ConfirmReturn = 3;
+                    request.Status = 4; // Completed
+                    request.History.Status = 1; // Completed
+                    request.History.ReturnDate = DateTime.Now;
+                    request.Product.Available = 0; // Sản phẩm sẵn sàng cho thuê lại
+
+                    var borrowerId = request.UserId;
+                    var productName = request.Product?.Name ?? "Sản phẩm không xác định";
+                    await CreateNotification(
+                        borrowerId,
+                        $"Chủ sở hữu đã xác nhận trả sản phẩm '{productName}'. Yêu cầu đã hoàn thành."
+                    );
+                }
+                else
+                {
+                    // Chỉ người cho mượn xác nhận
+                    request.ConfirmReturn = 2;
+
+                    var borrowerId = request.UserId;
+                    var productName = request.Product?.Name ?? "Sản phẩm không xác định";
+                    await CreateNotification(
+                        borrowerId,
+                        $"Chủ sở hữu đã xác nhận trả sản phẩm '{productName}'. Vui lòng xác nhận trả để hoàn thành yêu cầu."
+                    );
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Xác nhận trả thành công." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "Lỗi khi xác nhận trả.",
+                    error = ex.Message,
+                    requestId
+                });
+            }
+        }
         // Tạo một yêu cầu mượn mới (RentRequest) với trạng thái mặc định là 0 (pending). Gửi thông báo cho chủ sở hữu đồ chơi.
         [HttpPost]
         [Authorize(Roles = "User")]
@@ -78,7 +149,6 @@ namespace ToySharingAPI.Controllers
 
                 if (product.UserId == mainUserId)
                     return BadRequest("You cannot request to rent your own product.");
-
                 var request = new RentRequest
                 {
                     UserId = mainUserId,
@@ -87,7 +157,9 @@ namespace ToySharingAPI.Controllers
                     Status = 0,
                     RequestDate = formData.RequestDate ?? DateTime.Now,
                     RentDate = formData.RentDate,
-                    ReturnDate = formData.ReturnDate
+                    ReturnDate = formData.ReturnDate,
+                    DepositAmount = product.Price,
+                    RentalFee = product.ProductValue,
                 };
 
                 _context.RentRequests.Add(request);
