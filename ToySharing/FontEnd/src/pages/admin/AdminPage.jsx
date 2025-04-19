@@ -9,7 +9,7 @@ const AdminPage = () => {
     { id: 1, label: "Trang chủ", link: "/adminpage" },
     { id: 2, label: "Quản lý người dùng", link: "/manageuser" },
     { id: 3, label: "Quản lý bài đăng", link: "/managepost" },
-    { id: 4, label: "Thống kê", link: "/statistic" },
+    // { id: 4, label: "Thống kê", link: "/statistic" },
   ];
 
   return (
@@ -45,10 +45,10 @@ const AdminPage = () => {
                 <li>
                   <strong>Quản lý bài đăng:</strong> Xem và xử lý các bài đăng của người dùng.
                 </li>
-                <li>
+                {/* <li>
                   <strong>Thống kê:</strong> Xem báo cáo và phân tích dữ liệu
                   hoạt động.
-                </li>
+                </li> */}
               </ol>
               <p>
                 Sử dụng các công cụ trên để duy trì hệ thống hoạt động hiệu quả.
