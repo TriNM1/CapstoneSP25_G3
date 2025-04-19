@@ -26,7 +26,7 @@ namespace ToySharingAPI.DTO
         public string? OwnerName { get; set; }
         public string? OwnerAvatar { get; set; }
         public string? Message { get; set; }
-
+        public byte ConfirmReturn { get; set; }
         public int Status { get; set; }
         public DateTime? RequestDate { get; set; }
         public DateTime RentDate { get; set; }
