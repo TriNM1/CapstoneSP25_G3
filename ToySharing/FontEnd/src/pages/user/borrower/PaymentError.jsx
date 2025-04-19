@@ -27,7 +27,7 @@ const PaymentError = () => {
         <Card className="text-center">
           <Card.Body>
             <Card.Title className="text-danger">Thanh Toán Thất Bại</Card.Title>
-            <Card.Text>{errorMessage}</Card.Text>
+            <Card.Text>Giao dịch không thành công</Card.Text>
             <Button variant="primary" onClick={handleRetry}>
               Thử lại
             </Button>

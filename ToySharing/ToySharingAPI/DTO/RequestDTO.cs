@@ -43,5 +43,7 @@ namespace ToySharingAPI.DTO
         [RegularExpression(@"^[a-zA-Z0-9\-_/\.]+$",
             ErrorMessage = "Image path can only contain letters, numbers, hyphens, underscores, slashes, and dots.")]
         public string? Image { get; set; }
+        public decimal DepositAmount { get; set; }
+        public decimal RetalFee { get; set; }
     }
 }

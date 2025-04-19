@@ -176,8 +176,8 @@ namespace ToySharingAPI.Controllers
                     RequestDate = formData.RequestDate ?? DateTime.Now,
                     RentDate = formData.RentDate,
                     ReturnDate = formData.ReturnDate,
-                    DepositAmount = product.Price,
-                    RentalFee = product.ProductValue,
+                    DepositAmount = product.ProductValue,
+                    RentalFee = product.Price
                 };
 
                 _context.RentRequests.Add(request);
@@ -201,7 +201,9 @@ namespace ToySharingAPI.Controllers
                     OwnerId = product.UserId,
                     OwnerName = product.User.Displayname,
                     OwnerAvatar = product.User.Avatar, // Thêm OwnerAvatar
-                    Status = request.Status
+                    Status = request.Status,
+                    DepositAmount = request.DepositAmount,
+                    RetalFee = request.RentalFee
                 };
 
                 return CreatedAtAction(nameof(GetRequestById), new { id = request.RequestId }, response);
