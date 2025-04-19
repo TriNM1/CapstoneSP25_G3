@@ -234,7 +234,12 @@ const InLending = () => {
                             <strong>Trạng thái:</strong>{" "}
                             <span className="in-progress">
                               {item.status === "Accepted" ? "Đã chấp nhận" :
-                              item.status === "Paid" ? "Người dùng đã thanh toán" : "Đã lấy"}
+                                item.status === "Paid" ? "Người dùng đã thanh toán" :
+                                  item.status === "PickedUp" ? (
+                                    item.confirmReturn === 2 ? "Đã xác nhận trả, chờ xác nhận" :
+                                      item.confirmReturn === 3 ? "Hoàn thành" : "Đã lấy, chưa xác nhận trả"
+                                  ) :
+                                    item.status === "Completed" ? "Hoàn thành" : "Không xác định"}
                             </span>
                           </Card.Text>
                           <div className="lender-info">

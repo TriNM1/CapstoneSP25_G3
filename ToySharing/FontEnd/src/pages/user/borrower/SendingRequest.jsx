@@ -389,13 +389,13 @@ const SendingRequest = () => {
     ? requests.filter((request) => {
         const requestDate = new Date(request.borrowDate);
         return (
-          (request.status === 0 || request.status === 1 || request.status === 2) &&
+          (request.status === 0 || request.status === 1 || request.status === 2 || request.status === 3) &&
           requestDate.getDate() === selectedDate.getDate() &&
           requestDate.getMonth() === selectedDate.getMonth() &&
           requestDate.getFullYear() === selectedDate.getFullYear()
         );
       })
-    : requests.filter((request) => request.status === 0 || request.status === 1 || request.status === 2);
+    : requests.filter((request) => request.status === 0 || request.status === 1 || request.status === 2 || request.state === 3);
 
   return (
     <div className="sending-request-page home-page">
