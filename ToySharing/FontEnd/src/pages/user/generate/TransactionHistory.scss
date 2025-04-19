@@ -1,32 +1,86 @@
-.transaction-history-page {
-    .card {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 20px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;600&display=swap');
+
+.transaction-history {
+  font-family: 'Roboto', sans-serif;
+  background-color: #f7f9fc;
+  color: #333333;
+
+  .card {
+    border: none;
+    border-radius: 8px;
+    padding: 24px;
+  }
+
+  h3 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #ff6f61;
+    margin-bottom: 24px;
+  }
+
+  .table {
+    font-size: 1rem;
+    line-height: 1.6;
+
+    th, td {
+      text-align: center;
+      vertical-align: middle;
+      padding: 12px;
     }
-  
-    h3 {
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: #333;
+
+    th {
+      font-weight: 600;
+      color: #ff6f61;
     }
-  
-    .table {
-      font-size: 0.9rem;
-      th,
-      td {
-        vertical-align: middle;
-        text-align: center;
-      }
-    }
-  
-    .btn-primary {
-      padding: 10px 20px;
-      font-size: 1rem;
-    }
-  
-    .text-center {
-      margin-top: 20px;
+
+    td {
+      color: #333333;
     }
   }
+
+  p {
+    font-size: 1.1rem;
+    color: #666666;
+    margin: 16px 0;
+  }
+
+  .btn-primary {
+    font-size: 1rem;
+    padding: 8px 16px;
+    border-radius: 4px;
+    background-color: #ff6f61;
+    border-color: #ff6f61;
+
+    &:hover {
+      background-color: #e65b50;
+      border-color: #e65b50;
+    }
+  }
+
+  .pagination-container {
+    .pagination {
+      .page-item {
+        .page-link {
+          color: #ff6f61;
+          border-radius: 4px;
+          margin: 0 4px;
+        }
+
+        &.active .page-link {
+          background-color: #ff6f61;
+          border-color: #ff6f61;
+          color: #ffffff;
+        }
+
+        &.disabled .page-link {
+          color: #cccccc;
+        }
+
+        &:hover:not(.active):not(.disabled) .page-link {
+          background-color: #f7f9fc;
+          color: #e65b50;
+        }
+      }
+    }
+  }
+}
