@@ -112,7 +112,7 @@ const ListBorrowRequests = () => {
       const sessionToken = sessionStorage.getItem("token");
       const token = sessionToken || localToken;
       const actionUrl = `${API_BASE_URL}/Requests/${selectedRequestId}/status`;
-      const newStatus = confirmAction === "accept" ? 1 : 4;
+      const newStatus = confirmAction === "accept" ? 1 : 5;
       await axios.put(
         actionUrl,
         { newStatus },

@@ -205,6 +205,7 @@ namespace ToySharingAPI.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error updating request status: {ex.ToString()}");
                 return StatusCode(500, new { message = "An error occurred while updating the request status.", error = ex.Message });
             }
         }
