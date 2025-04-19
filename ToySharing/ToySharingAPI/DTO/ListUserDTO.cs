@@ -8,5 +8,7 @@
         public bool? Gender { get; set; }
         public int? Status { get; set; }
         public string Role { get; set; } = string.Empty;
+
+        public DateTime? CreatedAt { get; set; }
     }
 }

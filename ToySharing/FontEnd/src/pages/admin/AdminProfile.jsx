@@ -9,7 +9,7 @@ const AdminProfile = () => {
     { id: 1, label: "Trang chủ", link: "/adminpage" },
     { id: 2, label: "Quản lý người dùng", link: "/manageuser" },
     { id: 3, label: "Quản lý bài đăng", link: "/managepost" },
-    // { id: 4, label: "Thống kê", link: "/statistic" },
+    { id: 4, label: "Thống kê", link: "/statistic" },
   ];
 
   return (

@@ -474,6 +474,7 @@ namespace ToySharingAPI.Controllers
                             Gender = mainUser.Gender,
                             Status = mainUser.Status,
                             Role = roleStr,
+                            CreatedAt = mainUser.CreatedAt
                         });
                     }
                 }
