@@ -595,6 +595,42 @@ namespace ToySharingAPI.Controllers
                 return StatusCode(500, new { message = "Đã xảy ra lỗi khi xóa sản phẩm. Vui lòng thử lại sau." });
             }
         }
+        [HttpDelete("admin/{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteProductByAdmin(int id)
+        {
+            try
+            {
+                // Tìm sản phẩm và bao gồm danh sách RentRequests
+                var product = await _context.Products
+                    .Include(p => p.RentRequests)
+                    .FirstOrDefaultAsync(p => p.ProductId == id);
+
+                // Kiểm tra sản phẩm có tồn tại không
+                if (product == null)
+                {
+                    return NotFound(new { message = "Sản phẩm không tồn tại." });
+                }
+
+                // Kiểm tra xem sản phẩm có đang được cho mượn không
+                if (product.RentRequests.Any(r => r.Status == 1))
+                {
+                    return BadRequest(new { message = "Không thể xóa sản phẩm vì sản phẩm đang được cho mượn." });
+                }
+
+                // Xóa sản phẩm
+                _context.Products.Remove(product);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Xóa sản phẩm thành công." });
+            }
+            catch (Exception ex)
+            {
+                // Ghi log lỗi chi tiết hơn (có thể dùng ILogger nếu có)
+                Console.WriteLine($"Error deleting product {id}: {ex.Message}, StackTrace: {ex.StackTrace}");
+                return StatusCode(500, new { message = "Đã xảy ra lỗi khi xóa sản phẩm. Vui lòng thử lại sau." });
+            }
+        }
         [HttpPost("upload-image")]
         [Authorize]
         public async Task<IActionResult> UploadImage(IFormFile image)

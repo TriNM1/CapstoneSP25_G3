@@ -61,6 +61,10 @@ const UserDetail = ({ isLoggedIn, setActiveLink }) => {
           status: apiData.status || 0,
           rating: apiData.rating || 0,
           gender: apiData.gender !== undefined ? apiData.gender : true,
+          age : apiData.age || 0,
+          bank_name : apiData.bank_name || "",
+          bank_account : apiData.bank_account || 0,
+          bank_account_name : apiData.bank_account_name || "",
         });
       } catch (error) {
         console.error("Lỗi khi lấy dữ liệu:", error);
@@ -180,6 +184,16 @@ const UserDetail = ({ isLoggedIn, setActiveLink }) => {
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
+                  <Form.Label>Tuổi</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="age"
+                    value={user.age}
+                    onChange={handleChange}
+                    disabled={!editMode}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
                   <Form.Label>Điện thoại</Form.Label>
                   <Form.Control
                     type="text"
@@ -195,6 +209,36 @@ const UserDetail = ({ isLoggedIn, setActiveLink }) => {
                     type="text"
                     name="address"
                     value={user.address}
+                    onChange={handleChange}
+                    disabled={!editMode}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Tên ngân hàng</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="bank_name"
+                    value={user.bank_name}
+                    onChange={handleChange}
+                    disabled={!editMode}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Số tài khoản</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="bank_account"
+                    value={user.bank_account}
+                    onChange={handleChange}
+                    disabled={!editMode}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Tên tài khoản</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="bank_account_name"
+                    value={user.bank_account_name}
                     onChange={handleChange}
                     disabled={!editMode}
                   />
