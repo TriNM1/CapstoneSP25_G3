@@ -53,6 +53,7 @@ const MyToy = () => {
     productStatus: "",
     suitableAge: "",
     price: "",
+    productValue: "",
     description: "",
     available: 0,
   });
@@ -92,7 +93,8 @@ const MyToy = () => {
           categoryName: toy.categoryName,
           productStatus: toy.productStatus === 0 ? "Mới" : toy.productStatus === 1 ? "Cũ" : "Không xác định",
           suitableAge: toy.suitableAge,
-          price: `${toy.price.toLocaleString("vi-VN")} VND`,
+          price: `${toy.price} VND`,
+          productValue: `${toy.productValue} VND`,
           description: toy.description,
         }));
 
@@ -132,7 +134,16 @@ const MyToy = () => {
     e.stopPropagation();
     const toyToEdit = toys.find((toy) => toy.id === id);
     if (toyToEdit) {
-      setEditToyData({
+      const parseCurrency = (value) => {
+        if (!value || value === "0 VND" || value === "null VND" || value === "undefined VND") {
+          console.log("parseCurrency returning empty string for:", value);
+          return "";
+        }
+        const result = value.replace(" VND", ""); 
+        return result;
+      };
+  
+      const newEditToyData = {
         id: toyToEdit.id,
         imagePaths: [toyToEdit.image],
         files: [],
@@ -140,10 +151,12 @@ const MyToy = () => {
         categoryName: toyToEdit.categoryName || "",
         productStatus: toyToEdit.productStatus || "",
         suitableAge: toyToEdit.suitableAge ? String(toyToEdit.suitableAge) : "",
-        price: toyToEdit.price ? toyToEdit.price.replace(" VND", "") : "",
+        price: parseCurrency(toyToEdit.price),
+        productValue: parseCurrency(toyToEdit.productValue),
         description: toyToEdit.description || "",
         available: toyToEdit.status === "Sẵn sàng cho mượn" ? 0 : 1,
-      });
+      };
+      setEditToyData(newEditToyData);
       setShowEditModal(true);
     }
   };
@@ -172,9 +185,50 @@ const MyToy = () => {
       toast.error("Độ tuổi phù hợp phải là số từ 0 đến 50!");
       return;
     }
-    const price = parseFloat(editToyData.price.replace(/[^0-9.]/g, ""));
-    if (isNaN(price) || price < -1) {
-      toast.error("Phí mượn đồ chơi phải là một số không âm!");
+
+    const price = parseFloat(editToyData.price);
+    const productValue = parseFloat(editToyData.productValue);
+    // Validation for price
+    if (price === "") {
+      toast.error("Phí cho mượn là bắt buộc!");
+      return;
+    }
+    if (isNaN(price)) {
+      toast.error("Phí cho mượn phải là một số!");
+      return;
+    }
+    if (price < 0) {
+      toast.error("Phí cho mượn không thể là số âm!");
+      return;
+    }
+    if (price > 0 && price < 1000) {
+      toast.error("Nếu nhập phí cho mượn lớn hơn 0, nó phải ít nhất là 1000!");
+      return;
+    }
+    if (price > productValue) {
+      toast.error("Phí cho mượn không được vượt quá giá trị đồ chơi");
+      return;
+    }
+
+    // Validation for productValue
+    if (productValue === "") {
+      toast.error("Giá trị đồ chơi là bắt buộc!");
+      return;
+    }
+    if (isNaN(productValue)) {
+      toast.error("Giá trị đồ chơi phải là một số!");
+      return;
+    }
+    if (productValue < 0) {
+      toast.error("Giá trị đồ chơi không thể là số âm!");
+      return;
+    }
+    if (productValue > 0 && productValue < 1000) {
+      toast.error("Nếu nhập Giá trị đồ chơi lớn hơn 0, nó phải ít nhất là 1000!");
+      return;
+    }
+    if (productValue < price) {
+      toast.error("Giá trị đồ chơi không được vượt quá giá trị sản phẩm");
       return;
     }
 
@@ -198,6 +252,7 @@ const MyToy = () => {
       formData.append("ProductStatus", productStatus);
       formData.append("SuitableAge", suitableAge);
       formData.append("Price", price);
+      formData.append("ProductValue", productValue);
       formData.append("Description", editToyData.description || "");
       formData.append("Available", editToyData.available || 0);
 
@@ -216,16 +271,17 @@ const MyToy = () => {
         prevToys.map((toy) =>
           toy.id === editToyData.id
             ? {
-                ...toy,
-                image: response.data.imagePaths[0] || toy.image,
-                name: response.data.name,
-                categoryName: response.data.categoryName,
-                productStatus: response.data.productStatus,
-                suitableAge: response.data.suitableAge,
-                price: `${response.data.price.toLocaleString("vi-VN")} VND`,
-                description: response.data.description,
-                status: response.data.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
-              }
+              ...toy,
+              image: response.data.imagePaths[0] || toy.image,
+              name: response.data.name,
+              categoryName: response.data.categoryName,
+              productStatus: response.data.productStatus,
+              suitableAge: response.data.suitableAge,
+              price: `${response.data.price} VND`,
+              productValue: `${response.data.productValue} VND`,
+              description: response.data.description,
+              status: response.data.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
+            }
             : toy
         )
       );
@@ -456,9 +512,19 @@ const MyToy = () => {
             <Form.Group controlId="editPrice" className="mb-3">
               <Form.Label>Phí mượn đồ chơi <span className="text-danger">*</span></Form.Label>
               <Form.Control
-                type="text"
+                type="number"
                 name="price"
                 value={editToyData.price}
+                onChange={handleEditChange}
+                required
+              />
+            </Form.Group>
+            <Form.Group controlId="editProductValue" className="mb-3">
+              <Form.Label>Giá trị đồ chơi <span className="text-danger">*</span></Form.Label>
+              <Form.Control
+                type="number"
+                name="productValue"
+                value={editToyData.productValue}
                 onChange={handleEditChange}
                 required
               />

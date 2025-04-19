@@ -106,23 +106,32 @@ const AddToy = () => {
       toast.error("Nếu nhập phí cho mượn lớn hơn 0, nó phải ít nhất là 1000!");
       return;
     }
+    if (priceValue > productValue) {
+      toast.error("Phí cho mượn không được vượt quá giá trị sản phẩm");
+      return;
+    }
 
     // Validation for productValue
     if (!productValue) {
-      toast.error("Giá trị sản phẩm là bắt buộc!");
+      toast.error("Giá trị đồ chơi là bắt buộc!");
       return;
     }
     const productValueNum = parseFloat(productValue);
     if (isNaN(productValueNum)) {
-      toast.error("Giá trị sản phẩm phải là một số!");
+      toast.error("Giá trị đồ chơi phải là một số!");
       return;
     }
     if (productValueNum < 0) {
-      toast.error("Giá trị sản phẩm không thể là số âm!");
+      toast.error("Giá trị đồ chơi không thể là số âm!");
       return;
     }
     if (productValueNum > 0 && productValueNum < 1000) {
-      toast.error("Nếu nhập giá trị sản phẩm lớn hơn 0, nó phải ít nhất là 1000!");
+      toast.error("Nếu nhập giá trị đồ chơi lớn hơn 0, nó phải ít nhất là 1000!");
+      return;
+    }
+
+    if (productValue < priceValue) {
+      toast.error("Giá trị đồ chơi phải lớn hơn phí cho mượn");
       return;
     }
     
