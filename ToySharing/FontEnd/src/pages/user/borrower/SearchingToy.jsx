@@ -288,14 +288,21 @@ const SearchingToy = () => {
 
   const filteredToys = selectedDate
     ? toys.filter((toy) => {
-        const toyDate = new Date(toy.createdAt);
-        return (
-          toyDate.getDate() === selectedDate.getDate() &&
-          toyDate.getMonth() === selectedDate.getMonth() &&
-          toyDate.getFullYear() === selectedDate.getFullYear()
-        );
-      })
+      const toyDate = new Date(toy.createdAt);
+      return (
+        toyDate.getDate() === selectedDate.getDate() &&
+        toyDate.getMonth() === selectedDate.getMonth() &&
+        toyDate.getFullYear() === selectedDate.getFullYear()
+      );
+    })
     : toys;
+
+  // Sắp xếp theo khoảng cách (gần nhất trước)
+  const sortedToys = [...filteredToys].sort((a, b) => {
+    const distanceA = typeof a.distance === "number" ? a.distance : Infinity;
+    const distanceB = typeof b.distance === "number" ? b.distance : Infinity;
+    return distanceA - distanceB; // Khoảng cách nhỏ hơn lên đầu
+  });
 
   const handleOpenBorrowModal = (toyId) => {
     setSelectedToyId(toyId);
@@ -515,12 +522,12 @@ const SearchingToy = () => {
               Cập nhật vị trí
             </Button>
             <Row className="request-items-section">
-              {filteredToys.length === 0 ? (
+              {sortedToys.length === 0 ? (
                 <Col className="text-center">
                   <h5>Không có đồ chơi nào để hiển thị</h5>
                 </Col>
               ) : (
-                filteredToys.map((toy) => {
+                sortedToys.map((toy) => {
                   const hasSentRequest = userRequests.some(
                     (req) =>
                       req.productId === toy.productId &&
@@ -575,8 +582,8 @@ const SearchingToy = () => {
                               alt="Ảnh đại diện người cho mượn"
                               className="lender-avatar"
                               onError={(e) =>
-                                (e.target.src =
-                                  "https://via.placeholder.com/50?text=Avatar")
+                              (e.target.src =
+                                "https://via.placeholder.com/50?text=Avatar")
                               }
                             />
                             <Button
@@ -609,7 +616,7 @@ const SearchingToy = () => {
                 })
               )}
             </Row>
-            {filteredToys.length > 0 && (
+            {sortedToys.length > 0 && (
               <div className="text-center">
                 <Button
                   variant="outline-primary"
@@ -676,10 +683,10 @@ const SearchingToy = () => {
                 (req) =>
                   req.productId === selectedToy.productId && req.status === 0
               ) && (
-                <p className="text-success">
-                  Bạn đã gửi yêu cầu mượn cho đồ chơi này.
-                </p>
-              )}
+                  <p className="text-success">
+                    Bạn đã gửi yêu cầu mượn cho đồ chơi này.
+                  </p>
+                )}
             </>
           )}
         </Modal.Body>

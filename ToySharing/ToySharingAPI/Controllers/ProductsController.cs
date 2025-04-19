@@ -279,6 +279,7 @@ namespace ToySharingAPI.Controllers
                 ProductStatus = model.ProductStatus,
                 SuitableAge = model.SuitableAge,
                 Price = model.Price,
+                ProductValue = model.ProductValue,
                 Available = 0,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
@@ -316,6 +317,7 @@ namespace ToySharingAPI.Controllers
                 ProductStatus = product.ProductStatus,
                 SuitableAge = product.SuitableAge,
                 Price = product.Price,
+                ProductValue = product.ProductValue,
                 Description = product.Description,
                 Available = product.Available ?? 0,
                 CreatedAt = product.CreatedAt ?? DateTime.Now,
@@ -368,6 +370,7 @@ namespace ToySharingAPI.Controllers
             product.Description = model.Description?.Trim();
             product.ProductStatus = model.ProductStatus;
             product.Price = model.Price;
+            product.ProductValue = model.ProductValue;
             product.SuitableAge = model.SuitableAge;
             product.UpdatedAt = DateTime.Now;
 
@@ -412,6 +415,7 @@ namespace ToySharingAPI.Controllers
                     Description = product.Description,
                     ProductStatus = product.ProductStatus,
                     Price = product.Price,
+                    ProductValue = product.ProductValue,
                     SuitableAge = product.SuitableAge,
                     CreatedAt = product.CreatedAt ?? DateTime.Now,
                     ImagePaths = product.Images.Select(i => i.Path).ToList()
@@ -445,6 +449,7 @@ namespace ToySharingAPI.Controllers
                     Description = p.Description,
                     ProductStatus = p.ProductStatus,
                     Price = p.Price,
+                    ProductValue = p.ProductValue,
                     SuitableAge = p.SuitableAge,
                     CreatedAt = p.CreatedAt ?? DateTime.Now,
                     ImagePaths = p.Images.Select(i => i.Path).ToList(),

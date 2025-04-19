@@ -54,7 +54,96 @@ namespace ToySharingAPI.Controllers
 
             return mainUser.Id;
         }
+        [HttpPut("{requestId}/confirm-return")]
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> ConfirmReturn(int requestId)
+        {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
 
+            var request = await _context.RentRequests
+                .Include(r => r.Product)
+                .ThenInclude(p => p.User)
+                .Include(r => r.User)
+                .Include(r => r.History)
+                .FirstOrDefaultAsync(r => r.RequestId == requestId);
+
+            if (request == null)
+                return NotFound("Yêu cầu không tồn tại.");
+
+            if (request.Status != 3)
+                return BadRequest("Chỉ có thể xác nhận trả từ trạng thái 'đã lấy' (status = 3).");
+
+            bool isBorrower = request.UserId == mainUserId;
+            bool isOwner = request.Product.UserId == mainUserId;
+
+            if (!isBorrower && !isOwner)
+                return Forbid("Bạn không có quyền xác nhận trả cho yêu cầu này.");
+
+            byte currentConfirm = request.ConfirmReturn;
+
+            if (isBorrower)
+            {
+                if ((currentConfirm & 1) != 0)
+                    return BadRequest("Bạn đã xác nhận trả trước đó.");
+                currentConfirm |= 1; // Set bit 0
+            }
+            else if (isOwner)
+            {
+                if ((currentConfirm & 2) != 0)
+                    return BadRequest("Bạn đã xác nhận trả trước đó.");
+                currentConfirm |= 2; // Set bit 1
+            }
+
+            try
+            {
+                request.ConfirmReturn = currentConfirm;
+
+                if (currentConfirm == 3) // Cả hai đã xác nhận
+                {
+                    request.Status = 4; // Completed
+                    request.History.Status = 1; // Completed
+                    request.History.ReturnDate = DateTime.Now;
+                    request.Product.Available = 0; // Sản phẩm sẵn sàng cho thuê lại
+
+                    var borrowerId = request.UserId;
+                    var ownerId = request.Product.UserId;
+                    var productName = request.Product?.Name ?? "Sản phẩm không xác định";
+                    await CreateNotification(
+                        borrowerId,
+                        $"Yêu cầu mượn sản phẩm '{productName}' đã hoàn thành."
+                    );
+                    await CreateNotification(
+                        ownerId,
+                        $"Yêu cầu mượn sản phẩm '{productName}' đã hoàn thành."
+                    );
+                }
+                else
+                {
+                    var notificationUserId = isBorrower ? request.Product.UserId : request.UserId;
+                    var role = isBorrower ? "người mượn" : "chủ sở hữu";
+                    var productName = request.Product?.Name ?? "Sản phẩm không xác định";
+                    await CreateNotification(
+                        notificationUserId,
+                        $"{role} đã xác nhận trả sản phẩm '{productName}'. Vui lòng xác nhận để hoàn thành yêu cầu."
+                    );
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Xác nhận trả thành công." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "Lỗi khi xác nhận trả.",
+                    error = ex.Message,
+                    requestId
+                });
+            }
+        }
         // Tạo một yêu cầu mượn mới (RentRequest) với trạng thái mặc định là 0 (pending). Gửi thông báo cho chủ sở hữu đồ chơi.
         [HttpPost]
         [Authorize(Roles = "User")]
@@ -78,7 +167,6 @@ namespace ToySharingAPI.Controllers
 
                 if (product.UserId == mainUserId)
                     return BadRequest("You cannot request to rent your own product.");
-
                 var request = new RentRequest
                 {
                     UserId = mainUserId,
@@ -87,7 +175,9 @@ namespace ToySharingAPI.Controllers
                     Status = 0,
                     RequestDate = formData.RequestDate ?? DateTime.Now,
                     RentDate = formData.RentDate,
-                    ReturnDate = formData.ReturnDate
+                    ReturnDate = formData.ReturnDate,
+                    DepositAmount = product.ProductValue,
+                    RentalFee = product.Price
                 };
 
                 _context.RentRequests.Add(request);
@@ -111,7 +201,9 @@ namespace ToySharingAPI.Controllers
                     OwnerId = product.UserId,
                     OwnerName = product.User.Displayname,
                     OwnerAvatar = product.User.Avatar, // Thêm OwnerAvatar
-                    Status = request.Status
+                    Status = request.Status,
+                    DepositAmount = request.DepositAmount,
+                    RetalFee = request.RentalFee
                 };
 
                 return CreatedAtAction(nameof(GetRequestById), new { id = request.RequestId }, response);
@@ -300,6 +392,7 @@ namespace ToySharingAPI.Controllers
                     returnDate = r.ReturnDate,
                     requestDate = r.RequestDate,
                     message = r.Message,
+                    confirmReturn = r.ConfirmReturn, // Thêm confirmReturn
                     status = r.Status, // Trả về status trực tiếp
                     image = r.Product.Images.FirstOrDefault() != null ? r.Product.Images.FirstOrDefault().Path : null,
                     depositAmount = r.DepositAmount,
@@ -438,7 +531,7 @@ namespace ToySharingAPI.Controllers
                 .Include(r => r.User)
                 .Include(r => r.History)
                 .Where(r => r.Product.UserId == mainUserId &&
-                            (r.Status == 0 || r.Status == 1 || r.Status == 2))
+                            (r.Status == 0 || r.Status == 1 || r.Status == 2 || r.Status == 3))
                 .Select(r => new RequestDTO
                 {
                     RequestId = r.RequestId,
@@ -477,6 +570,7 @@ namespace ToySharingAPI.Controllers
                     3 => "PickedUp",
                     _ => "Unknown"
                 },
+                ConfirmReturn = r.ConfirmReturn, // Thêm confirmReturn
                 r.RequestDate,
                 r.RentDate,
                 r.ReturnDate

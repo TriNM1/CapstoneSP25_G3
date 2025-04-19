@@ -26,7 +26,7 @@ namespace ToySharingAPI.DTO
         public string? OwnerName { get; set; }
         public string? OwnerAvatar { get; set; }
         public string? Message { get; set; }
-
+        public byte ConfirmReturn { get; set; }
         public int Status { get; set; }
         public DateTime? RequestDate { get; set; }
         public DateTime RentDate { get; set; }
@@ -43,5 +43,7 @@ namespace ToySharingAPI.DTO
         [RegularExpression(@"^[a-zA-Z0-9\-_/\.]+$",
             ErrorMessage = "Image path can only contain letters, numbers, hyphens, underscores, slashes, and dots.")]
         public string? Image { get; set; }
+        public decimal DepositAmount { get; set; }
+        public decimal RetalFee { get; set; }
     }
 }

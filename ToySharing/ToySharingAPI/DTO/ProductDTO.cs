@@ -10,7 +10,8 @@
         public int Available { get; set; } 
         public string? Description { get; set; } 
         public int ProductStatus { get; set; } 
-        public decimal Price { get; set; } 
+        public decimal Price { get; set; }
+        public decimal ProductValue { get; set; }
         public int SuitableAge { get; set; } 
         public DateTime CreatedAt { get; set; } 
         public List<string> ImagePaths { get; set; } = new List<string>();

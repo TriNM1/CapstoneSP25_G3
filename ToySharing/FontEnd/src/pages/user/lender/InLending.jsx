@@ -23,6 +23,12 @@ import "./InLending.scss";
 const InLending = () => {
   const navigate = useNavigate();
   const [activeLink, setActiveLink] = useState("lending");
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [lendings, setLendings] = useState([]);
+  const [visibleItems, setVisibleItems] = useState(4);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileData, setProfileData] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0); // Thêm để làm mới dữ liệu
 
   const sideMenuItems = [
     { id: 2, label: "Danh sách đồ chơi của tôi", link: "/mytoy" },
@@ -31,57 +37,60 @@ const InLending = () => {
     { id: 5, label: "Lịch sử trao đổi", link: "/transferhistory" },
   ];
 
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [lendings, setLendings] = useState([]);
-  const [visibleItems, setVisibleItems] = useState(4);
-  const [showProfileModal, setShowProfileModal] = useState(false);
-  const [profileData, setProfileData] = useState(null);
-
   const API_BASE_URL = "https://localhost:7128/api";
 
-  useEffect(() => {
-    const fetchLendings = async () => {
-      try {
-        const localToken = localStorage.getItem("token");
-        const sessionToken = sessionStorage.getItem("token");
-        const token = sessionToken || localToken;
-        if (!token) {
-          toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
-          navigate("/login");
-          return;
-        }
-        const response = await axios.get(`${API_BASE_URL}/Requests/borrowing`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const filteredLendings = response.data
-          .filter((req) => req.requestStatus === "Accepted" || req.requestStatus === "Paid" || req.requestStatus === "PickedUp")
-          .map((req) => ({
-            id: req.requestId,
-            image: req.image || toy1,
-            name: req.productName,
-            borrowDate: new Date(req.rentDate).toISOString().split("T")[0],
-            returnDate: new Date(req.returnDate).toISOString().split("T")[0],
-            lenderId: req.userId,
-            lenderAvatar: req.borrowerAvatar || user,
-            status: req.requestStatus,
-          }));
-        setLendings(filteredLendings);
-      } catch (error) {
-        console.error("Lỗi khi lấy danh sách đồ chơi đang cho mượn:", error);
-        if (error.response && error.response.status === 401) {
-          toast.error("Token không hợp lệ hoặc đã hết hạn! Vui lòng đăng nhập lại.");
-          navigate("/login");
-        } else {
-          toast.error("Không thể tải dữ liệu từ API!");
-        }
-        setLendings([]);
+  const fetchLendings = async () => {
+    try {
+      const localToken = localStorage.getItem("token");
+      const sessionToken = sessionStorage.getItem("token");
+      const token = sessionToken || localToken;
+      if (!token) {
+        toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
+        navigate("/login");
+        return;
       }
-    };
+      const response = await axios.get(`${API_BASE_URL}/Requests/borrowing`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const filteredLendings = response.data
+        .filter((req) => ["Accepted", "Paid", "PickedUp"].includes(req.requestStatus))
+        .map((req) => ({
+          id: req.requestId,
+          image: req.image || toy1,
+          name: req.productName,
+          borrowDate: new Date(req.rentDate).toISOString().split("T")[0],
+          returnDate: new Date(req.returnDate).toISOString().split("T")[0],
+          lenderId: req.userId,
+          lenderAvatar: req.borrowerAvatar || user,
+          status: req.requestStatus,
+          confirmReturn: req.confirmReturn || 0,
+        }));
+      setLendings(filteredLendings);
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách đồ chơi đang cho mượn:", error);
+      if (error.response && error.response.status === 401) {
+        toast.error("Token không hợp lệ hoặc đã hết hạn! Vui lòng đăng nhập lại.");
+        navigate("/login");
+      } else {
+        toast.error("Không thể tải dữ liệu từ API!");
+      }
+      setLendings([]);
+    }
+  };
 
+  useEffect(() => {
     fetchLendings();
-  }, [navigate]);
+  }, [navigate, refreshTrigger]);
+
+  // Polling để làm mới dữ liệu mỗi 30 giây
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRefreshTrigger((prev) => prev + 1);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleMessage = async (lenderId) => {
     try {
@@ -99,8 +108,6 @@ const InLending = () => {
       });
 
       const conversations = response.data;
-      console.log("Danh sách cuộc trò chuyện:", conversations);
-
       const existingConversation = conversations.find(
         (convo) =>
           (convo.user1Id === lenderId && convo.user2Id === parseInt(localStorage.getItem("userId") || sessionStorage.getItem("userId"))) ||
@@ -111,7 +118,6 @@ const InLending = () => {
 
       if (existingConversation) {
         conversationId = existingConversation.conversationId;
-        console.log("Cuộc trò chuyện đã tồn tại, ID:", conversationId);
       } else {
         const createResponse = await axios.post(
           `${API_BASE_URL}/Conversations`,
@@ -125,7 +131,6 @@ const InLending = () => {
         );
 
         conversationId = createResponse.data.conversationId;
-        console.log("Cuộc trò chuyện mới được tạo, ID:", conversationId);
       }
 
       navigate("/message", { state: { activeConversationId: conversationId } });
@@ -159,6 +164,59 @@ const InLending = () => {
     } catch (error) {
       console.error("Lỗi khi lấy thông tin người mượn:", error);
       toast.error("Không thể tải thông tin người mượn!");
+    }
+  };
+
+  const handleConfirmReturn = async (requestId) => {
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) {
+        toast.error("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!");
+        navigate("/login");
+        return;
+      }
+
+      await axios.put(
+        `${API_BASE_URL}/Requests/${requestId}/confirm-return`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      setLendings((prev) =>
+        prev.map((item) =>
+          item.id === requestId
+            ? {
+                ...item,
+                confirmReturn: item.confirmReturn | 2,
+                status: (item.confirmReturn | 2) === 3 ? "Completed" : item.status,
+              }
+            : item
+        )
+      );
+      setRefreshTrigger((prev) => prev + 1); // Kích hoạt làm mới
+      toast.success("Xác nhận trả thành công!");
+    } catch (error) {
+      console.error("Lỗi khi xác nhận trả:", error);
+      let errorMessage = "Không thể xác nhận trả!";
+      if (error.response) {
+        errorMessage = error.response.data.message || errorMessage;
+        if (error.response.status === 401) {
+          errorMessage = "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!";
+          navigate("/login");
+        } else if (error.response.status === 403) {
+          errorMessage = "Bạn không có quyền thực hiện hành động này!";
+        } else if (error.response.status === 404) {
+          errorMessage = "Yêu cầu không tồn tại!";
+        } else if (error.response.status === 400) {
+          errorMessage = error.response.data.message || "Yêu cầu không hợp lệ!";
+        }
+      }
+      toast.error(errorMessage);
     }
   };
 
@@ -234,7 +292,12 @@ const InLending = () => {
                             <strong>Trạng thái:</strong>{" "}
                             <span className="in-progress">
                               {item.status === "Accepted" ? "Đã chấp nhận" :
-                              item.status === "Paid" ? "Người dùng đã thanh toán" : "Đã lấy"}
+                               item.status === "Paid" ? "Người dùng đã thanh toán" :
+                               item.status === "PickedUp" ? (
+                                 (item.confirmReturn & 2) !== 0 ? "Bạn đã xác nhận trả, chờ người mượn" :
+                                 (item.confirmReturn & 1) !== 0 ? "Chờ bạn xác nhận trả" : "Đã lấy, chưa xác nhận trả"
+                               ) :
+                               item.status === "Completed" ? "Hoàn thành" : "Không xác định"}
                             </span>
                           </Card.Text>
                           <div className="lender-info">
@@ -253,6 +316,15 @@ const InLending = () => {
                             <Button className="btn-message" onClick={() => handleMessage(item.lenderId)}>
                               Nhắn tin
                             </Button>
+                            {item.status === "PickedUp" && (
+                              <Button
+                                variant="success"
+                                onClick={() => handleConfirmReturn(item.id)}
+                                disabled={(item.confirmReturn & 2) !== 0}
+                              >
+                                {(item.confirmReturn & 2) !== 0 ? "Đã xác nhận trả" : "Xác nhận trả"}
+                              </Button>
+                            )}
                           </div>
                         </Card.Body>
                       </Card>

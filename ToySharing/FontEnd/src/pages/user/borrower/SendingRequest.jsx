@@ -30,9 +30,9 @@ const SendingRequest = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [showPickedUpModal, setShowPickedUpModal] = useState(false);
-  const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [mainUserId, setMainUserId] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0); // Thêm để làm mới dữ liệu
 
   const API_BASE_URL = "https://localhost:7128/api";
 
@@ -61,50 +61,59 @@ const SendingRequest = () => {
     getMainUserId();
   }, [navigate]);
 
-  useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        const token = getAuthToken();
-        if (!token) {
-          toast.error("Vui lòng đăng nhập để xem danh sách yêu cầu!");
-          navigate("/login");
-          return;
-        }
-
-        const response = await axios.get(`${API_BASE_URL}/Requests/toy-request`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const formattedRequests = response.data.map((req) => ({
-          requestId: req.requestId,
-          productId: req.productId,
-          productName: req.productName,
-          ownerId: req.ownerId || null,
-          ownerName: req.ownerName || "Không xác định",
-          ownerAvatar: req.ownerAvatar,
-          borrowDate: req.borrowDate,
-          returnDate: req.returnDate,
-          requestDate: req.requestDate || new Date().toISOString(),
-          message: req.message,
-          status: req.status,
-          image: req.image,
-          depositAmount: req.depositAmount,
-          rentalFee: req.rentalFee,
-          displayName: req.name
-        }));
-
-        setRequests(formattedRequests);
-      } catch (error) {
-        console.error("Lỗi khi lấy danh sách yêu cầu:", error);
-        toast.error("Không thể tải danh sách yêu cầu!");
-        setRequests([]);
+  const fetchRequests = async () => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        toast.error("Vui lòng đăng nhập để xem danh sách yêu cầu!");
+        navigate("/login");
+        return;
       }
-    };
 
+      const response = await axios.get(`${API_BASE_URL}/Requests/toy-request`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const formattedRequests = response.data.map((req) => ({
+        requestId: req.requestId,
+        productId: req.productId,
+        productName: req.productName,
+        ownerId: req.ownerId || null,
+        ownerName: req.ownerName || "Không xác định",
+        ownerAvatar: req.ownerAvatar,
+        borrowDate: req.borrowDate,
+        returnDate: req.returnDate,
+        requestDate: req.requestDate || new Date().toISOString(),
+        message: req.message,
+        status: req.status,
+        image: req.image,
+        depositAmount: req.depositAmount,
+        rentalFee: req.rentalFee,
+        displayName: req.name,
+        confirmReturn: req.confirmReturn || 0, // Đảm bảo có confirmReturn
+      }));
+
+      setRequests(formattedRequests);
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách yêu cầu:", error);
+      toast.error("Không thể tải danh sách yêu cầu!");
+      setRequests([]);
+    }
+  };
+
+  useEffect(() => {
     fetchRequests();
-  }, [navigate]);
+  }, [navigate, refreshTrigger]);
+
+  // Polling để làm mới dữ liệu mỗi 30 giây
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRefreshTrigger((prev) => prev + 1);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handlePaymentClick = async (requestId) => {
     try {
@@ -125,7 +134,7 @@ const SendingRequest = () => {
         RequestId: request.requestId,
         Name: request.displayName,
         OrderInfo: `Thanh toán cho yêu cầu mượn đồ chơi số: ${request.requestId} - ${request.productName}`,
-        DepositAmount: request.depositAmount, 
+        DepositAmount: request.depositAmount,
         RentalFee: request.rentalFee,
       };
 
@@ -138,7 +147,7 @@ const SendingRequest = () => {
 
       const { payUrl } = response.data;
       if (payUrl) {
-        window.location.href = payUrl; // Chuyển hướng đến trang thanh toán MoMo
+        window.location.href = payUrl;
       } else {
         toast.error("Không thể tạo link thanh toán!");
       }
@@ -147,7 +156,7 @@ const SendingRequest = () => {
       toast.error("Không thể tạo thanh toán!");
     }
   };
-  
+
   const handleViewProfile = async (ownerId) => {
     if (!ownerId) {
       toast.error("Không có thông tin người cho mượn!");
@@ -160,9 +169,8 @@ const SendingRequest = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      // console.log("Dữ liệu profile:", response.data); // Debug API response
       const userInfo = response.data.userInfo || response.data;
-      setProfileData({ ...userInfo, userId: ownerId }); 
+      setProfileData({ ...userInfo, userId: ownerId });
       setShowProfileModal(true);
     } catch (error) {
       console.error("Lỗi khi lấy thông tin người cho mượn:", error);
@@ -172,7 +180,6 @@ const SendingRequest = () => {
 
   const handleMessage = async (ownerId) => {
     try {
-      // console.log("ownerId gửi đến handleMessage:", ownerId); // Debug ownerId
       const token = getAuthToken();
       if (!token) {
         toast.error("Vui lòng đăng nhập để nhắn tin!");
@@ -195,8 +202,6 @@ const SendingRequest = () => {
       });
 
       const conversations = response.data;
-      console.log("Danh sách cuộc trò chuyện:", conversations);
-
       const existingConversation = conversations.find(
         (convo) =>
           (convo.user1Id === ownerId && convo.user2Id === mainUserId) ||
@@ -207,7 +212,6 @@ const SendingRequest = () => {
 
       if (existingConversation) {
         conversationId = existingConversation.conversationId;
-        console.log("Cuộc trò chuyện đã tồn tại, ID:", conversationId);
       } else {
         const createResponse = await axios.post(
           `${API_BASE_URL}/Conversations`,
@@ -221,7 +225,6 @@ const SendingRequest = () => {
         );
 
         conversationId = createResponse.data.conversationId;
-        console.log("Cuộc trò chuyện mới được tạo, ID:", conversationId);
       }
 
       navigate("/message", { state: { activeConversationId: conversationId } });
@@ -230,14 +233,8 @@ const SendingRequest = () => {
       if (error.response && error.response.status === 401) {
         toast.error("Token không hợp lệ hoặc đã hết hạn! Vui lòng đăng nhập lại.");
         navigate("/login");
-      } else if (error.response && error.response.status === 500) {
-        toast.error(
-          error.response.data?.message || "Lỗi server khi tạo cuộc trò chuyện!"
-        );
       } else {
-        toast.error(
-          error.response?.data?.message || "Không thể bắt đầu cuộc trò chuyện!"
-        );
+        toast.error(error.response?.data?.message || "Không thể bắt đầu cuộc trò chuyện!");
       }
     }
   };
@@ -250,11 +247,6 @@ const SendingRequest = () => {
   const handlePickedUpClick = (id) => {
     setSelectedRequestId(id);
     setShowPickedUpModal(true);
-  };
-
-  const handleCompleteClick = (id) => {
-    setSelectedRequestId(id);
-    setShowCompleteModal(true);
   };
 
   const handleConfirmPickedUp = async () => {
@@ -282,6 +274,7 @@ const SendingRequest = () => {
           req.requestId === selectedRequestId ? { ...req, status: 3 } : req
         )
       );
+      setRefreshTrigger((prev) => prev + 1); // Kích hoạt làm mới
       toast.success("Đã đánh dấu yêu cầu là đã lấy!");
       setShowPickedUpModal(false);
       setSelectedRequestId(null);
@@ -305,7 +298,7 @@ const SendingRequest = () => {
     }
   };
 
-  const handleConfirmComplete = async () => {
+  const handleConfirmReturn = async (requestId) => {
     try {
       const token = getAuthToken();
       if (!token) {
@@ -315,7 +308,7 @@ const SendingRequest = () => {
       }
 
       await axios.put(
-        `${API_BASE_URL}/Requests/history/${selectedRequestId}/complete`,
+        `${API_BASE_URL}/Requests/${requestId}/confirm-return`,
         {},
         {
           headers: {
@@ -326,14 +319,21 @@ const SendingRequest = () => {
       );
 
       setRequests((prev) =>
-        prev.filter((req) => req.requestId !== selectedRequestId)
+        prev.map((req) =>
+          req.requestId === requestId
+            ? {
+                ...req,
+                confirmReturn: req.confirmReturn | 1,
+                status: (req.confirmReturn | 1) === 3 ? 4 : req.status,
+              }
+            : req
+        )
       );
-      toast.success("Đã hoàn thành yêu cầu thành công!");
-      setShowCompleteModal(false);
-      setSelectedRequestId(null);
+      setRefreshTrigger((prev) => prev + 1); // Kích hoạt làm mới
+      toast.success("Xác nhận trả thành công!");
     } catch (error) {
-      console.error("Lỗi khi hoàn thành yêu cầu:", error);
-      let errorMessage = "Không thể hoàn thành yêu cầu!";
+      console.error("Lỗi khi xác nhận trả:", error);
+      let errorMessage = "Không thể xác nhận trả!";
       if (error.response) {
         errorMessage = error.response.data.message || errorMessage;
         if (error.response.status === 401) {
@@ -342,7 +342,7 @@ const SendingRequest = () => {
         } else if (error.response.status === 403) {
           errorMessage = "Bạn không có quyền thực hiện hành động này!";
         } else if (error.response.status === 404) {
-          errorMessage = "Yêu cầu hoặc lịch sử không tồn tại!";
+          errorMessage = "Yêu cầu không tồn tại!";
         } else if (error.response.status === 400) {
           errorMessage = error.response.data.message || "Yêu cầu không hợp lệ!";
         }
@@ -389,13 +389,13 @@ const SendingRequest = () => {
     ? requests.filter((request) => {
         const requestDate = new Date(request.borrowDate);
         return (
-          (request.status === 0 || request.status === 1 || request.status === 2) &&
+          (request.status === 0 || request.status === 1 || request.status === 2 || request.status === 3) &&
           requestDate.getDate() === selectedDate.getDate() &&
           requestDate.getMonth() === selectedDate.getMonth() &&
           requestDate.getFullYear() === selectedDate.getFullYear()
         );
       })
-    : requests.filter((request) => request.status === 0 || request.status === 1 || request.status === 2);
+    : requests.filter((request) => request.status === 0 || request.status === 1 || request.status === 2 || request.status === 3);
 
   return (
     <div className="sending-request-page home-page">
@@ -450,14 +450,23 @@ const SendingRequest = () => {
                       </Card.Text>
                       <Card.Text className="status">
                         <strong>Trạng thái:</strong>{" "}
-                        <span className={
-                          request.status === 0 ? "pending" :
-                          request.status === 1 ? "accepted" :
-                          request.status === 2 ? "paid" : "picked-up"
-                        }>
+                        <span
+                          className={
+                            request.status === 0 ? "pending" :
+                            request.status === 1 ? "accepted" :
+                            request.status === 2 ? "paid" :
+                            request.status === 3 ? "picked-up" :
+                            request.status === 4 ? "completed" : ""
+                          }
+                        >
                           {request.status === 0 ? "Đang chờ chấp nhận" :
                            request.status === 1 ? "Chấp nhận, chưa thanh toán" :
-                           request.status === 2 ? "Chấp nhận, đã thanh toán" : "Đã lấy"}
+                           request.status === 2 ? "Chấp nhận, đã thanh toán" :
+                           request.status === 3 ? (
+                             (request.confirmReturn & 1) !== 0 ? "Bạn đã xác nhận trả, chờ người cho mượn" :
+                             (request.confirmReturn & 2) !== 0 ? "Chờ bạn xác nhận trả" : "Đã lấy, chưa xác nhận trả"
+                           ) :
+                           request.status === 4 ? "Hoàn thành" : "Không xác định"}
                         </span>
                       </Card.Text>
                       <div className="lender-info d-flex align-items-center mb-2">
@@ -488,7 +497,6 @@ const SendingRequest = () => {
                           <>
                             <Button
                               variant="primary"
-                              // onClick={() => handlePickedUpClick(request.requestId)}
                               onClick={() => handlePaymentClick(request.requestId)}
                               className="me-2"
                             >
@@ -503,22 +511,22 @@ const SendingRequest = () => {
                           </>
                         )}
                         {request.status === 2 && (
-                          <>
-                            <Button
-                              variant="primary"
-                              onClick={() => handlePickedUpClick(request.requestId)}
-                              className="me-2"
-                            >
-                              Đã lấy
-                            </Button>
-                          </>
+                          <Button
+                            variant="primary"
+                            onClick={() => handlePickedUpClick(request.requestId)}
+                            className="me-2"
+                            disabled={request.status === 3}
+                          >
+                            {request.status === 3 ? "Đã lấy" : "Đã lấy"}
+                          </Button>
                         )}
                         {request.status === 3 && (
                           <Button
                             variant="success"
-                            onClick={() => handleCompleteClick(request.requestId)}
+                            onClick={() => handleConfirmReturn(request.requestId)}
+                            disabled={(request.confirmReturn & 1) !== 0}
                           >
-                            Đã lấy
+                            {(request.confirmReturn & 1) !== 0 ? "Đã xác nhận trả" : "Xác nhận trả"}
                           </Button>
                         )}
                       </div>
@@ -589,27 +597,6 @@ const SendingRequest = () => {
             Hủy
           </Button>
           <Button variant="primary" onClick={handleConfirmPickedUp}>
-            Xác nhận
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      <Modal
-        show={showCompleteModal}
-        onHide={() => setShowCompleteModal(false)}
-        centered
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Xác nhận hoàn thành</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p>Bạn có chắc chắn đã trả đồ chơi này không?</p>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowCompleteModal(false)}>
-            Hủy
-          </Button>
-          <Button variant="primary" onClick={handleConfirmComplete}>
             Xác nhận
           </Button>
         </Modal.Footer>
