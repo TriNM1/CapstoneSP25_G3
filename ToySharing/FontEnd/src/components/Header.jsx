@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from "react";
 import { Container, Navbar, Nav, Badge, Dropdown } from "react-bootstrap";
 import { FaEnvelope, FaBell } from "react-icons/fa";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
+import * as signalR from "@microsoft/signalr";
 import logo from "../assets/logo.png";
 import user from "../assets/user.png";
 import "./Header.scss";
@@ -20,10 +21,161 @@ const Header = ({
   const [notificationCount, setNotificationCount] = useState(initialNotificationCount || 0);
   const [conversations, setConversations] = useState([]);
   const [unreadMessages, setUnreadMessages] = useState(initialUnreadMessages || 0);
+  const [userAvatar, setUserAvatar] = useState(user);
+  const [connection, setConnection] = useState(null);
   const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
   const token = localStorage.getItem("token") || sessionStorage.getItem("token");
   const navigate = useNavigate();
+  const location = useLocation();
 
+  // Khởi tạo kết nối SignalR
+  useEffect(() => {
+    if (!isLoggedIn || !token || !userId) {
+      return;
+    }
+
+    const newConnection = new signalR.HubConnectionBuilder()
+      .withUrl("https://localhost:7128/chatHub", {
+        accessTokenFactory: () => token,
+      })
+      .withAutomaticReconnect()
+      .build();
+
+    setConnection(newConnection);
+
+    return () => {
+      if (newConnection) {
+        newConnection.stop();
+      }
+    };
+  }, [isLoggedIn, token, userId]);
+
+  // Lấy tên người gửi từ senderId
+  const fetchSenderName = async (senderId) => {
+    if (!senderId || isNaN(senderId)) {
+      console.warn("senderId không hợp lệ:", senderId);
+      return "Unknown";
+    }
+    try {
+      const response = await axios.get(`https://localhost:7128/api/User/profile/${senderId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const userInfo = response.data.userInfo || response.data;
+      return userInfo.displayName || "Unknown";
+    } catch (error) {
+      console.error(`Lỗi khi lấy thông tin người gửi (ID: ${senderId}):`, error);
+      return "Unknown";
+    }
+  };
+
+  // Bắt đầu kết nối SignalR và lắng nghe sự kiện
+  useEffect(() => {
+    if (connection) {
+      connection
+        .start()
+        .then(() => {
+          console.log("SignalR Connected");
+
+          // Lắng nghe sự kiện receivemessage (viết thường để khớp với server)
+          connection.on("receivemessage", async (message) => {
+            console.log("Tin nhắn mới (receivemessage):", message);
+
+            // Kiểm tra kiểu dữ liệu của message
+            if (typeof message !== "object" || message === null) {
+              console.warn("Payload không phải object:", message);
+              return;
+            }
+
+            const { conversationId, senderId, content } = message;
+
+            // Kiểm tra dữ liệu hợp lệ
+            if (!conversationId || !content) {
+              console.warn("Dữ liệu tin nhắn không đầy đủ:", message);
+              return;
+            }
+
+            // Chỉ xử lý nếu người gửi không phải người dùng hiện tại
+            if (senderId !== parseInt(userId)) {
+              // Lấy tên người gửi
+              const senderName = await fetchSenderName(senderId);
+
+              setConversations((prev) => {
+                const existingConvo = prev.find((convo) => convo.conversationId === conversationId);
+                if (existingConvo) {
+                  // Cập nhật cuộc trò chuyện hiện có
+                  return prev.map((convo) =>
+                    convo.conversationId === conversationId
+                      ? {
+                          ...convo,
+                          lastMessageContent: content,
+                          isRead: false,
+                          lastSenderId: senderId,
+                        }
+                      : convo
+                  );
+                } else {
+                  // Thêm cuộc trò chuyện mới
+                  return [
+                    ...prev,
+                    {
+                      conversationId,
+                      lastMessageContent: content,
+                      isRead: false,
+                      lastSenderId: senderId,
+                      otherUser: { name: senderName },
+                    },
+                  ];
+                }
+              });
+
+              // Tăng số tin nhắn chưa đọc
+              setUnreadMessages((prev) => prev + 1);
+            }
+          });
+
+          // Thêm sự kiện khác nếu server gửi số lượng tin nhắn chưa đọc
+          connection.on("updateUnreadCount", (count) => {
+            console.log("Cập nhật số tin nhắn chưa đọc:", count);
+            if (typeof count === "number") {
+              setUnreadMessages(count);
+            }
+          });
+        })
+        .catch((error) => {
+          console.error("Lỗi khi kết nối SignalR:", error);
+        });
+
+      return () => {
+        connection.off("receivemessage");
+        connection.off("updateUnreadCount");
+        connection.stop();
+      };
+    }
+  }, [connection, userId, token]);
+
+  // Cập nhật activeLink dựa trên đường dẫn
+  useEffect(() => {
+    const path = location.pathname;
+    if (path === "/home") {
+      setActiveLink("home");
+    } else if (
+      path === "/mytoy" ||
+      path === "/inlending" ||
+      path === "/listborrowrequests" ||
+      path === "/transferhistory" ||
+      path === "/addtoy"
+    ) {
+      setActiveLink("Lender");
+    } else if (path === "/searchtoy" || path === "/sendingrequest" || path === "/borrowhistory") {
+      setActiveLink("Borrow");
+    } else if (path === "/policy") {
+      setActiveLink("policy");
+    } else if (path === "/userguide") {
+      setActiveLink("userguide");
+    }
+  }, [location.pathname, setActiveLink]);
+
+  // Lấy thông báo
   useEffect(() => {
     const fetchNotifications = async () => {
       if (!isLoggedIn || !token) {
@@ -35,8 +187,9 @@ const Header = ({
         const response = await axios.get("https://localhost:7128/api/Notifications/user", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setNotifications(response.data);
-        setNotificationCount(response.data.filter(notif => !notif.readStatus).length);
+        const notificationsData = response.data || [];
+        setNotifications(notificationsData);
+        setNotificationCount(notificationsData.filter((notif) => !notif.readStatus).length);
       } catch (error) {
         console.error("Lỗi khi lấy thông báo:", error);
         setNotifications([]);
@@ -46,6 +199,7 @@ const Header = ({
     fetchNotifications();
   }, [isLoggedIn, token]);
 
+  // Lấy danh sách cuộc trò chuyện
   useEffect(() => {
     const fetchConversations = async () => {
       if (!isLoggedIn || !token) {
@@ -57,9 +211,13 @@ const Header = ({
         const response = await axios.get("https://localhost:7128/api/Conversations", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setConversations(response.data);
-        const unreadCount = response.data.reduce((count, convo) => {
-          return count + (convo.lastMessageContent && !convo.isRead && convo.lastSenderId !== parseInt(userId) ? 1 : 0);
+        const conversationsData = response.data || [];
+        setConversations(conversationsData);
+        const unreadCount = conversationsData.reduce((count, convo) => {
+          return (
+            count +
+            (convo.lastMessageContent && !convo.isRead && convo.lastSenderId !== parseInt(userId) ? 1 : 0)
+          );
         }, 0);
         setUnreadMessages(unreadCount);
       } catch (error) {
@@ -69,6 +227,27 @@ const Header = ({
       }
     };
     fetchConversations();
+  }, [isLoggedIn, token, userId]);
+
+  // Lấy thông tin người dùng
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!isLoggedIn || !token || !userId) {
+        setUserAvatar(user);
+        return;
+      }
+      try {
+        const response = await axios.get(`https://localhost:7128/api/User/profile/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const avatarUrl = response.data.userInfo.avatar;
+        setUserAvatar(avatarUrl || user);
+      } catch (error) {
+        console.error("Lỗi khi lấy thông tin người dùng:", error);
+        setUserAvatar(user);
+      }
+    };
+    fetchUserProfile();
   }, [isLoggedIn, token, userId]);
 
   const handleMarkNotificationAsRead = async (notificationId) => {
@@ -83,7 +262,7 @@ const Header = ({
           notif.notificationId === notificationId ? { ...notif, readStatus: true } : notif
         )
       );
-      setNotificationCount((prev) => prev - 1);
+      setNotificationCount((prev) => Math.max(prev - 1, 0));
     } catch (error) {
       console.error("Lỗi khi đánh dấu thông báo đã đọc:", error);
     }
@@ -96,9 +275,9 @@ const Header = ({
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const messages = response.data;
-      const unreadMessages = messages.filter(msg => !msg.isRead && msg.senderId !== parseInt(userId));
+      const unreadMessages = messages.filter((msg) => !msg.isRead && msg.senderId !== parseInt(userId));
       await Promise.all(
-        unreadMessages.map(msg =>
+        unreadMessages.map((msg) =>
           axios.put(
             `https://localhost:7128/api/conversations/${conversationId}/messages/${msg.messageId}/read`,
             {},
@@ -112,7 +291,7 @@ const Header = ({
           convo.conversationId === conversationId ? { ...convo, isRead: true } : convo
         )
       );
-      setUnreadMessages((prev) => prev - unreadMessages.length);
+      setUnreadMessages((prev) => Math.max(prev - unreadMessages.length, 0));
       navigate("/message", { state: { activeConversationId: conversationId } });
     } catch (error) {
       console.error("Lỗi khi đánh dấu tin nhắn đã đọc:", error);
@@ -143,17 +322,17 @@ const Header = ({
             </Nav.Link>
             <Nav.Link
               as={Link}
-              to="/lending/listBorrowRequests"
-              onClick={() => setActiveLink("listBorrowRequests")}
-              className={activeLink === "listBorrowRequests" ? "active" : ""}
+              to="/mytoy"
+              onClick={() => setActiveLink("Lender")}
+              className={activeLink === "Lender" ? "active" : ""}
             >
               Cho mượn đồ
             </Nav.Link>
             <Nav.Link
               as={Link}
-              to="/borrowing/searchtoy"
-              onClick={() => setActiveLink("searchtoy")}
-              className={activeLink === "searchtoy" ? "active" : ""}
+              to="/searchtoy"
+              onClick={() => setActiveLink("Borrow")}
+              className={activeLink === "Borrow" ? "active" : ""}
             >
               Mượn đồ chơi
             </Nav.Link>
@@ -191,20 +370,24 @@ const Header = ({
                   </Dropdown.Toggle>
                   <Dropdown.Menu className="message-menu">
                     {conversations.length > 0 ? (
-                      conversations.map((convo) => {
-                        const isUnread = convo.lastMessageContent && !convo.isRead && convo.lastSenderId !== parseInt(userId);
+                      conversations.map((convo, index) => {
+                        const isUnread =
+                          convo.lastMessageContent &&
+                          !convo.isRead &&
+                          convo.lastSenderId !== parseInt(userId);
                         return (
                           <Dropdown.Item
-                            key={convo.conversationId}
+                            key={convo.conversationId || `convo-${index}`}
                             onClick={() => handleMarkMessagesAsRead(convo.conversationId)}
                             className={isUnread ? "unread" : "read"}
                           >
-                            <strong>{convo.otherUser.name}</strong>: {convo.lastMessageContent || "Chưa có tin nhắn"}
+                            <strong>{convo.otherUser?.name || "Unknown"}</strong>:{" "}
+                            {convo.lastMessageContent || "Chưa có tin nhắn"}
                           </Dropdown.Item>
                         );
                       })
                     ) : (
-                      <Dropdown.Item>Không có tin nhắn</Dropdown.Item>
+                      <Dropdown.Item key="no-messages">Không có tin nhắn</Dropdown.Item>
                     )}
                   </Dropdown.Menu>
                 </Dropdown>
@@ -224,7 +407,7 @@ const Header = ({
                     {notifications.length > 0 ? (
                       notifications.map((notif) => (
                         <Dropdown.Item
-                          key={notif.notificationId}
+                          key={notif.notificationId || `notif-${notif.content}`}
                           onClick={() => !notif.readStatus && handleMarkNotificationAsRead(notif.notificationId)}
                           className={notif.readStatus ? "read" : "unread"}
                         >
@@ -232,13 +415,13 @@ const Header = ({
                         </Dropdown.Item>
                       ))
                     ) : (
-                      <Dropdown.Item>Không có thông báo</Dropdown.Item>
+                      <Dropdown.Item key="no-notifications">Không có thông báo</Dropdown.Item>
                     )}
                   </Dropdown.Menu>
                 </Dropdown>
                 <Dropdown align="end">
                   <Dropdown.Toggle variant="link" id="dropdown-user" className="p-0">
-                    <img src={user} alt="Avatar" className="user-avatar" />
+                    <img src={userAvatar} alt="Avatar" className="user-avatar" />
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
                     <Dropdown.Item
@@ -247,6 +430,9 @@ const Header = ({
                       onClick={() => setActiveLink("profile")}
                     >
                       Thông tin cá nhân
+                    </Dropdown.Item>
+                    <Dropdown.Item as={Link} to="/transaction-history" onClick={() => setActiveLink("transaction-history")}>
+                      Lịch sử giao dịch
                     </Dropdown.Item>
                     <Dropdown.Item as={Link} to="/logout" onClick={() => setActiveLink("logout")}>
                       Đăng xuất

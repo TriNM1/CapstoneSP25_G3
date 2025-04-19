@@ -1,0 +1,32 @@
+.transaction-history-page {
+    .card {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+  
+    h3 {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #333;
+    }
+  
+    .table {
+      font-size: 0.9rem;
+      th,
+      td {
+        vertical-align: middle;
+        text-align: center;
+      }
+    }
+  
+    .btn-primary {
+      padding: 10px 20px;
+      font-size: 1rem;
+    }
+  
+    .text-center {
+      margin-top: 20px;
+    }
+  }

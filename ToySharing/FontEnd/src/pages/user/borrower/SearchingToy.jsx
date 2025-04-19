@@ -35,6 +35,7 @@ const SearchingToy = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
+  const [userAddress, setUserAddress] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const API_BASE_URL = "https://localhost:7128/api";
@@ -67,52 +68,95 @@ const SearchingToy = () => {
 
   const fetchUserLocation = async () => {
     const token = getAuthToken();
-    if (!token) return;
+    if (!token) {
+      setUserLocation(null);
+      setUserAddress(null);
+      return;
+    }
 
-    if (navigator.geolocation) {
+    // Ưu tiên lấy tọa độ từ cơ sở dữ liệu
+    try {
+      const response = await axios.get(`${API_BASE_URL}/User/current/location`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const { address, latitude, longitude } = response.data;
+
+      if (latitude && longitude && !isNaN(latitude) && !isNaN(longitude)) {
+        setUserLocation({ latitude, longitude });
+        setUserAddress(address || "Địa chỉ không được cung cấp");
+        return;
+      }
+
+      if (address) {
+        setUserAddress(address);
+        // Thử lấy tọa độ từ địa chỉ nếu không có trong cơ sở dữ liệu
+        const coordinates = await getCoordinatesFromAddress(address);
+        if (coordinates) {
+          setUserLocation(coordinates);
+          return;
+        }
+      }
+
+      setUserLocation(null);
+      setUserAddress(null);
+      toast.warn("Vị trí của bạn chưa được xác định trong hồ sơ.");
+    } catch (error) {
+      console.error("Lỗi khi lấy vị trí từ database:", error);
+      setUserLocation(null);
+      setUserAddress(null);
+      toast.warn("Vui lòng cung cấp vị trí để tính khoảng cách.");
+    }
+
+    // Nếu không có tọa độ từ cơ sở dữ liệu, thử Geolocation
+    if (navigator.geolocation && !userLocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setUserLocation({
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
           });
+          setUserAddress(null);
         },
-        async (error) => {
-          console.error("Lỗi khi lấy vị trí người dùng từ Geolocation:", error);
-          await fetchLocationFromDatabase(token);
+        (error) => {
+          console.error("Lỗi khi lấy vị trí từ Geolocation:", error);
+          if (!userLocation && !userAddress) {
+            toast.warn("Vui lòng cung cấp vị trí để tính khoảng cách.");
+          }
         }
       );
-    } else {
-      console.error("Trình duyệt không hỗ trợ Geolocation.");
-      await fetchLocationFromDatabase(token);
     }
   };
 
-  const fetchLocationFromDatabase = async (token) => {
+  const getCoordinatesFromAddress = async (address) => {
+    if (!address) {
+      console.warn("Địa chỉ trống, không thể lấy tọa độ.");
+      return null;
+    }
     try {
-      if (!token) {
-        console.error("Token không tồn tại.");
-        setUserLocation(null);
-        return;
+      const encodedAddress = encodeURIComponent(address);
+      const response = await axios.get(
+        `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=jsonv2`,
+        {
+          headers: {
+            "User-Agent": "ToySharingApp",
+          },
+        }
+      );
+      if (response.data && response.data.length > 0) {
+        const { lat, lon } = response.data[0];
+        if (lat && lon && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lon))) {
+          return {
+            latitude: parseFloat(lat),
+            longitude: parseFloat(lon),
+          };
+        }
       }
-
-      const response = await axios.get(`${API_BASE_URL}/User/current/location`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.data.latitude !== null && response.data.longitude !== null) {
-        setUserLocation({
-          latitude: response.data.latitude,
-          longitude: response.data.longitude,
-        });
-      } else {
-        toast.warn("Vị trí của bạn chưa được xác định trong hồ sơ.");
-        setUserLocation(null);
-      }
+      console.warn(`Không tìm thấy tọa độ cho địa chỉ: ${address}`);
+      return null;
     } catch (error) {
-      console.error("Lỗi khi lấy vị trí từ database:", error);
-      toast.error("Không thể lấy vị trí từ hồ sơ người dùng.");
-      setUserLocation(null);
+      console.error(`Lỗi khi lấy tọa độ cho địa chỉ ${address}:`, error);
+      return null;
     }
   };
 
@@ -126,39 +170,93 @@ const SearchingToy = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const formattedToys = await Promise.all(response.data.map(async (toy) => {
-          let distance;
-          if (isLoggedIn && userLocation && userLocation.latitude !== null && userLocation.longitude !== null) {
-            const distResponse = await axios.get(
-              `${API_BASE_URL}/User/distance-to-product/${toy.productId}?myLatitude=${userLocation.latitude}&myLongitude=${userLocation.longitude}`,
-              {
-                headers: { Authorization: `Bearer ${token}` },
+        const formattedToys = await Promise.all(
+          response.data.map(async (toy) => {
+            let distance;
+
+            if (!isLoggedIn) {
+              distance = "Vui lòng đăng nhập để biết khoảng cách";
+            } else {
+              let ownerAddress, ownerLatitude, ownerLongitude;
+
+              // Lấy thông tin vị trí của chủ sở hữu
+              try {
+                const ownerLocationResponse = await axios.get(
+                  `${API_BASE_URL}/User/${toy.userId}/location`,
+                  {
+                    headers: { Authorization: `Bearer ${token}` },
+                  }
+                );
+                ownerAddress = ownerLocationResponse.data.address;
+                ownerLatitude = ownerLocationResponse.data.latitude;
+                ownerLongitude = ownerLocationResponse.data.longitude;
+              } catch (error) {
+                console.error(`Lỗi khi lấy địa chỉ chủ sở hữu ${toy.userId}:`, error);
+                distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
+                return { ...toy, distance };
               }
-            );
-            distance = distResponse.data.distanceKilometers !== null ? distResponse.data.distanceKilometers : distResponse.data.distanceText;
-          } else if (isLoggedIn) {
-            distance = "Vị trí của bạn chưa được xác định";
-          } else {
-            distance = "Vui lòng đăng nhập để biết khoảng cách";
-          }
-          return {
-            productId: toy.productId,
-            userId: toy.userId,
-            image: toy.imagePaths && toy.imagePaths.length > 0 ? toy.imagePaths[0] : "https://placehold.co/300x200?text=No+Image",
-            name: toy.name,
-            ownerAvatar: toy.ownerAvatar,
-            createdAt: new Date(toy.createdAt).toISOString().split("T")[0],
-            categoryName: toy.categoryName,
-            productStatus: toy.productStatus,
-            suitableAge: toy.suitableAge,
-            price: toy.price,
-            description: toy.description,
-            available: toy.available,
-            ownerName: toy.ownerName || "Người cho mượn",
-            ownerId: toy.userId,
-            distance: distance,
-          };
-        }));
+
+              if (!ownerLatitude || !ownerLongitude) {
+                // Nếu không có tọa độ của chủ sở hữu
+                if (ownerAddress) {
+                  const ownerCoords = await getCoordinatesFromAddress(ownerAddress);
+                  if (ownerCoords) {
+                    ownerLatitude = ownerCoords.latitude;
+                    ownerLongitude = ownerCoords.longitude;
+                  } else {
+                    distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
+                    return { ...toy, distance };
+                  }
+                } else {
+                  distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
+                  return { ...toy, distance };
+                }
+              }
+
+              // Tính khoảng cách nếu có tọa độ của người dùng
+              if (userLocation && userLocation.latitude && userLocation.longitude) {
+                try {
+                  const distResponse = await axios.get(
+                    `${API_BASE_URL}/User/distance-to-product/${toy.productId}?myLatitude=${userLocation.latitude}&myLongitude=${userLocation.longitude}`,
+                    {
+                      headers: { Authorization: `Bearer ${token}` },
+                    }
+                  );
+                  distance = distResponse.data.distanceKilometers ?? "Không thể tính khoảng cách";
+                } catch (error) {
+                  console.error(`Lỗi khi tính khoảng cách cho đồ chơi ${toy.productId}:`, error);
+                  distance =
+                    error.response?.status === 400
+                      ? "Chưa xác định vị trí của người sở hữu đồ chơi"
+                      : "Không thể tính khoảng cách";
+                }
+              } else {
+                distance = "Chưa xác định vị trí của bạn";
+              }
+            }
+
+            return {
+              productId: toy.productId,
+              userId: toy.userId,
+              image:
+                toy.imagePaths && toy.imagePaths.length > 0
+                  ? toy.imagePaths[0]
+                  : "https://via.placeholder.com/300x200?text=No+Image",
+              name: toy.name,
+              ownerAvatar: toy.ownerAvatar || "https://via.placeholder.com/50?text=Avatar",
+              createdAt: new Date(toy.createdAt).toISOString().split("T")[0],
+              categoryName: toy.categoryName,
+              productStatus: toy.productStatus === 0 ? "Mới" : toy.productStatus === 1 ? "Cũ" : "Không xác định",
+              suitableAge: toy.suitableAge,
+              price: toy.price,
+              description: toy.description,
+              available: toy.available,
+              ownerName: toy.ownerName || "Người cho mượn",
+              ownerId: toy.userId,
+              distance: distance,
+            };
+          })
+        );
 
         setToys(formattedToys);
       } catch (error) {
@@ -169,7 +267,7 @@ const SearchingToy = () => {
     };
 
     if (mainUserId) fetchToys();
-  }, [mainUserId, userLocation, isLoggedIn]);
+  }, [mainUserId, userLocation, userAddress, isLoggedIn]);
 
   useEffect(() => {
     const fetchUserRequests = async () => {
@@ -238,6 +336,7 @@ const SearchingToy = () => {
       toast.success("Gửi yêu cầu mượn thành công!");
       handleCloseBorrowModal();
     } catch (err) {
+      console.error("Lỗi khi gửi yêu cầu mượn:", err);
       toast.error("Lỗi khi gửi yêu cầu mượn!");
     }
   };
@@ -246,9 +345,22 @@ const SearchingToy = () => {
     try {
       const token = getAuthToken();
       const response = await axios.get(`${API_BASE_URL}/Products/${toyId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      setSelectedToy(response.data);
+      setSelectedToy({
+        productId: response.data.productId,
+        image:
+          response.data.imagePaths && response.data.imagePaths.length > 0
+            ? response.data.imagePaths[0]
+            : "https://via.placeholder.com/300x200?text=No+Image",
+        name: response.data.name,
+        categoryName: response.data.categoryName,
+        productStatus: response.data.productStatus === 0 ? "Mới" : response.data.productStatus === 1 ? "Cũ" : "Không xác định",
+        suitableAge: response.data.suitableAge,
+        price: response.data.price,
+        description: response.data.description,
+        available: response.data.available,
+      });
       setShowDetailModal(true);
     } catch (error) {
       console.error("Lỗi khi lấy chi tiết đồ chơi:", error);
@@ -259,10 +371,16 @@ const SearchingToy = () => {
   const handleViewProfile = async (ownerId) => {
     try {
       const token = getAuthToken();
+      if (!token) {
+        toast.error("Vui lòng đăng nhập để xem thông tin người cho mượn!");
+        navigate("/login");
+        return;
+      }
       const response = await axios.get(`${API_BASE_URL}/User/profile/${ownerId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setProfileData(response.data.userInfo);
+      const userInfo = response.data.userInfo || response.data;
+      setProfileData({ ...userInfo, userId: ownerId });
       setShowProfileModal(true);
     } catch (error) {
       console.error("Lỗi khi lấy thông tin người cho mượn:", error);
@@ -270,8 +388,94 @@ const SearchingToy = () => {
     }
   };
 
+  const handleMessage = async (ownerId) => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        toast.error("Vui lòng đăng nhập để nhắn tin!");
+        navigate("/login");
+        return;
+      }
+
+      if (!ownerId || isNaN(ownerId)) {
+        toast.error("ID người dùng không hợp lệ!");
+        return;
+      }
+
+      if (ownerId === mainUserId) {
+        toast.error("Bạn không thể nhắn tin cho chính mình!");
+        return;
+      }
+
+      const response = await axios.get(`${API_BASE_URL}/Conversations`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const conversations = response.data;
+      const existingConversation = conversations.find(
+        (convo) =>
+          (convo.user1Id === ownerId && convo.user2Id === mainUserId) ||
+          (convo.user2Id === ownerId && convo.user1Id === mainUserId)
+      );
+
+      let conversationId;
+
+      if (existingConversation) {
+        conversationId = existingConversation.conversationId;
+      } else {
+        const createResponse = await axios.post(
+          `${API_BASE_URL}/Conversations`,
+          { user2Id: ownerId },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        conversationId = createResponse.data.conversationId;
+      }
+
+      navigate("/message", { state: { activeConversationId: conversationId } });
+    } catch (error) {
+      console.error("Lỗi khi xử lý nhắn tin:", error);
+      if (error.response && error.response.status === 401) {
+        toast.error("Token không hợp lệ hoặc đã hết hạn! Vui lòng đăng nhập lại.");
+        navigate("/login");
+      } else if (error.response && error.response.status === 500) {
+        toast.error(
+          error.response.data?.message || "Lỗi server khi tạo cuộc trò chuyện!"
+        );
+      } else {
+        toast.error(
+          error.response?.data?.message || "Không thể bắt đầu cuộc trò chuyện!"
+        );
+      }
+    }
+  };
+
   const handleLoadMore = () => {
     toast.info("Đã hiển thị tất cả đồ chơi!");
+  };
+
+  // Hàm cập nhật vị trí (tùy chọn)
+  const handleUpdateLocation = async (newAddress) => {
+    try {
+      const token = getAuthToken();
+      const response = await axios.put(
+        `${API_BASE_URL}/User/${mainUserId}/location`,
+        { address: newAddress },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      toast.success("Cập nhật vị trí thành công!");
+      fetchUserLocation(); // Làm mới vị trí
+    } catch (error) {
+      console.error("Lỗi khi cập nhật vị trí:", error);
+      toast.error("Không thể cập nhật vị trí!");
+    }
   };
 
   return (
@@ -299,76 +503,119 @@ const SearchingToy = () => {
                 placeholderText="Chọn ngày"
               />
             </Form.Group>
+            {/* Nút cập nhật vị trí (tùy chọn) */}
+            <Button
+              variant="outline-primary"
+              className="mb-3"
+              onClick={() => {
+                const newAddress = prompt("Nhập địa chỉ mới:");
+                if (newAddress) handleUpdateLocation(newAddress);
+              }}
+            >
+              Cập nhật vị trí
+            </Button>
             <Row className="request-items-section">
-              {filteredToys.map((toy) => {
-                const hasSentRequest = userRequests.some(
-                  (req) => req.productId === toy.productId && req.userId === mainUserId && req.status === 0
-                );
-                return (
-                  <Col key={toy.productId} xs={12} md={6} className="mb-4">
-                    <Card className="request-card">
-                      <Card.Img variant="top" src={toy.image} className="toy-image" />
-                      <Card.Body>
-                        <Card.Title className="toy-name">
-                          <a
-                            href="#"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleViewDetail(toy.productId);
-                            }}
-                            style={{ color: "inherit", textDecoration: "none" }}
-                          >
+              {filteredToys.length === 0 ? (
+                <Col className="text-center">
+                  <h5>Không có đồ chơi nào để hiển thị</h5>
+                </Col>
+              ) : (
+                filteredToys.map((toy) => {
+                  const hasSentRequest = userRequests.some(
+                    (req) =>
+                      req.productId === toy.productId &&
+                      req.userId === mainUserId &&
+                      req.status === 0
+                  );
+                  return (
+                    <Col key={toy.productId} xs={12} md={6} className="mb-4">
+                      <Card
+                        className="request-card"
+                        onClick={() => handleViewDetail(toy.productId)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <Card.Img
+                          variant="top"
+                          src={toy.image}
+                          className="toy-image"
+                          onError={(e) => (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")}
+                        />
+                        <Card.Body>
+                          <Card.Title className="toy-name">
                             {toy.name}
-                          </a>
-                        </Card.Title>
-                        <Card.Text className="send-date">
-                          <strong>Ngày đăng:</strong> {toy.createdAt}
-                        </Card.Text>
-                        <Card.Text className="price">
-                          <strong>Phí cho mượn:</strong> {toy.price.toLocaleString("vi-VN")} VND
-                        </Card.Text>
-                        <Card.Text className="status">
-                          <strong>Trạng thái:</strong>{" "}
-                          <span className={toy.available === 0 ? "available" : "unavailable"}>
-                            {toy.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn"}
-                          </span>
-                        </Card.Text>
-                        <Card.Text className="distance">
-                          <strong>Khoảng cách:</strong>{" "}
-                          {typeof toy.distance === "number" ? `${toy.distance.toFixed(2)} km` : toy.distance}
-                        </Card.Text>
-                        <div className="lender-info d-flex align-items-center mb-2">
-                          <img
-                            src={toy.ownerAvatar}
-                            alt="Ảnh đại diện người cho mượn"
-                            className="lender-avatar"
-                          />
-                          <Button
-                            variant="link"
-                            className="ms-2 lender-link p-0 text-decoration-none"
-                            onClick={() => handleViewProfile(toy.ownerId)}
-                          >
-                            Thông tin người cho mượn
-                          </Button>
-                        </div>
-                        <div className="request-actions text-center">
-                          <Button
-                            variant="primary"
-                            onClick={() => handleOpenBorrowModal(toy.productId)}
-                            disabled={hasSentRequest}
-                          >
-                            {hasSentRequest ? "Đã gửi yêu cầu" : "Mượn"}
-                          </Button>
-                        </div>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                );
-              })}
+                          </Card.Title>
+                          <Card.Text className="send-date">
+                            <strong>Ngày đăng:</strong> {toy.createdAt}
+                          </Card.Text>
+                          <Card.Text className="price">
+                            <strong>Phí cho mượn:</strong>{" "}
+                            {toy.price.toLocaleString("vi-VN")} VND
+                          </Card.Text>
+                          <Card.Text className="status">
+                            <strong>Trạng thái:</strong>{" "}
+                            <span
+                              className={
+                                toy.available === 0 ? "available" : "unavailable"
+                              }
+                            >
+                              {toy.available === 0
+                                ? "Sẵn sàng cho mượn"
+                                : "Đã cho mượn"}
+                            </span>
+                          </Card.Text>
+                          <Card.Text className="distance">
+                            <strong>Khoảng cách:</strong>{" "}
+                            {typeof toy.distance === "number"
+                              ? `${toy.distance.toFixed(2)} km`
+                              : toy.distance}
+                          </Card.Text>
+                          <div className="lender-info d-flex align-items-center mb-2">
+                            <img
+                              src={toy.ownerAvatar}
+                              alt="Ảnh đại diện người cho mượn"
+                              className="lender-avatar"
+                              onError={(e) =>
+                                (e.target.src =
+                                  "https://via.placeholder.com/50?text=Avatar")
+                              }
+                            />
+                            <Button
+                              variant="link"
+                              className="lender-link p-0 text-decoration-none"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewProfile(toy.ownerId);
+                              }}
+                            >
+                              Thông tin người cho mượn
+                            </Button>
+                          </div>
+                          <div className="request-actions text-center">
+                            <Button
+                              variant="primary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenBorrowModal(toy.productId);
+                              }}
+                              disabled={hasSentRequest}
+                            >
+                              {hasSentRequest ? "Đã gửi yêu cầu" : "Mượn"}
+                            </Button>
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  );
+                })
+              )}
             </Row>
             {filteredToys.length > 0 && (
               <div className="text-center">
-                <Button variant="outline-primary" className="view-more-btn" onClick={handleLoadMore}>
+                <Button
+                  variant="outline-primary"
+                  className="view-more-btn"
+                  onClick={handleLoadMore}
+                >
                   Xem thêm
                 </Button>
               </div>
@@ -376,7 +623,11 @@ const SearchingToy = () => {
           </Col>
         </Row>
       </Container>
-      <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} centered>
+      <Modal
+        show={showDetailModal}
+        onHide={() => setShowDetailModal(false)}
+        centered
+      >
         <Modal.Header closeButton>
           <Modal.Title>Chi tiết đồ chơi</Modal.Title>
         </Modal.Header>
@@ -384,30 +635,68 @@ const SearchingToy = () => {
           {selectedToy && (
             <>
               <img
-                src={selectedToy.imagePaths && selectedToy.imagePaths.length > 0 ? selectedToy.imagePaths[0] : "https://placehold.co/200x200?text=No+Image"}
+                src={selectedToy.image}
                 alt={selectedToy.name}
-                style={{ width: "100%", height: "auto", maxHeight: "200px", objectFit: "cover" }}
+                style={{
+                  width: "100%",
+                  height: "auto",
+                  maxHeight: "200px",
+                  objectFit: "cover",
+                }}
+                onError={(e) => (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")}
               />
               <h5 className="mt-3">{selectedToy.name}</h5>
-              <p><strong>Danh mục:</strong> {selectedToy.categoryName || "Không có"}</p>
-              <p><strong>Tình trạng:</strong> {selectedToy.productStatus || "Không có"}</p>
-              <p><strong>Độ tuổi phù hợp:</strong> {selectedToy.suitableAge}</p>
-              <p><strong>Phí cho mượn:</strong> {selectedToy.price.toLocaleString("vi-VN")} VND</p>
-              <p><strong>Mô tả:</strong> {selectedToy.description || "Không có"}</p>
-              <p><strong>Trạng thái:</strong> {selectedToy.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn"}</p>
-              {userRequests.some((req) => req.productId === selectedToy.productId && req.status === 0) && (
-                <p className="text-success">Bạn đã gửi yêu cầu mượn cho đồ chơi này.</p>
+              <p>
+                <strong>Danh mục:</strong>{" "}
+                {selectedToy.categoryName || "Không có"}
+              </p>
+              <p>
+                <strong>Tình trạng:</strong>{" "}
+                {selectedToy.productStatus || "Không có"}
+              </p>
+              <p>
+                <strong>Độ tuổi phù hợp:</strong>{" "}
+                {selectedToy.suitableAge || "Không có"}
+              </p>
+              <p>
+                <strong>Phí cho mượn:</strong>{" "}
+                {selectedToy.price.toLocaleString("vi-VN")} VND
+              </p>
+              <p>
+                <strong>Mô tả:</strong>{" "}
+                {selectedToy.description || "Không có"}
+              </p>
+              <p>
+                <strong>Trạng thái:</strong>{" "}
+                {selectedToy.available === 0
+                  ? "Sẵn sàng cho mượn"
+                  : "Đã cho mượn"}
+              </p>
+              {userRequests.some(
+                (req) =>
+                  req.productId === selectedToy.productId && req.status === 0
+              ) && (
+                <p className="text-success">
+                  Bạn đã gửi yêu cầu mượn cho đồ chơi này.
+                </p>
               )}
             </>
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
+          <Button
+            variant="secondary"
+            onClick={() => setShowDetailModal(false)}
+          >
             Đóng
           </Button>
         </Modal.Footer>
       </Modal>
-      <Modal show={showBorrowModal} onHide={handleCloseBorrowModal} centered>
+      <Modal
+        show={showBorrowModal}
+        onHide={handleCloseBorrowModal}
+        centered
+      >
         <Modal.Header closeButton>
           <Modal.Title>Nhập thông tin mượn</Modal.Title>
         </Modal.Header>
@@ -456,7 +745,11 @@ const SearchingToy = () => {
           </Button>
         </Modal.Footer>
       </Modal>
-      <Modal show={showProfileModal} onHide={() => setShowProfileModal(false)} centered>
+      <Modal
+        show={showProfileModal}
+        onHide={() => setShowProfileModal(false)}
+        centered
+      >
         <Modal.Header closeButton>
           <Modal.Title>Thông tin người cho mượn</Modal.Title>
         </Modal.Header>
@@ -464,23 +757,51 @@ const SearchingToy = () => {
           {profileData ? (
             <div>
               <img
-                src={profileData.avatar}
+                src={
+                  profileData.avatar ||
+                  "https://via.placeholder.com/100?text=Avatar"
+                }
                 alt="Ảnh đại diện"
                 className="rounded-circle mb-3"
-                style={{ width: "100px", height: "100px" }}
+                style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                onError={(e) => (e.target.src = "https://via.placeholder.com/100?text=Avatar")}
               />
-              <p><strong>Tên hiển thị:</strong> {profileData.displayName}</p>
-              <p><strong>Tuổi:</strong> {profileData.age}</p>
-              <p><strong>Địa chỉ:</strong> {profileData.address}</p>
-              <p><strong>Đánh giá:</strong> {profileData.rating ? profileData.rating.toFixed(2) : "Chưa có đánh giá"}</p>
+              <p>
+                <strong>Tên hiển thị:</strong>{" "}
+                {profileData.displayName || "Không có"}
+              </p>
+              <p>
+                <strong>Tuổi:</strong>{" "}
+                {profileData.age || "Không có thông tin"}
+              </p>
+              <p>
+                <strong>Địa chỉ:</strong>{" "}
+                {profileData.address || "Không có thông tin"}
+              </p>
+              <p>
+                <strong>Đánh giá:</strong>{" "}
+                {profileData.rating
+                  ? profileData.rating.toFixed(2)
+                  : "Chưa có đánh giá"}
+              </p>
             </div>
           ) : (
             <p>Đang tải thông tin...</p>
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowProfileModal(false)}>
+          <Button
+            variant="secondary"
+            onClick={() => setShowProfileModal(false)}
+          >
             Đóng
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => handleMessage(profileData?.userId)}
+            disabled={!profileData || !isLoggedIn || !profileData?.userId || profileData?.userId === mainUserId}
+          >
+            Nhắn tin
           </Button>
         </Modal.Footer>
       </Modal>

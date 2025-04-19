@@ -297,7 +297,7 @@ const Message = () => {
                   .filter((message) => message.conversationId === activeConversation.conversationId)
                   .map((message) => {
                     const isMe = message.senderId === userId;
-                    console.log("userId:", userId, "senderId:", message.senderId, "isMe:", isMe);
+                    // console.log("userId:", userId, "senderId:", message.senderId, "isMe:", isMe);
                     return (
                       <div
                         key={message.messageId}

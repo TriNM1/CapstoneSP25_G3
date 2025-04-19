@@ -59,6 +59,31 @@ namespace ToySharingAPI.Controllers
 
             return mainUser.Id;
         }
+        [HttpGet("current/location")]
+        [Authorize]
+        public async Task<IActionResult> GetCurrentUserLocation()
+        {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
+
+            var user = await _context.Users
+                .Where(u => u.Id == mainUserId)
+                .Select(u => new
+                {
+                    Address = u.Address,
+                    Latitude = u.Latitude,
+                    Longitude = u.Longtitude
+                })
+                .FirstOrDefaultAsync();
+
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            return Ok(user);
+        }
         // Get user by ID (không hiển thị Latitude, Longitude)
         [HttpGet("{id}")]
         public async Task<ActionResult<UserDTO>> GetUserById(int id)
@@ -68,7 +93,7 @@ namespace ToySharingAPI.Controllers
                 .Select(u => new UserDTO
                 {
                     Name = u.Name,
-                    DisplayName = u.DisplayName,
+                    DisplayName = u.Displayname,
                     Phone = u.Phone,
                     Address = u.Address,
                     Status = u.Status,
@@ -130,7 +155,7 @@ namespace ToySharingAPI.Controllers
                 {
                     UserInfo = new UserInfo
                     {
-                        DisplayName = u.DisplayName,
+                        DisplayName = u.Displayname,
                         Age = u.Age ?? 0,
                         Address = u.Address,
                         Avatar = u.Avatar,
@@ -163,7 +188,7 @@ namespace ToySharingAPI.Controllers
             }
 
             existingUser.Name = userDto.Name;
-            existingUser.DisplayName = userDto.DisplayName;
+            existingUser.Displayname = userDto.DisplayName;
             existingUser.Phone = userDto.Phone;
             existingUser.Address = userDto.Address;
             existingUser.Status = userDto.Status;
@@ -186,7 +211,6 @@ namespace ToySharingAPI.Controllers
             return Ok(new { message = "User updated successfully" });
         }
 
-        // Get User Location (chỉ trả về Address)
         [HttpGet("{id}/location")]
         public async Task<IActionResult> GetUserLocation(int id)
         {
@@ -194,7 +218,9 @@ namespace ToySharingAPI.Controllers
                 .Where(u => u.Id == id)
                 .Select(u => new
                 {
-                    Address = u.Address
+                    Address = u.Address,
+                    Latitude = u.Latitude,
+                    Longitude = u.Longtitude
                 })
                 .FirstOrDefaultAsync();
 
@@ -444,7 +470,7 @@ namespace ToySharingAPI.Controllers
                         {
                             Id = mainUser.Id,
                             Email = mainUser.Name,
-                            DisplayName = mainUser.DisplayName,
+                            DisplayName = mainUser.Displayname,
                             Gender = mainUser.Gender,
                             Status = mainUser.Status,
                             Role = roleStr,

@@ -143,7 +143,7 @@ namespace ToySharingAPI.Controllers
                         bool isProfileCompleted =
                             !string.IsNullOrEmpty(mainUser.Phone) &&
                             !string.IsNullOrEmpty(mainUser.Address) &&
-                            !string.IsNullOrEmpty(mainUser.DisplayName);
+                            !string.IsNullOrEmpty(mainUser.Displayname);
 
                         var response = new LoginResponseDTO
                         {

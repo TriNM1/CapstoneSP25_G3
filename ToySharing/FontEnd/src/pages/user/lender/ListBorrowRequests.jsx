@@ -54,7 +54,7 @@ const ListBorrowRequests = () => {
 
       const formattedRequests = response.data.map((req) => ({
         id: req.requestId,
-        image: req.image || "https://via.placeholder.com/200",
+        image: req.image || "https://via.placeholder.com/300x200?text=No+Image",
         name: req.productName,
         price: `${req.price.toLocaleString("vi-VN")} VND`,
         requestDate: new Date(req.requestDate).toISOString().split("T")[0],
@@ -96,7 +96,7 @@ const ListBorrowRequests = () => {
   const visibleRequests = filteredRequests.slice(0, visibleItems);
 
   const handleViewMessage = (message) => {
-    setModalMessage(message);
+    setModalMessage(message || "");
     setShowMessageModal(true);
   };
 
@@ -112,7 +112,7 @@ const ListBorrowRequests = () => {
       const sessionToken = sessionStorage.getItem("token");
       const token = sessionToken || localToken;
       const actionUrl = `${API_BASE_URL}/Requests/${selectedRequestId}/status`;
-      const newStatus = confirmAction === "accept" ? 1 : 2;
+      const newStatus = confirmAction === "accept" ? 1 : 4;
       await axios.put(
         actionUrl,
         { newStatus },
@@ -154,7 +154,7 @@ const ListBorrowRequests = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      setProfileData(response.data.userInfo); // Truy cập vào userInfo
+      setProfileData(response.data.userInfo);
       setShowProfileModal(true);
     } catch (error) {
       console.error("Lỗi khi lấy thông tin người mượn:", error);
@@ -207,8 +207,13 @@ const ListBorrowRequests = () => {
                 <Row className="lending-items-section">
                   {visibleRequests.map((request) => (
                     <Col key={request.id} xs={12} md={6} className="mb-4">
-                      <Card className="toy-card">
-                        <Card.Img variant="top" src={request.image} className="toy-image" />
+                      <Card className="borrow-request-card">
+                        <Card.Img
+                          variant="top"
+                          src={request.image}
+                          className="toy-image"
+                          onError={(e) => (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")}
+                        />
                         <Card.Body className="card-body">
                           <Card.Title className="toy-name">{request.name}</Card.Title>
                           <Card.Text className="toy-price">{request.price}</Card.Text>
@@ -222,11 +227,16 @@ const ListBorrowRequests = () => {
                             <strong>Ngày trả:</strong> {request.returnDate}
                           </Card.Text>
                           <div className="lender-info">
-                            <img src={request.requesterAvatar} alt="Ảnh đại diện người mượn" className="requester-avatar" />
+                            <img
+                              src={request.requesterAvatar || "https://via.placeholder.com/50?text=Avatar"}
+                              alt="Ảnh đại diện người mượn"
+                              className="requester-avatar"
+                              onError={(e) => (e.target.src = "https://via.placeholder.com/50?text=Avatar")}
+                            />
                             <span>
                               <Button
                                 variant="link"
-                                className="p-0 text-decoration-none"
+                                className="requester-link p-0 text-decoration-none"
                                 onClick={() => handleViewProfile(request.requesterId)}
                               >
                                 Thông tin người mượn
@@ -234,15 +244,31 @@ const ListBorrowRequests = () => {
                             </span>
                           </div>
                           <div className="card-actions">
-                            <Button className="btn-view" onClick={() => handleViewMessage(request.message)}>
-                              Xem lời nhắn
-                            </Button>
-                            <Button className="btn-accept" onClick={() => handleConfirmAction("accept", request.id)}>
-                              Chấp nhận
-                            </Button>
-                            <Button className="btn-decline" onClick={() => handleConfirmAction("decline", request.id)}>
-                              Từ chối
-                            </Button>
+                            <div className="d-flex justify-content-center mb-3">
+                              <Button
+                                variant="secondary"
+                                onClick={() => handleViewMessage(request.message)}
+                                style={{ width: "150px" }}
+                              >
+                                Xem lời nhắn
+                              </Button>
+                            </div>
+                            <div className="d-flex justify-content-center gap-3">
+                              <Button
+                                variant="success"
+                                onClick={() => handleConfirmAction("accept", request.id)}
+                                style={{ width: "120px" }}
+                              >
+                                Chấp nhận
+                              </Button>
+                              <Button
+                                variant="danger"
+                                onClick={() => handleConfirmAction("decline", request.id)}
+                                style={{ width: "120px" }}
+                              >
+                                Từ chối
+                              </Button>
+                            </div>
                           </div>
                         </Card.Body>
                       </Card>
@@ -268,7 +294,13 @@ const ListBorrowRequests = () => {
         <Modal.Header closeButton>
           <Modal.Title>Lời nhắn</Modal.Title>
         </Modal.Header>
-        <Modal.Body>{modalMessage}</Modal.Body>
+        <Modal.Body>
+          {modalMessage ? (
+            <p>{modalMessage}</p>
+          ) : (
+            <p style={{ opacity: 0.5, color: "#666" }}>Không có lời nhắn</p>
+          )}
+        </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowMessageModal(false)}>
             Đóng
@@ -303,14 +335,15 @@ const ListBorrowRequests = () => {
           {profileData ? (
             <div>
               <img
-                src={profileData.avatar}
+                src={profileData.avatar || "https://via.placeholder.com/100?text=Avatar"}
                 alt="Ảnh đại diện"
                 className="rounded-circle mb-3"
-                style={{ width: "100px", height: "100px" }}
+                style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                onError={(e) => (e.target.src = "https://via.placeholder.com/100?text=Avatar")}
               />
-              <p><strong>Tên:</strong> {profileData.displayName}</p>
-              <p><strong>Tuổi:</strong> {profileData.age}</p>
-              <p><strong>Địa chỉ:</strong> {profileData.address}</p>
+              <p><strong>Tên:</strong> {profileData.displayName || "Không có tên"}</p>
+              <p><strong>Tuổi:</strong> {profileData.age || "Không có thông tin"}</p>
+              <p><strong>Địa chỉ:</strong> {profileData.address || "Không có thông tin"}</p>
               <p><strong>Đánh giá:</strong> {profileData.rating ? profileData.rating.toFixed(2) : "Chưa có đánh giá"}</p>
             </div>
           ) : (

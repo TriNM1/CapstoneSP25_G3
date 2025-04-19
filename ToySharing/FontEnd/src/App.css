@@ -1,22 +1,59 @@
+/* Root container */
 #root {
-  max-width: 1280px;
-  margin-right: 0px;
-  margin-left: 300px;
+  width: 100%;
+  max-width: 1400px; /* Giới hạn chiều rộng tối đa */
+  margin: 0 auto; /* Căn giữa */
   padding: 1rem;
   text-align: center;
+  box-sizing: border-box;
 }
 
+/* Ứng dụng chính */
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Card chung (áp dụng cho các trang, bao gồm SearchToy) */
+.card {
+  width: 100%;
+  max-width: 100%;
+  padding: 1.5rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Hình ảnh chung */
+img {
+  max-width: 100%;
+  height: auto;
+  object-fit: cover; /* Đảm bảo ảnh không bị méo */
+}
+
+/* Logo */
 .logo {
-  height: 6em;
-  padding: 1.5em;
+  height: 4rem; /* Giảm kích thước để tối ưu */
+  padding: 1rem;
   will-change: filter;
   transition: filter 300ms;
 }
+
 .logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+  filter: drop-shadow(0 0 1rem #646cffaa);
 }
+
 .logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+  filter: drop-shadow(0 0 1rem #61dafbaa);
 }
 
 @keyframes logo-spin {
@@ -34,10 +71,35 @@
   }
 }
 
-.card {
-  padding: 2em;
-}
-
+/* Văn bản phụ */
 .read-the-docs {
   color: #888;
+  font-size: 0.9rem;
+}
+
+/* Responsive cho màn hình nhỏ */
+@media (max-width: 768px) {
+  #root {
+    padding: 0.5rem;
+  }
+
+  .card {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .logo {
+    height: 3rem;
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .card {
+    padding: 0.75rem;
+  }
+
+  .read-the-docs {
+    font-size: 0.8rem;
+  }
 }

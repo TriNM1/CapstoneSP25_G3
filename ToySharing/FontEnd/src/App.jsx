@@ -13,6 +13,7 @@ import SearchToy from "./pages/user/borrower/SearchingToy";
 import Message from "./pages/user/generate/Message";
 import UserInfor from "./pages/user/generate/UserInfor";
 import UserDetail from "./pages/user/generate/UserDetail"; 
+import TransactionHistory from "./pages/user/generate/TransactionHistory";
 import AddToy from "./pages/user/lender/AddToy";
 import MyToy from "./pages/user/lender/MyToy";
 import InLending from "./pages/user/lender/InLending";
@@ -21,6 +22,8 @@ import Policy from "./pages/user/generate/Policy";
 import UserGuide from "./pages/user/generate/UserGuide";
 import SendingRequest from "./pages/user/borrower/SendingRequest";
 import ToyDetail from "./pages/user/generate/ToyDetail";
+import PaymentSuccess from "./pages/user/borrower/PaymentSuccess";
+import PaymentError from "./pages/user/borrower/PaymentError";
 
 //admin
 import AdminPage from "./pages/admin/AdminPage";
@@ -29,7 +32,7 @@ import ManageUser from "./pages/admin/ManageUser";
 import ManagePost from "./pages/admin/ManagePost";
 // Route wrappers
 // import RouteProtected from "./components/ProtectedRoute"
-
+// import Admin from "./components/ProtectedRoute"
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AdminProfile from "./pages/admin/AdminProfile";
 
@@ -51,6 +54,7 @@ function App() {
         <Route path="/inforinput" element={<InforInput />} />
         <Route path="/policy" element={<Policy />} />
         <Route path="/userguide" element={<UserGuide />} />
+        <Route path="/transaction-history" element={<TransactionHistory />} />
 
         <Route path="/listborrowrequests" element={<ListBorrowRequests />} />
         {/* Các route liên quan đến Lending */}
@@ -59,12 +63,14 @@ function App() {
           path="/lending/listborrowrequests"
           element={<ListBorrowRequests />}
         />
-        <Route path="/lending/inlending" element={<InLending />} />
+        <Route path="/inlending" element={<InLending />} />
 
         <Route path="/searchtoy" element={<SearchToy />} />
         <Route path="/borrowing" element={<SearchToy />} />
-        <Route path="/borrowing/searchtoy" element={<SearchToy />} />
+        <Route path="/searchtoy" element={<SearchToy />} />
         <Route path="/sendingrequest" element={<SendingRequest />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/payment-error" element={<PaymentError />} />
         <Route path="/borrowhistory" element={<BorrowHistory />} />
         <Route path="/message" element={<Message />} />
         <Route path="/user-info/:userId" element={<UserInfor />} />
@@ -84,7 +90,7 @@ function App() {
         <Route path="/toydetail/:toyId" element={<ToyDetail />} />
 
         {/* Route mặc định nếu không khớp */}
-        <Route path="*" element={<AdminPage />} />
+        <Route path="*" element={<Home />} /> 
       </Routes>
     </BrowserRouter>
   );

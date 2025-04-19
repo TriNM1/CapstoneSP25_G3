@@ -27,6 +27,8 @@ public partial class Product
 
     public DateTime? UpdatedAt { get; set; }
 
+    public decimal ProductValue { get; set; }
+
     public virtual Category Category { get; set; } = null!;
 
     public virtual ICollection<History> Histories { get; set; } = new List<History>();

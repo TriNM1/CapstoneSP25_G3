@@ -56,7 +56,7 @@ const InLending = () => {
           },
         });
         const filteredLendings = response.data
-          .filter((req) => req.requestStatus === "Accepted" || req.requestStatus === "PickedUp")
+          .filter((req) => req.requestStatus === "Accepted" || req.requestStatus === "Paid" || req.requestStatus === "PickedUp")
           .map((req) => ({
             id: req.requestId,
             image: req.image || toy1,
@@ -83,8 +83,61 @@ const InLending = () => {
     fetchLendings();
   }, [navigate]);
 
-  const handleMessage = (lenderId) => {
-    toast.info("Chức năng nhắn tin đang chờ API tạo conversation!");
+  const handleMessage = async (lenderId) => {
+    try {
+      const localToken = localStorage.getItem("token");
+      const sessionToken = sessionStorage.getItem("token");
+      const token = sessionToken || localToken;
+      if (!token) {
+        toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
+        navigate("/login");
+        return;
+      }
+
+      const response = await axios.get(`${API_BASE_URL}/Conversations`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const conversations = response.data;
+      console.log("Danh sách cuộc trò chuyện:", conversations);
+
+      const existingConversation = conversations.find(
+        (convo) =>
+          (convo.user1Id === lenderId && convo.user2Id === parseInt(localStorage.getItem("userId") || sessionStorage.getItem("userId"))) ||
+          (convo.user2Id === lenderId && convo.user1Id === parseInt(localStorage.getItem("userId") || sessionStorage.getItem("userId")))
+      );
+
+      let conversationId;
+
+      if (existingConversation) {
+        conversationId = existingConversation.conversationId;
+        console.log("Cuộc trò chuyện đã tồn tại, ID:", conversationId);
+      } else {
+        const createResponse = await axios.post(
+          `${API_BASE_URL}/Conversations`,
+          { user2Id: lenderId },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        conversationId = createResponse.data.conversationId;
+        console.log("Cuộc trò chuyện mới được tạo, ID:", conversationId);
+      }
+
+      navigate("/message", { state: { activeConversationId: conversationId } });
+    } catch (error) {
+      console.error("Lỗi khi xử lý nhắn tin:", error);
+      if (error.response && error.response.status === 401) {
+        toast.error("Token không hợp lệ hoặc đã hết hạn! Vui lòng đăng nhập lại.");
+        navigate("/login");
+      } else {
+        toast.error(error.response?.data?.message || "Không thể bắt đầu cuộc trò chuyện!");
+      }
+    }
   };
 
   const handleViewProfile = async (lenderId) => {
@@ -135,7 +188,7 @@ const InLending = () => {
           <Col xs={12} md={2}>
             <SideMenu menuItems={sideMenuItems} activeItem={3} />
           </Col>
-          <Col xs={12} md={10} className={`main-content ${lendings.length === 0 ? 'empty' : ''}`}>
+          <Col xs={12} md={10} className={`main-content ${visibleLendings.length === 0 ? 'empty' : ''}`}>
             <Form.Group controlId="selectDate" className="mb-3">
               <Form.Label>Chọn ngày mượn</Form.Label>
               <DatePicker
@@ -147,8 +200,20 @@ const InLending = () => {
               />
             </Form.Group>
             {visibleLendings.length === 0 ? (
-              <div className="text-center">
-                <h5>Không có đồ chơi nào trong trạng thái đang cho mượn</h5>
+              <div className="empty-message">
+                <div className="empty-content text-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="64"
+                    height="64"
+                    fill="#ccc"
+                    viewBox="0 0 24 24"
+                    className="mb-3"
+                  >
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
+                  </svg>
+                  <h5>Không có đồ chơi nào trong trạng thái đang cho mượn</h5>
+                </div>
               </div>
             ) : (
               <>
@@ -168,7 +233,8 @@ const InLending = () => {
                           <Card.Text className="lending-status">
                             <strong>Trạng thái:</strong>{" "}
                             <span className="in-progress">
-                              {item.status === "Accepted" ? "Đã chấp nhận" : "Đã lấy"}
+                              {item.status === "Accepted" ? "Đã chấp nhận" :
+                              item.status === "Paid" ? "Người dùng đã thanh toán" : "Đã lấy"}
                             </span>
                           </Card.Text>
                           <div className="lender-info">
