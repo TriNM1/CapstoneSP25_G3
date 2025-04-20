@@ -1,59 +1,66 @@
-// eslint-disable-next-line no-unused-vars
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Container, Row, Col, Card } from "react-bootstrap";
 import AdminSideMenu from "../../components/AdminSideMenu";
-import {
-  LineChart,
-  Line,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
+import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend, BarChart, Bar } from "recharts";
 import "./Statistic.scss";
 
 const Statistic = () => {
-  // Dữ liệu giả cho biểu đồ
-  const monthlyUsers = [
-    { month: "Tháng 1", users: 120 },
-    { month: "Tháng 2", users: 150 },
-    { month: "Tháng 3", users: 180 },
-    { month: "Tháng 4", users: 200 },
-    { month: "Tháng 5", users: 250 },
-    { month: "Tháng 6", users: 300 },
-  ];
+  const [monthlyUsers, setMonthlyUsers] = useState([]);
+  const [monthlyPosts, setMonthlyPosts] = useState([]);
 
-  const monthlyPosts = [
-    { month: "Tháng 1", posts: 80 },
-    { month: "Tháng 2", posts: 100 },
-    { month: "Tháng 3", posts: 120 },
-    { month: "Tháng 4", posts: 150 },
-    { month: "Tháng 5", posts: 170 },
-    { month: "Tháng 6", posts: 190 },
-  ];
+  useEffect(() => {
+    // Fetch dữ liệu người dùng
+    fetch("https://localhost:7128/api/User/role/user")
+      .then(response => response.json())
+      .then(data => {
+        const usersByMonth = processUserData(data);
+        setMonthlyUsers(usersByMonth);
+      });
 
-  const topPosters = [
-    { name: "Nguyễn Văn A", posts: 45 },
-    { name: "Trần Thị B", posts: 40 },
-    { name: "Lê Văn C", posts: 35 },
-    { name: "Phạm Thị D", posts: 30 },
-  ];
+    // Fetch dữ liệu bài đăng
+    fetch("https://localhost:7128/api/Products")
+      .then(response => response.json())
+      .then(data => {
+        const postsByMonth = processPostData(data);
+        setMonthlyPosts(postsByMonth);
+      });
+  }, []);
 
-  const topRentedProducts = [
-    { product: "Sản phẩm A", rents: 60 },
-    { product: "Sản phẩm B", rents: 55 },
-    { product: "Sản phẩm C", rents: 50 },
-    { product: "Sản phẩm D", rents: 45 },
-  ];
+  // Xử lý dữ liệu người dùng
+  const processUserData = (users) => {
+    const usersByMonth = {};
 
-  // Màu sắc cho biểu đồ Pie
-  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
+    users.forEach(user => {
+      const month = new Date(user.createdAt).toLocaleString('default', { month: 'long' });
+      if (!usersByMonth[month]) {
+        usersByMonth[month] = 0;
+      }
+      usersByMonth[month]++;
+    });
+
+    return Object.keys(usersByMonth).map(month => ({
+      month,
+      users: usersByMonth[month]
+    }));
+  };
+
+  // Xử lý dữ liệu bài đăng
+  const processPostData = (posts) => {
+    const postsByMonth = {};
+
+    posts.forEach(post => {
+      const month = new Date(post.createdAt).toLocaleString('default', { month: 'long' });
+      if (!postsByMonth[month]) {
+        postsByMonth[month] = 0;
+      }
+      postsByMonth[month]++;
+    });
+
+    return Object.keys(postsByMonth).map(month => ({
+      month,
+      posts: postsByMonth[month]
+    }));
+  };
 
   return (
     <div className="statistic admin-page">
@@ -81,12 +88,7 @@ const Statistic = () => {
                   <Card.Body>
                     <Card.Title>Lượng người dùng hàng tháng</Card.Title>
                     <LineChart width={600} height={300} data={monthlyUsers}>
-                      <Line
-                        type="monotone"
-                        dataKey="users"
-                        stroke="#ff6f61"
-                        strokeWidth={2}
-                      />
+                      <Line type="monotone" dataKey="users" stroke="#ff6f61" strokeWidth={2} />
                       <CartesianGrid stroke="#ccc" strokeDasharray="5 5" />
                       <XAxis dataKey="month" />
                       <YAxis />
@@ -110,49 +112,6 @@ const Statistic = () => {
                     </BarChart>
                   </Card.Body>
                 </Card>
-
-                {/* Biểu đồ cột: Những người đăng bài nhiều nhất */}
-                <Card className="chart-card">
-                  <Card.Body>
-                    <Card.Title>Những người đăng bài nhiều nhất</Card.Title>
-                    <BarChart width={600} height={300} data={topPosters}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="posts" fill="#82ca9d" />
-                    </BarChart>
-                  </Card.Body>
-                </Card>
-
-                {/* Biểu đồ tròn: Sản phẩm được thuê nhiều nhất */}
-                <Card className="chart-card">
-                  <Card.Body>
-                    <Card.Title>Sản phẩm được thuê nhiều nhất</Card.Title>
-                    <PieChart width={400} height={300}>
-                      <Pie
-                        data={topRentedProducts}
-                        dataKey="rents"
-                        nameKey="product"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={80}
-                        label
-                      >
-                        {topRentedProducts.map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={COLORS[index % COLORS.length]}
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </Card.Body>
-                </Card>
-
-                {/* Có thể thêm các biểu đồ khác theo nhu cầu */}
               </div>
             </div>
           </Col>
