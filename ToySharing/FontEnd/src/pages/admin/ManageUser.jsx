@@ -21,8 +21,9 @@ const ManageUser = () => {
   const menuItems = [
     { id: 1, label: "Trang chủ", link: "/adminpage" },
     { id: 2, label: "Quản lý người dùng", link: "/manageuser" },
-    { id: 3, label: "Quản lý bài đăng", link: "/managepost" },
-    { id: 4, label: "Thống kê", link: "/statistic" },
+    { id: 3, label: "Quản lý banner", link: "/banner-management" },
+    { id: 4, label: "Quản lý bài đăng", link: "/managepost" },
+    { id: 5, label: "Thống kê", link: "/statistic" },
   ];
 
   // Các trạng thái tìm kiếm

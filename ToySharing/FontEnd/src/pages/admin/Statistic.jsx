@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Container, Row, Col, Card } from "react-bootstrap";
 import AdminSideMenu from "../../components/AdminSideMenu";
 import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend, BarChart, Bar } from "recharts";
+import banner from "../../assets/banner2.jpg";
 import "./Statistic.scss";
 
 const Statistic = () => {
@@ -63,7 +64,7 @@ const Statistic = () => {
   };
 
   return (
-    <div className="statistic admin-page">
+    <div className="admin-page statistic">
       <Container fluid className="mt-4">
         <Row>
           {/* Side menu dùng chung */}
@@ -72,15 +73,16 @@ const Statistic = () => {
               menuItems={[
                 { id: 1, label: "Trang chủ", link: "/adminpage" },
                 { id: 2, label: "Quản lý người dùng", link: "/manageuser" },
-                { id: 3, label: "Quản lý bài đăng", link: "/managepost" },
-                { id: 4, label: "Thống kê", link: "/statistic" },
+                { id: 3, label: "Quản lý banner", link: "/banner-management" },
+                { id: 4, label: "Quản lý bài đăng", link: "/managepost" },
+                { id: 5, label: "Thống kê", link: "/statistic" },
               ]}
             />
           </Col>
 
           {/* Nội dung chính */}
           <Col xs={12} md={10} className="main-content">
-            <div className="statistic-content">
+            <div className="guide-content">
               <h1>Thống kê</h1>
               <div className="charts-container">
                 {/* Biểu đồ đường: Lượng người dùng hàng tháng */}

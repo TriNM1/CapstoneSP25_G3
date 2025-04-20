@@ -30,6 +30,7 @@ import AdminPage from "./pages/admin/AdminPage";
 import ManageUser from "./pages/admin/ManageUser";
 import Statistic from "./pages/admin/Statistic";
 import ManagePost from "./pages/admin/ManagePost";
+import BannerManagement from "./pages/admin/BannerManagement";
 // Route wrappers
 // import RouteProtected from "./components/ProtectedRoute"
 // import Admin from "./components/ProtectedRoute"
@@ -85,7 +86,7 @@ function App() {
         <Route path="/manageuser" element={<ManageUser />} />
         <Route path="/managepost" element={<ManagePost />} />
         <Route path="/statistic" element={<Statistic />} /> 
-        
+        <Route path="/banner-management" element={<BannerManagement />} />
         {/* Route ToyDetail */}
         <Route path="/toydetail/:toyId" element={<ToyDetail />} />
 

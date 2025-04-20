@@ -142,7 +142,7 @@ const ManagePost = () => {
         {
           method: "DELETE",
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${localStorage.getItem("token") || sessionStorage.getItem("token")}`,
             accept: "*/*",
           },
         }
@@ -173,7 +173,7 @@ const ManagePost = () => {
     );
     if (!confirmDelete) return;
 
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (!token) {
       alert("Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.");
       return;
@@ -253,8 +253,9 @@ const ManagePost = () => {
               menuItems={[
                 { id: 1, label: "Trang chủ", link: "/adminpage" },
                 { id: 2, label: "Quản lý người dùng", link: "/manageuser" },
-                { id: 3, label: "Quản lý vi phạm", link: "/managepost" },
-                { id: 4, label: "Thống kê", link: "/statistic" },
+                { id: 3, label: "Quản lý banner", link: "/banner-management" },
+                { id: 4, label: "Quản lý bài đăng", link: "/managepost" },
+                { id: 5, label: "Thống kê", link: "/statistic" },
               ]}
             />
           </Col>
@@ -312,7 +313,7 @@ const ManagePost = () => {
                   style={{ marginRight: "10px" }}
                 >
                   {selectedProducts.length === currentItems.length &&
-                  currentItems.length > 0
+                    currentItems.length > 0
                     ? "Bỏ chọn tất cả"
                     : "Chọn tất cả"}
                 </Button>

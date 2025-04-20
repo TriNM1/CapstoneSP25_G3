@@ -17,7 +17,6 @@ namespace ToySharingAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
     public class AdminController : ControllerBase
     {
         private readonly ToySharingVer3Context _context;
@@ -79,7 +78,7 @@ namespace ToySharingAPI.Controllers
         }
 
         // Xem tất cả banner
-        [HttpGet("banners")]
+        [HttpGet("banners")] 
         public async Task<ActionResult<IEnumerable<Banner>>> GetBanners()
         {
             return await _context.Banners.ToListAsync();
@@ -99,6 +98,7 @@ namespace ToySharingAPI.Controllers
 
         // Thêm banner mới
         [HttpPost("banners")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<Banner>> CreateBanner([FromForm] CreateBannerDTO bannerDto)
         {
             try
@@ -126,6 +126,7 @@ namespace ToySharingAPI.Controllers
 
         // Sửa banner
         [HttpPut("banners/{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateBanner(int id, [FromForm] UpdateBannerDTO bannerDto)
         {
             var banner = await _context.Banners.FindAsync(id);
@@ -159,6 +160,7 @@ namespace ToySharingAPI.Controllers
 
         // Xóa banner
         [HttpDelete("banners/{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteBanner(int id)
         {
             var banner = await _context.Banners.FindAsync(id);
