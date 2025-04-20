@@ -240,9 +240,22 @@ namespace ToySharingAPI.Controllers
 
             try
             {
-                if (requestDto.NewStatus == 1) // Chấp nhận yêu cầu
+                if (requestDto.NewStatus == 1)
                 {
-                    request.Status = 1;
+                    var totalAmount = request.DepositAmount + request.RentalFee;
+                    if (totalAmount == 0)
+                    {
+                        request.Status = 2;
+                    }
+                    else if (totalAmount >= 1000)
+                    {
+                        request.Status = 1;
+                    }
+                    else
+                    {
+                        return BadRequest("Tổng DepositAmount và RentalFee phải bằng 0 hoặc lớn hơn hoặc bằng 1000.");
+                    }
+
                     request.Product.Available = 1;
 
                     // Tạo bản ghi History với trạng thái pending (0)
@@ -262,7 +275,7 @@ namespace ToySharingAPI.Controllers
 
                     var borrowerId = request.UserId;
                     var productName = request.Product.Name;
-                    await CreateNotification(borrowerId, $"Your request to rent '{productName}' has been accepted.");
+                    await CreateNotification(borrowerId, $"Yêu cầu mượn '{productName}' của bạn đã được chấp nhận.");
                 }
                 else if (requestDto.NewStatus == 5) // Từ chối yêu cầu
                 {
@@ -277,7 +290,7 @@ namespace ToySharingAPI.Controllers
                         ProductId = request.ProductId,
                         Status = 2, // Trạng thái canceled
                         Rating = null,
-                        Message = "Request rejected by owner",
+                        Message = "Yêu cầu bị từ chối bởi chủ sở hữu",
                         ReturnDate = DateTime.Now
                     };
                     _context.Histories.Add(history);
@@ -290,15 +303,15 @@ namespace ToySharingAPI.Controllers
                 }
                 else
                 {
-                    return BadRequest("Invalid status value. Status must be 1 (Accepted) or 5 (Rejected).");
+                    return BadRequest("Giá trị trạng thái không hợp lệ. Trạng thái phải là 1 (Accepted) hoặc 5 (Rejected).");
                 }
 
-                return Ok(new { message = "Request status updated successfully" });
+                return Ok(new { message = "Cập nhật trạng thái yêu cầu thành công" });
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error updating request status: {ex.ToString()}");
-                return StatusCode(500, new { message = "An error occurred while updating the request status.", error = ex.Message });
+                Console.WriteLine($"Lỗi khi cập nhật trạng thái yêu cầu: {ex.ToString()}");
+                return StatusCode(500, new { message = "Đã xảy ra lỗi khi cập nhật trạng thái yêu cầu.", error = ex.Message });
             }
         }
 
@@ -460,8 +473,8 @@ namespace ToySharingAPI.Controllers
                 {
                     RequestId = h.RequestId,
                     UserId = h.Product.UserId, // Owner's UserId
-                    BorrowerName = null, 
-                    BorrowerAvatar = null, 
+                    BorrowerName = null,
+                    BorrowerAvatar = null,
                     ProductId = h.ProductId,
                     ProductName = h.Product.Name,
                     Status = h.Status,
@@ -820,7 +833,7 @@ namespace ToySharingAPI.Controllers
 
             try
             {
-                request.Status = 6; 
+                request.Status = 6;
                 history.Status = 2; // Canceled
                 history.Message = formData.Reason;
                 history.ReturnDate = DateTime.Now;
