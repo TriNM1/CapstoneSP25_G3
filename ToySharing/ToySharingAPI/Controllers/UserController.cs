@@ -39,7 +39,7 @@ namespace ToySharingAPI.Controllers
             _s3Client = new AmazonS3Client(credentials, RegionEndpoint.GetBySystemName(_awsSettings.Region));
 
         }
-        
+
         private async Task<int> GetAuthenticatedUserId()
         {
             // Kiểm tra xem User có được xác thực không
@@ -160,7 +160,7 @@ namespace ToySharingAPI.Controllers
                         Address = u.Address,
                         Avatar = u.Avatar,
                         Rating = _context.Histories
-                            .Where(h => h.Product.UserId == u.Id && h.Status == 2)
+                            .Where(h => h.Product.UserId == u.Id && h.Status == 1 || h.Status == 2)
                             .Average(h => (double?)h.Rating) ?? 0
                     }
                 })
@@ -447,7 +447,7 @@ namespace ToySharingAPI.Controllers
 
             return Ok(new { avatarUrl = imageUrl });
         }
-        
+
         [HttpGet("role/user")]
         //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllUsersWithUserRole()
@@ -463,7 +463,7 @@ namespace ToySharingAPI.Controllers
                     var roleStr = roles.FirstOrDefault() ?? string.Empty;
                     var mainUser = await _context.Users
                         .FirstOrDefaultAsync(u => u.AuthUserId == authUserGuid);
-                    
+
                     if (mainUser != null)
                     {
                         result.Add(new ListUserDTO

@@ -5,7 +5,12 @@
 $primary-color: #ff6f61;
 $success-color: #28a745;
 $danger-color: #dc3545;
-
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #6c757d; /* Gray out the button */
+  border-color: #6c757d;
+}
 .inlending-page {
   background-color: #f7f9fc;
   font-family: 'Roboto', sans-serif;

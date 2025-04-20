@@ -517,7 +517,7 @@ namespace ToySharingAPI.Controllers
 
         [HttpGet("borrowing")]
         [Authorize(Roles = "User")]
-        public async Task<ActionResult<IEnumerable<RequestDTO>>> GetBorrowingRequests()
+        public async Task<ActionResult<IEnumerable<object>>> GetBorrowingRequests()
         {
             var mainUserId = await GetAuthenticatedUserId();
             if (mainUserId == -1)
@@ -545,6 +545,7 @@ namespace ToySharingAPI.Controllers
                     OwnerName = r.Product.User.Name,
                     Message = r.Message,
                     Status = r.Status,
+                    ConfirmReturn = r.ConfirmReturn,
                     RequestDate = r.RequestDate,
                     RentDate = r.RentDate,
                     ReturnDate = r.ReturnDate,
@@ -562,15 +563,8 @@ namespace ToySharingAPI.Controllers
                 r.ProductName,
                 r.Price,
                 r.Image,
-                RequestStatus = r.Status switch
-                {
-                    0 => "Pending",
-                    1 => "Accepted",
-                    2 => "Paid",
-                    3 => "PickedUp",
-                    _ => "Unknown"
-                },
-                ConfirmReturn = r.ConfirmReturn, // Thêm confirmReturn
+                Status = r.Status, // Trả về số (0, 1, 2, 3, 4, 7) thay vì chuỗi
+                r.ConfirmReturn,
                 r.RequestDate,
                 r.RentDate,
                 r.ReturnDate
@@ -895,6 +889,75 @@ namespace ToySharingAPI.Controllers
                 });
             }
         }
+        [HttpPut("{requestId}/mark-not-returned")]
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> MarkNotReturned(int requestId)
+        {
+            var mainUserId = await GetAuthenticatedUserId();
+            if (mainUserId == -1)
+                return Unauthorized("Không thể xác thực người dùng.");
+
+            var request = await _context.RentRequests
+                .Include(r => r.Product)
+                .ThenInclude(p => p.User)
+                .Include(r => r.User)
+                .Include(r => r.History)
+                .FirstOrDefaultAsync(r => r.RequestId == requestId);
+
+            if (request == null)
+                return NotFound("Yêu cầu không tồn tại.");
+
+            if (request.Product.UserId != mainUserId)
+                return Forbid("Bạn không có quyền đánh dấu yêu cầu này là chưa trả.");
+
+            if (request.Status != 3)
+                return BadRequest("Chỉ có thể đánh dấu chưa trả từ trạng thái 'đã lấy' (status = 3).");
+
+            if ((request.ConfirmReturn & 1) != 0)
+                return BadRequest("Người mượn đã xác nhận trả, không thể đánh dấu là chưa trả.");
+
+            var currentDate = DateTime.Now;
+            var returnDate = request.ReturnDate;
+            var daysOverdue = (currentDate - returnDate).TotalDays;
+
+            if (daysOverdue <= 3)
+                return BadRequest("Chỉ có thể đánh dấu chưa trả nếu đã quá 3 ngày kể từ ngày trả dự kiến.");
+
+            try
+            {
+                request.Status = 7; // Not Returned
+                request.History.Status = 3; // Mark history as Not Returned
+                request.History.ReturnDate = currentDate;
+                request.Product.Available = 0; // Make product available again
+
+                await _context.SaveChangesAsync();
+
+                var borrowerId = request.UserId;
+                var ownerId = request.Product.UserId;
+                var productName = request.Product?.Name ?? "Sản phẩm không xác định";
+
+                await CreateNotification(
+                    borrowerId,
+                    $"Yêu cầu mượn sản phẩm '{productName}' đã bị đánh dấu là chưa trả do quá hạn 3 ngày."
+                );
+                await CreateNotification(
+                    ownerId,
+                    $"Bạn đã đánh dấu yêu cầu mượn sản phẩm '{productName}' là chưa trả."
+                );
+
+                return Ok(new { message = "Đã đánh dấu yêu cầu là chưa trả thành công." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "Lỗi khi đánh dấu yêu cầu là chưa trả.",
+                    error = ex.Message,
+                    requestId
+                });
+            }
+        }
+    
         public class CancelRequestDTO
         {
             public string Reason { get; set; }
