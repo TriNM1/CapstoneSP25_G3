@@ -28,6 +28,12 @@ const TransactionHistory = () => {
     3: "Chuyển tiền phạt",
   };
 
+  const transactionStatusMap = {
+    0: "Chờ thanh toán",
+    1: "Thành công",
+    2: "Thất bại",
+  };
+
   const indexOfLastTransaction = currentPage * transactionsPerPage;
   const indexOfFirstTransaction = indexOfLastTransaction - transactionsPerPage;
   const currentTransactions = transactions.slice(
@@ -94,6 +100,7 @@ const TransactionHistory = () => {
                     <th>Loại Giao Dịch</th>
                     <th>Số Tiền</th>
                     <th>Ngày Giao Dịch</th>
+                    <th>Trạng Thái</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -104,6 +111,7 @@ const TransactionHistory = () => {
                       <td>{transactionTypeMap[transaction.transactionType] || "Không xác định"}</td>
                       <td>{transaction.amount.toLocaleString("vi-VN")} VND</td>
                       <td>{new Date(transaction.createdAt).toLocaleString("vi-VN")}</td>
+                      <td>{transactionStatusMap[transaction.status] || "Không xác định"}</td>
                     </tr>
                   ))}
                 </tbody>
