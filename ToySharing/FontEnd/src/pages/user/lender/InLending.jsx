@@ -56,20 +56,19 @@ const InLending = () => {
       });
       const filteredLendings = response.data
         .filter((req) => [1, 2, 3, 4, 7].includes(req.status))
-        .map((req) => {
-          console.log("Request from API:", req); // Debug API response
-          return {
-            id: req.requestId,
-            image: req.image || toy1,
-            name: req.productName,
-            borrowDate: new Date(req.rentDate).toISOString().split("T")[0],
-            returnDate: new Date(req.returnDate).toISOString().split("T")[0],
-            lenderId: req.userId,
-            lenderAvatar: req.borrowerAvatar || user,
-            status: req.status, // Lưu status dưới dạng số (1, 2, 3, 4, 7)
-            confirmReturn: req.confirmReturn || 0,
-          };
-        });
+        .map((req) => ({
+          id: req.requestId,
+          image: req.image || toy1,
+          name: req.productName,
+          borrowDate: new Date(req.rentDate).toISOString().split("T")[0],
+          returnDate: new Date(req.returnDate).toISOString().split("T")[0],
+          lenderId: req.userId,
+          lenderAvatar: req.borrowerAvatar || user,
+          status: req.status,
+          confirmReturn: req.confirmReturn || 0,
+        }))
+        // Sắp xếp theo borrowDate từ mới nhất đến cũ nhất
+        .sort((a, b) => new Date(b.borrowDate) - new Date(a.borrowDate));
       setLendings(filteredLendings);
     } catch (error) {
       console.error("Lỗi khi lấy danh sách đồ chơi đang cho mượn:", error);
@@ -193,17 +192,15 @@ const InLending = () => {
         const newLendings = prev.map((item) =>
           item.id === requestId
             ? {
-                ...item,
-                confirmReturn: item.confirmReturn | 2,
-                status: (item.confirmReturn | 2) === 3 ? 4 : item.status, // Sử dụng số 4 cho Completed
-              }
+              ...item,
+              confirmReturn: item.confirmReturn | 2,
+              status: (item.confirmReturn | 2) === 3 ? 4 : item.status,
+            }
             : item
         );
-        console.log("Updated lendings:", newLendings); // Debug state
         return newLendings;
       });
 
-      // Delay refresh để đảm bảo backend sync
       setTimeout(() => {
         setRefreshTrigger((prev) => prev + 1);
       }, 500);
@@ -215,14 +212,13 @@ const InLending = () => {
       if (error.response) {
         errorMessage = error.response.data.message || errorMessage;
         if (error.response.status === 400 && errorMessage.includes("Bạn đã xác nhận trả trước đó")) {
-          // Xử lý trường hợp bấm lại nút
           setLendings((prev) =>
             prev.map((item) =>
               item.id === requestId
                 ? {
-                    ...item,
-                    confirmReturn: item.confirmReturn | 2,
-                  }
+                  ...item,
+                  confirmReturn: item.confirmReturn | 2,
+                }
                 : item
             )
           );
@@ -264,10 +260,10 @@ const InLending = () => {
         prev.map((item) =>
           item.id === requestId
             ? {
-                ...item,
-                status: 7, // Sử dụng số 7 cho NotReturned
-                confirmReturn: item.confirmReturn,
-              }
+              ...item,
+              status: 7,
+              confirmReturn: item.confirmReturn,
+            }
             : item
         )
       );
@@ -301,7 +297,6 @@ const InLending = () => {
     const currentDate = new Date();
     const parsedReturnDate = new Date(returnDate);
     const daysOverdue = (currentDate - parsedReturnDate) / (1000 * 60 * 60 * 24);
-    console.log("isOverdue:", { returnDate, daysOverdue, confirmReturn }); // Debug overdue logic
     return daysOverdue > 3 && (confirmReturn & 1) === 0;
   };
 
@@ -373,14 +368,12 @@ const InLending = () => {
                             <strong>Trạng thái:</strong>{" "}
                             <span className={`in-progress ${item.status === 7 ? "not-returned" : ""}`}>
                               {item.status === 1 ? "Đã chấp nhận" :
-                               item.status === 2 ? "Người dùng đã thanh toán" :
-                               item.status === 3 ? (
-                                 (item.confirmReturn & 2) !== 0 ? "Bạn đã xác nhận trả, chờ người mượn" :
-                                 (item.confirmReturn & 1) !== 0 ? "Chờ bạn xác nhận trả" :
-                                 isOverdue(item.returnDate, item.confirmReturn) ? "Quá hạn, chưa trả" : "Đã lấy, chưa xác nhận trả"
-                               ) :
-                               item.status === 4 ? "Hoàn thành" :
-                               item.status === 7 ? "Chưa trả" : "Không xác định"}
+                                item.status === 2 ? "Người dùng đã thanh toán" :
+                                  item.status === 3 ? (
+                                    (item.confirmReturn & 2) !== 0 ? "Bạn đã xác nhận trả, chờ người mượn" :
+                                      (item.confirmReturn & 1) !== 0 ? "Chờ bạn xác nhận trả" :
+                                        isOverdue(item.returnDate, item.confirmReturn) ? "Quá hạn, chưa trả" : "Đã lấy, chưa xác nhận trả"
+                                  ) : "Hoàn thành"}
                             </span>
                           </Card.Text>
                           <div className="lender-info">

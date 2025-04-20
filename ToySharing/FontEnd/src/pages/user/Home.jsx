@@ -323,6 +323,9 @@ const Home = () => {
       return;
     }
     setSelectedToyId(toyId);
+    const today = new Date();
+    setBorrowStart(today); // Đặt ngày mượn là hôm nay
+    setBorrowEnd(today); // Đặt ngày trả là hôm nay
     setShowBorrowModal(true);
   };
 

@@ -6,6 +6,61 @@ $primary-color: #ff6f61;
 $success-color: #28a745;
 $danger-color: #dc3545;
 
+.filter-panel {
+  transition: all 0.3s ease;
+  overflow: hidden;
+
+  &.show {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    width: 100%;
+  }
+
+  &:not(.show) {
+    height: auto;
+    padding: 0;
+    background: none;
+  }
+
+  .filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    width: 100%;
+
+    .form-group {
+      flex: 1;
+      min-width: 200px;
+      width: 100%;
+    }
+
+    .form-control,
+    .form-select {
+      width: 100%;
+      font-size: 1rem;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+    }
+
+    label {
+      font-weight: bold;
+      font-size: 1.1rem;
+      margin-bottom: 5px;
+      display: block;
+      text-align: left;
+    }
+  }
+
+  .btn-outline-primary {
+    margin-bottom: 0;
+    font-size: 1rem;
+    padding: 8px 16px;
+  }
+}
+
 .searching-toy-page {
   background-color: #f7f9fc;
   font-family: 'Roboto', sans-serif;
@@ -104,16 +159,16 @@ $danger-color: #dc3545;
       margin-bottom: 10px;
     }
 
-    .toy-price,
-    .toy-status,
-    .toy-distance,
-    .toy-condition {
+    .price,
+    .status,
+    .distance,
+    .send-date {
       font-size: 1rem;
       margin-bottom: 5px;
-      color: #333;
+      color: #333; /* Đảm bảo phí cho mượn không đỏ */
     }
 
-    .toy-status {
+    .status {
       strong {
         font-weight: bold;
       }
@@ -138,7 +193,7 @@ $danger-color: #dc3545;
         color: #fff;
 
         &:hover {
-          background-color: darken($primary-color, 10%);
+          background-color: #e65b50;
         }
       }
 

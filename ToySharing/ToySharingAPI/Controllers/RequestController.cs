@@ -829,6 +829,16 @@ namespace ToySharingAPI.Controllers
             {
                 if (history != null)
                 {
+                    request.Status = 6;
+                    history.Status = 2; // Canceled
+                    history.Message = formData.Reason;
+                    history.ReturnDate = DateTime.Now;
+                    request.Product.Available = 0;
+
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
                     history = new History
                     {
                         RequestId = requestId,
@@ -839,16 +849,6 @@ namespace ToySharingAPI.Controllers
                         ReturnDate = DateTime.Now,
                     };
                     _context.Histories.Add(history);
-                }
-                else
-                {
-                    request.Status = 6;
-                    history.Status = 2; // Canceled
-                    history.Message = formData.Reason;
-                    history.ReturnDate = DateTime.Now;
-                    request.Product.Available = 0;
-
-                    await _context.SaveChangesAsync();
                 }
                 var ownerId = request.Product.UserId;
                 var productName = request.Product.Name ?? "Sản phẩm không xác định";

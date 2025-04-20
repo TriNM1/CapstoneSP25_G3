@@ -2,6 +2,63 @@
 @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto&display=swap');
 
 $primary-color: #ff6f61;
+$success-color: #28a745;
+$danger-color: #dc3545;
+
+.filter-panel {
+  transition: all 0.3s ease;
+  overflow: hidden;
+
+  &.show {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    width: 100%;
+  }
+
+  &:not(.show) {
+    height: auto;
+    padding: 0;
+    background: none;
+  }
+
+  .filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    width: 100%;
+
+    .form-group {
+      flex: 1;
+      min-width: 200px;
+      width: 100%;
+    }
+
+    .form-control,
+    .form-select {
+      width: 100%;
+      font-size: 1rem;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+    }
+
+    label {
+      font-weight: bold;
+      font-size: 1.1rem;
+      margin-bottom: 5px;
+      display: block;
+      text-align: left;
+    }
+  }
+
+  .btn-outline-primary {
+    margin-bottom: 0;
+    font-size: 1rem;
+    padding: 8px 16px;
+  }
+}
 
 .mytoy-page {
   background-color: #f7f9fc;
@@ -72,55 +129,34 @@ $primary-color: #ff6f61;
       align-items: center;
 
       .filter-panel-wrapper {
-        flex-grow: 1; 
+        flex-grow: 1;
         flex-shrink: 1;
         margin-right: 1rem;
       }
 
       .add-toy-btn {
         background-color: rgb(0, 200, 80);
-        flex-shrink: 0; 
-        width: auto; 
+        flex-shrink: 0;
+        width: auto;
         padding: 1rem 1rem;
-        font-size: 1rem; 
+        font-size: 1rem;
       }
     }
 
     .toy-items-section {
       margin-top: 1rem;
+
+      .toy-price {
+        font-size: 1rem;
+        margin-bottom: 5px;
+        color: #333; /* Sửa màu chữ phí cho mượn thành màu mặc định */
+      }
     }
   }
 
   .filter-toggle {
     button {
       font-size: 1rem;
-    }
-  }
-
-  .filter-panel {
-    background-color: #fff;
-    border-radius: 8px;
-    padding: 15px;
-    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
-    margin-top: 15px;
-
-    label {
-      font-weight: bold;
-      font-size: 1.1rem;
-      margin-bottom: 5px;
-      display: block;
-      text-align: left;
-    }
-
-    .form-control {
-      font-size: 1rem;
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-
-      &::placeholder {
-        opacity: 0.3;
-      }
     }
   }
 

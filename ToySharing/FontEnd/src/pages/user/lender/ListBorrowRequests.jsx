@@ -52,18 +52,21 @@ const ListBorrowRequests = () => {
         },
       });
 
-      const formattedRequests = response.data.map((req) => ({
-        id: req.requestId,
-        image: req.image || "https://via.placeholder.com/300x200?text=No+Image",
-        name: req.productName,
-        price: `${req.price.toLocaleString("vi-VN")} VND`,
-        requestDate: new Date(req.requestDate).toISOString().split("T")[0],
-        borrowDate: new Date(req.rentDate).toISOString().split("T")[0],
-        returnDate: new Date(req.returnDate).toISOString().split("T")[0],
-        requesterId: req.userId,
-        requesterAvatar: req.borrowerAvatar,
-        message: req.message,
-      }));
+      const formattedRequests = response.data
+        .map((req) => ({
+          id: req.requestId,
+          image: req.image || "https://via.placeholder.com/300x200?text=No+Image",
+          name: req.productName,
+          price: `${req.price.toLocaleString("vi-VN")} VND`,
+          requestDate: new Date(req.requestDate).toISOString().split("T")[0],
+          borrowDate: new Date(req.rentDate).toISOString().split("T")[0],
+          returnDate: new Date(req.returnDate).toISOString().split("T")[0],
+          requesterId: req.userId,
+          requesterAvatar: req.borrowerAvatar,
+          message: req.message,
+        }))
+        // Sắp xếp theo requestDate từ mới nhất đến cũ nhất
+        .sort((a, b) => new Date(b.requestDate) - new Date(a.requestDate));
 
       setRequests(formattedRequests);
     } catch (error) {

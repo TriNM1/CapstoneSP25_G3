@@ -18,10 +18,90 @@ import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
+const FilterPanel = ({ showFilter, onToggle, filterValues, onChange, categories }) => {
+  return (
+    <div className={`filter-panel ${showFilter ? "show" : ""}`}>
+      <Button variant="outline-primary" onClick={onToggle}>
+        {showFilter ? "Ẩn bộ lọc" : "Hiện bộ lọc"}
+      </Button>
+      {showFilter && (
+        <Form className="filter-form mt-3">
+          <Form.Group controlId="filterName" className="mb-3">
+            <Form.Label>Tên đồ chơi</Form.Label>
+            <Form.Control
+              type="text"
+              name="name"
+              value={filterValues.name}
+              onChange={onChange}
+              placeholder="Nhập tên đồ chơi"
+            />
+          </Form.Group>
+          <Form.Group controlId="filterCondition" className="mb-3">
+            <Form.Label>Tình trạng</Form.Label>
+            <Form.Control
+              as="select"
+              name="condition"
+              value={filterValues.condition}
+              onChange={onChange}
+            >
+              <option value="">Tất cả</option>
+              <option value="Mới">Mới</option>
+              <option value="Cũ">Cũ</option>
+            </Form.Control>
+          </Form.Group>
+          <Form.Group controlId="filterCategory" className="mb-3">
+            <Form.Label>Danh mục</Form.Label>
+            <Form.Control
+              as="select"
+              name="category"
+              value={filterValues.category}
+              onChange={onChange}
+            >
+              <option value="">Tất cả</option>
+              {categories.map((cat, index) => (
+                <option key={index} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </Form.Control>
+          </Form.Group>
+          <Form.Group controlId="filterAgeRange" className="mb-3">
+            <Form.Label>Độ tuổi</Form.Label>
+            <Form.Control
+              as="select"
+              name="ageRange"
+              value={filterValues.ageRange}
+              onChange={onChange}
+            >
+              <option value="">Tất cả</option>
+              <option value="0-3">0-3 tuổi</option>
+              <option value="4-7">4-7 tuổi</option>
+              <option value="8-12">8-12 tuổi</option>
+              <option value="12+">12+ tuổi</option>
+            </Form.Control>
+          </Form.Group>
+          <Form.Group controlId="filterPriceSort" className="mb-3">
+            <Form.Label>Sắp xếp theo phí cho mượn</Form.Label>
+            <Form.Control
+              as="select"
+              name="priceSort"
+              value={filterValues.priceSort}
+              onChange={onChange}
+            >
+              <option value="">Mặc định</option>
+              <option value="asc">Từ thấp đến cao</option>
+              <option value="desc">Từ cao đến thấp</option>
+            </Form.Control>
+          </Form.Group>
+        </Form>
+      )}
+    </div>
+  );
+};
+
 const SearchingToy = () => {
   const navigate = useNavigate();
   const [activeLink, setActiveLink] = useState("searching-toy");
-  const [selectedDate, setSelectedDate] = useState(null);
   const [toys, setToys] = useState([]);
   const [mainUserId, setMainUserId] = useState(null);
   const [userRequests, setUserRequests] = useState([]);
@@ -37,6 +117,15 @@ const SearchingToy = () => {
   const [userLocation, setUserLocation] = useState(null);
   const [userAddress, setUserAddress] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
+  const [filterValues, setFilterValues] = useState({
+    name: "",
+    condition: "",
+    category: "",
+    ageRange: "",
+    priceSort: "",
+  });
+  const [categories, setCategories] = useState([]);
 
   const API_BASE_URL = "https://localhost:7128/api";
 
@@ -66,6 +155,27 @@ const SearchingToy = () => {
     if (token) fetchUserLocation();
   }, [navigate]);
 
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const token = getAuthToken();
+        if (!token) return;
+
+        const response = await axios.get(`${API_BASE_URL}/Products/categories`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        setCategories(response.data);
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách danh mục:", error);
+        toast.error("Không thể tải danh sách danh mục!");
+        setCategories([]);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
   const fetchUserLocation = async () => {
     const token = getAuthToken();
     if (!token) {
@@ -74,7 +184,6 @@ const SearchingToy = () => {
       return;
     }
 
-    // Ưu tiên lấy tọa độ từ cơ sở dữ liệu
     try {
       const response = await axios.get(`${API_BASE_URL}/User/current/location`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -90,7 +199,6 @@ const SearchingToy = () => {
 
       if (address) {
         setUserAddress(address);
-        // Thử lấy tọa độ từ địa chỉ nếu không có trong cơ sở dữ liệu
         const coordinates = await getCoordinatesFromAddress(address);
         if (coordinates) {
           setUserLocation(coordinates);
@@ -107,56 +215,112 @@ const SearchingToy = () => {
       setUserAddress(null);
       toast.warn("Vui lòng cung cấp vị trí để tính khoảng cách.");
     }
-
-    // Nếu không có tọa độ từ cơ sở dữ liệu, thử Geolocation
-    if (navigator.geolocation && !userLocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-          setUserAddress(null);
-        },
-        (error) => {
-          console.error("Lỗi khi lấy vị trí từ Geolocation:", error);
-          if (!userLocation && !userAddress) {
-            toast.warn("Vui lòng cung cấp vị trí để tính khoảng cách.");
-          }
-        }
-      );
-    }
   };
 
   const getCoordinatesFromAddress = async (address) => {
-    if (!address) {
-      console.warn("Địa chỉ trống, không thể lấy tọa độ.");
-      return null;
-    }
+    if (!address) return null;
     try {
       const encodedAddress = encodeURIComponent(address);
       const response = await axios.get(
         `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=jsonv2`,
-        {
-          headers: {
-            "User-Agent": "ToySharingApp",
-          },
-        }
+        { headers: { "User-Agent": "ToySharingApp" } }
       );
       if (response.data && response.data.length > 0) {
         const { lat, lon } = response.data[0];
         if (lat && lon && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lon))) {
-          return {
-            latitude: parseFloat(lat),
-            longitude: parseFloat(lon),
-          };
+          return { latitude: parseFloat(lat), longitude: parseFloat(lon) };
         }
       }
-      console.warn(`Không tìm thấy tọa độ cho địa chỉ: ${address}`);
       return null;
     } catch (error) {
       console.error(`Lỗi khi lấy tọa độ cho địa chỉ ${address}:`, error);
       return null;
+    }
+  };
+
+  const handleGetCurrentLocation = async () => {
+    if (!navigator.geolocation) {
+      toast.error("Trình duyệt của bạn không hỗ trợ định vị!");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        let address = "Địa chỉ từ định vị";
+
+        try {
+          const response = await axios.get(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=jsonv2`,
+            { headers: { "User-Agent": "ToySharingApp" } }
+          );
+          if (response.data && response.data.display_name) {
+            address = response.data.display_name;
+          }
+        } catch (error) {
+          console.error("Lỗi khi lấy địa chỉ từ tọa độ:", error);
+        }
+
+        try {
+          const token = getAuthToken();
+          if (!token) {
+            toast.error("Vui lòng đăng nhập để cập nhật vị trí!");
+            return;
+          }
+
+          await axios.put(
+            `${API_BASE_URL}/User/current/location`,
+            { address, latitude, longitude },
+            { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
+          );
+
+          setUserLocation({ latitude, longitude });
+          setUserAddress(address);
+          toast.success("Lấy vị trí hiện tại thành công!");
+          fetchUserLocation();
+        } catch (error) {
+          console.error("Lỗi khi cập nhật vị trí:", error);
+          toast.error(error.response?.data.message || "Không thể cập nhật vị trí!");
+        }
+      },
+      (error) => {
+        console.error("Lỗi khi lấy vị trí hiện tại:", error);
+        toast.error("Không thể lấy vị trí hiện tại. Vui lòng thử lại!");
+      }
+    );
+  };
+
+  const handleUpdateLocation = async () => {
+    const newAddress = prompt("Nhập địa chỉ mới:");
+    if (!newAddress) return;
+
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        toast.error("Vui lòng đăng nhập để cập nhật vị trí!");
+        return;
+      }
+
+      let latitude = null;
+      let longitude = null;
+
+      const coordinates = await getCoordinatesFromAddress(newAddress);
+      if (coordinates) {
+        latitude = coordinates.latitude;
+        longitude = coordinates.longitude;
+      }
+
+      await axios.put(
+        `${API_BASE_URL}/User/current/location`,
+        { address: newAddress, latitude, longitude },
+        { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
+      );
+
+      toast.success("Cập nhật vị trí thành công!");
+      fetchUserLocation();
+    } catch (error) {
+      console.error("Lỗi khi cập nhật vị trí:", error);
+      toast.error(error.response?.data.message || "Không thể cập nhật vị trí!");
     }
   };
 
@@ -170,34 +334,33 @@ const SearchingToy = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
+        if (!Array.isArray(response.data)) {
+          console.error("Dữ liệu API không phải mảng:", response.data);
+          setToys([]);
+          return;
+        }
+
         const formattedToys = await Promise.all(
           response.data.map(async (toy) => {
-            let distance;
+            let distance = isLoggedIn ? null : "Vui lòng đăng nhập để biết khoảng cách";
 
-            if (!isLoggedIn) {
-              distance = "Vui lòng đăng nhập để biết khoảng cách";
-            } else {
+            if (isLoggedIn) {
               let ownerAddress, ownerLatitude, ownerLongitude;
 
-              // Lấy thông tin vị trí của chủ sở hữu
               try {
                 const ownerLocationResponse = await axios.get(
                   `${API_BASE_URL}/User/${toy.userId}/location`,
-                  {
-                    headers: { Authorization: `Bearer ${token}` },
-                  }
+                  { headers: { Authorization: `Bearer ${token}` } }
                 );
                 ownerAddress = ownerLocationResponse.data.address;
                 ownerLatitude = ownerLocationResponse.data.latitude;
                 ownerLongitude = ownerLocationResponse.data.longitude;
               } catch (error) {
-                console.error(`Lỗi khi lấy địa chỉ chủ sở hữu ${toy.userId}:`, error);
                 distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
                 return { ...toy, distance };
               }
 
               if (!ownerLatitude || !ownerLongitude) {
-                // Nếu không có tọa độ của chủ sở hữu
                 if (ownerAddress) {
                   const ownerCoords = await getCoordinatesFromAddress(ownerAddress);
                   if (ownerCoords) {
@@ -213,22 +376,17 @@ const SearchingToy = () => {
                 }
               }
 
-              // Tính khoảng cách nếu có tọa độ của người dùng
               if (userLocation && userLocation.latitude && userLocation.longitude) {
                 try {
                   const distResponse = await axios.get(
                     `${API_BASE_URL}/User/distance-to-product/${toy.productId}?myLatitude=${userLocation.latitude}&myLongitude=${userLocation.longitude}`,
-                    {
-                      headers: { Authorization: `Bearer ${token}` },
-                    }
+                    { headers: { Authorization: `Bearer ${token}` } }
                   );
                   distance = distResponse.data.distanceKilometers ?? "Không thể tính khoảng cách";
                 } catch (error) {
-                  console.error(`Lỗi khi tính khoảng cách cho đồ chơi ${toy.productId}:`, error);
-                  distance =
-                    error.response?.status === 400
-                      ? "Chưa xác định vị trí của người sở hữu đồ chơi"
-                      : "Không thể tính khoảng cách";
+                  distance = error.response?.status === 400
+                    ? "Chưa xác định vị trí của người sở hữu đồ chơi"
+                    : "Không thể tính khoảng cách";
                 }
               } else {
                 distance = "Chưa xác định vị trí của bạn";
@@ -238,27 +396,27 @@ const SearchingToy = () => {
             return {
               productId: toy.productId,
               userId: toy.userId,
-              image:
-                toy.imagePaths && toy.imagePaths.length > 0
-                  ? toy.imagePaths[0]
-                  : "https://via.placeholder.com/300x200?text=No+Image",
-              name: toy.name,
+              image: toy.imagePaths && toy.imagePaths.length > 0
+                ? toy.imagePaths[0]
+                : "https://via.placeholder.com/300x200?text=No+Image",
+              name: toy.name || "Không có tên",
               ownerAvatar: toy.ownerAvatar || "https://via.placeholder.com/50?text=Avatar",
-              createdAt: new Date(toy.createdAt).toISOString().split("T")[0],
-              categoryName: toy.categoryName,
+              createdAt: toy.createdAt ? new Date(toy.createdAt).toISOString().split("T")[0] : "Không có ngày",
+              categoryName: toy.categoryName || "Không có danh mục",
               productStatus: toy.productStatus === 0 ? "Mới" : toy.productStatus === 1 ? "Cũ" : "Không xác định",
-              suitableAge: toy.suitableAge,
-              price: toy.price,
-              description: toy.description,
-              available: toy.available,
+              suitableAge: toy.suitableAge || "Không xác định",
+              price: parseFloat(toy.price) || 0,
+              description: toy.description || "Không có mô tả",
+              available: toy.available || 0,
               ownerName: toy.ownerName || "Người cho mượn",
               ownerId: toy.userId,
-              distance: distance,
+              distance,
             };
           })
         );
 
-        setToys(formattedToys);
+        const sortedToys = formattedToys.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        setToys(sortedToys);
       } catch (error) {
         console.error("Lỗi khi lấy danh sách đồ chơi:", error);
         toast.error("Không thể tải danh sách đồ chơi!");
@@ -286,26 +444,11 @@ const SearchingToy = () => {
     if (mainUserId) fetchUserRequests();
   }, [mainUserId]);
 
-  const filteredToys = selectedDate
-    ? toys.filter((toy) => {
-      const toyDate = new Date(toy.createdAt);
-      return (
-        toyDate.getDate() === selectedDate.getDate() &&
-        toyDate.getMonth() === selectedDate.getMonth() &&
-        toyDate.getFullYear() === selectedDate.getFullYear()
-      );
-    })
-    : toys;
-
-  // Sắp xếp theo khoảng cách (gần nhất trước)
-  const sortedToys = [...filteredToys].sort((a, b) => {
-    const distanceA = typeof a.distance === "number" ? a.distance : Infinity;
-    const distanceB = typeof b.distance === "number" ? b.distance : Infinity;
-    return distanceA - distanceB; // Khoảng cách nhỏ hơn lên đầu
-  });
-
   const handleOpenBorrowModal = (toyId) => {
     setSelectedToyId(toyId);
+    const today = new Date();
+    setBorrowStart(today); // Đặt ngày mượn là hôm nay
+    setBorrowEnd(today); // Đặt ngày trả là hôm nay
     setShowBorrowModal(true);
   };
 
@@ -356,17 +499,16 @@ const SearchingToy = () => {
       });
       setSelectedToy({
         productId: response.data.productId,
-        image:
-          response.data.imagePaths && response.data.imagePaths.length > 0
-            ? response.data.imagePaths[0]
-            : "https://via.placeholder.com/300x200?text=No+Image",
-        name: response.data.name,
-        categoryName: response.data.categoryName,
+        image: response.data.imagePaths && response.data.imagePaths.length > 0
+          ? response.data.imagePaths[0]
+          : "https://via.placeholder.com/300x200?text=No+Image",
+        name: response.data.name || "Không có tên",
+        categoryName: response.data.categoryName || "Không có danh mục",
         productStatus: response.data.productStatus === 0 ? "Mới" : response.data.productStatus === 1 ? "Cũ" : "Không xác định",
-        suitableAge: response.data.suitableAge,
-        price: response.data.price,
-        description: response.data.description,
-        available: response.data.available,
+        suitableAge: response.data.suitableAge || "Không xác định",
+        price: parseFloat(response.data.price) || 0,
+        description: response.data.description || "Không có mô tả",
+        available: response.data.available || 0,
       });
       setShowDetailModal(true);
     } catch (error) {
@@ -447,18 +589,7 @@ const SearchingToy = () => {
       navigate("/message", { state: { activeConversationId: conversationId } });
     } catch (error) {
       console.error("Lỗi khi xử lý nhắn tin:", error);
-      if (error.response && error.response.status === 401) {
-        toast.error("Token không hợp lệ hoặc đã hết hạn! Vui lòng đăng nhập lại.");
-        navigate("/login");
-      } else if (error.response && error.response.status === 500) {
-        toast.error(
-          error.response.data?.message || "Lỗi server khi tạo cuộc trò chuyện!"
-        );
-      } else {
-        toast.error(
-          error.response?.data?.message || "Không thể bắt đầu cuộc trò chuyện!"
-        );
-      }
+      toast.error(error.response?.data?.message || "Không thể bắt đầu cuộc trò chuyện!");
     }
   };
 
@@ -466,24 +597,69 @@ const SearchingToy = () => {
     toast.info("Đã hiển thị tất cả đồ chơi!");
   };
 
-  // Hàm cập nhật vị trí (tùy chọn)
-  const handleUpdateLocation = async (newAddress) => {
-    try {
-      const token = getAuthToken();
-      const response = await axios.put(
-        `${API_BASE_URL}/User/${mainUserId}/location`,
-        { address: newAddress },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      toast.success("Cập nhật vị trí thành công!");
-      fetchUserLocation(); // Làm mới vị trí
-    } catch (error) {
-      console.error("Lỗi khi cập nhật vị trí:", error);
-      toast.error("Không thể cập nhật vị trí!");
-    }
-  };
+  const filteredToys = toys
+    .filter((toy) => {
+      const matchesName = filterValues.name
+        ? toy.name.toLowerCase().includes(filterValues.name.toLowerCase())
+        : true;
+      const matchesCondition = filterValues.condition
+        ? toy.productStatus === filterValues.condition
+        : true;
+      const matchesCategory = filterValues.category
+        ? toy.categoryName === filterValues.category
+        : true;
+      const matchesAgeRange = filterValues.ageRange
+        ? (() => {
+            const age = parseInt(toy.suitableAge);
+            switch (filterValues.ageRange) {
+              case "0-3":
+                return age >= 0 && age <= 3;
+              case "4-7":
+                return age >= 4 && age <= 7;
+              case "8-12":
+                return age >= 8 && age <= 12;
+              case "12+":
+                return age >= 12;
+              default:
+                return true;
+            }
+          })()
+        : true;
+
+      return matchesName && matchesCondition && matchesCategory && matchesAgeRange;
+    })
+    .sort((a, b) => {
+      if (filterValues.priceSort === "asc") {
+        return parseFloat(a.price) - parseFloat(b.price);
+      } else if (filterValues.priceSort === "desc") {
+        return parseFloat(b.price) - parseFloat(a.price);
+      }
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+  if (!Array.isArray(toys)) {
+    return (
+      <div className="searching-toy-page home-page">
+        <Header
+          activeLink={activeLink}
+          setActiveLink={setActiveLink}
+          isLoggedIn={isLoggedIn}
+          unreadMessages={3}
+          notificationCount={2}
+        />
+        <Container fluid className="mt-4">
+          <Row>
+            <Col xs={12} md={2}>
+              <SideMenu menuItems={sideMenuItems} activeItem={1} />
+            </Col>
+            <Col xs={12} md={10} className="main-content">
+              <p>Đang tải dữ liệu...</p>
+            </Col>
+          </Row>
+        </Container>
+      </div>
+    );
+  }
 
   return (
     <div className="searching-toy-page home-page">
@@ -500,34 +676,38 @@ const SearchingToy = () => {
             <SideMenu menuItems={sideMenuItems} activeItem={1} />
           </Col>
           <Col xs={12} md={10} className="main-content">
-            <Form.Group controlId="selectDate" className="mb-3">
-              <Form.Label>Chọn ngày</Form.Label>
-              <DatePicker
-                selected={selectedDate}
-                onChange={(date) => setSelectedDate(date)}
-                dateFormat="yyyy-MM-dd"
-                className="date-picker-input"
-                placeholderText="Chọn ngày"
-              />
-            </Form.Group>
-            {/* Nút cập nhật vị trí (tùy chọn) */}
-            <Button
-              variant="outline-primary"
-              className="mb-3"
-              onClick={() => {
-                const newAddress = prompt("Nhập địa chỉ mới:");
-                if (newAddress) handleUpdateLocation(newAddress);
-              }}
-            >
-              Cập nhật vị trí
-            </Button>
+            <div className="d-flex align-items-center mb-3">
+              <div className="filter-panel-wrapper flex-grow-1">
+                <FilterPanel
+                  showFilter={showFilter}
+                  onToggle={() => setShowFilter(!showFilter)}
+                  filterValues={filterValues}
+                  onChange={(e) => setFilterValues({ ...filterValues, [e.target.name]: e.target.value })}
+                  categories={categories}
+                />
+              </div>
+              <Button
+                variant="outline-primary"
+                className="ms-3"
+                onClick={handleGetCurrentLocation}
+              >
+                Lấy vị trí hiện tại
+              </Button>
+              <Button
+                variant="outline-primary"
+                className="ms-3"
+                onClick={handleUpdateLocation}
+              >
+                Cập nhật vị trí
+              </Button>
+            </div>
             <Row className="request-items-section">
-              {sortedToys.length === 0 ? (
+              {filteredToys.length === 0 ? (
                 <Col className="text-center">
                   <h5>Không có đồ chơi nào để hiển thị</h5>
                 </Col>
               ) : (
-                sortedToys.map((toy) => {
+                filteredToys.map((toy) => {
                   const hasSentRequest = userRequests.some(
                     (req) =>
                       req.productId === toy.productId &&
@@ -548,9 +728,7 @@ const SearchingToy = () => {
                           onError={(e) => (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")}
                         />
                         <Card.Body>
-                          <Card.Title className="toy-name">
-                            {toy.name}
-                          </Card.Title>
+                          <Card.Title className="toy-name">{toy.name}</Card.Title>
                           <Card.Text className="send-date">
                             <strong>Ngày đăng:</strong> {toy.createdAt}
                           </Card.Text>
@@ -560,31 +738,20 @@ const SearchingToy = () => {
                           </Card.Text>
                           <Card.Text className="status">
                             <strong>Trạng thái:</strong>{" "}
-                            <span
-                              className={
-                                toy.available === 0 ? "available" : "unavailable"
-                              }
-                            >
-                              {toy.available === 0
-                                ? "Sẵn sàng cho mượn"
-                                : "Đã cho mượn"}
+                            <span className={toy.available === 0 ? "available" : "unavailable"}>
+                              {toy.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn"}
                             </span>
                           </Card.Text>
                           <Card.Text className="distance">
                             <strong>Khoảng cách:</strong>{" "}
-                            {typeof toy.distance === "number"
-                              ? `${toy.distance.toFixed(2)} km`
-                              : toy.distance}
+                            {typeof toy.distance === "number" ? `${toy.distance.toFixed(2)} km` : toy.distance}
                           </Card.Text>
                           <div className="lender-info d-flex align-items-center mb-2">
                             <img
                               src={toy.ownerAvatar}
                               alt="Ảnh đại diện người cho mượn"
                               className="lender-avatar"
-                              onError={(e) =>
-                              (e.target.src =
-                                "https://via.placeholder.com/50?text=Avatar")
-                              }
+                              onError={(e) => (e.target.src = "https://via.placeholder.com/50?text=Avatar")}
                             />
                             <Button
                               variant="link"
@@ -616,7 +783,7 @@ const SearchingToy = () => {
                 })
               )}
             </Row>
-            {sortedToys.length > 0 && (
+            {filteredToys.length > 0 && (
               <div className="text-center">
                 <Button
                   variant="outline-primary"
@@ -630,11 +797,7 @@ const SearchingToy = () => {
           </Col>
         </Row>
       </Container>
-      <Modal
-        show={showDetailModal}
-        onHide={() => setShowDetailModal(false)}
-        centered
-      >
+      <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Chi tiết đồ chơi</Modal.Title>
         </Modal.Header>
@@ -644,66 +807,29 @@ const SearchingToy = () => {
               <img
                 src={selectedToy.image}
                 alt={selectedToy.name}
-                style={{
-                  width: "100%",
-                  height: "auto",
-                  maxHeight: "200px",
-                  objectFit: "cover",
-                }}
+                style={{ width: "100%", height: "auto", maxHeight: "200px", objectFit: "cover" }}
                 onError={(e) => (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")}
               />
               <h5 className="mt-3">{selectedToy.name}</h5>
-              <p>
-                <strong>Danh mục:</strong>{" "}
-                {selectedToy.categoryName || "Không có"}
-              </p>
-              <p>
-                <strong>Tình trạng:</strong>{" "}
-                {selectedToy.productStatus || "Không có"}
-              </p>
-              <p>
-                <strong>Độ tuổi phù hợp:</strong>{" "}
-                {selectedToy.suitableAge || "Không có"}
-              </p>
-              <p>
-                <strong>Phí cho mượn:</strong>{" "}
-                {selectedToy.price.toLocaleString("vi-VN")} VND
-              </p>
-              <p>
-                <strong>Mô tả:</strong>{" "}
-                {selectedToy.description || "Không có"}
-              </p>
-              <p>
-                <strong>Trạng thái:</strong>{" "}
-                {selectedToy.available === 0
-                  ? "Sẵn sàng cho mượn"
-                  : "Đã cho mượn"}
-              </p>
-              {userRequests.some(
-                (req) =>
-                  req.productId === selectedToy.productId && req.status === 0
-              ) && (
-                  <p className="text-success">
-                    Bạn đã gửi yêu cầu mượn cho đồ chơi này.
-                  </p>
-                )}
+              <p><strong>Danh mục:</strong> {selectedToy.categoryName || "Không có"}</p>
+              <p><strong>Tình trạng:</strong> {selectedToy.productStatus || "Không có"}</p>
+              <p><strong>Độ tuổi phù hợp:</strong> {selectedToy.suitableAge || "Không có"}</p>
+              <p><strong>Phí cho mượn:</strong> {selectedToy.price.toLocaleString("vi-VN")} VND</p>
+              <p><strong>Mô tả:</strong> {selectedToy.description || "Không có"}</p>
+              <p><strong>Trạng thái:</strong> {selectedToy.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn"}</p>
+              {userRequests.some((req) => req.productId === selectedToy.productId && req.status === 0) && (
+                <p className="text-success">Bạn đã gửi yêu cầu mượn cho đồ chơi này.</p>
+              )}
             </>
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => setShowDetailModal(false)}
-          >
+          <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
             Đóng
           </Button>
         </Modal.Footer>
       </Modal>
-      <Modal
-        show={showBorrowModal}
-        onHide={handleCloseBorrowModal}
-        centered
-      >
+      <Modal show={showBorrowModal} onHide={handleCloseBorrowModal} centered>
         <Modal.Header closeButton>
           <Modal.Title>Nhập thông tin mượn</Modal.Title>
         </Modal.Header>
@@ -752,11 +878,7 @@ const SearchingToy = () => {
           </Button>
         </Modal.Footer>
       </Modal>
-      <Modal
-        show={showProfileModal}
-        onHide={() => setShowProfileModal(false)}
-        centered
-      >
+      <Modal show={showProfileModal} onHide={() => setShowProfileModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Thông tin người cho mượn</Modal.Title>
         </Modal.Header>
@@ -764,43 +886,23 @@ const SearchingToy = () => {
           {profileData ? (
             <div>
               <img
-                src={
-                  profileData.avatar ||
-                  "https://via.placeholder.com/100?text=Avatar"
-                }
+                src={profileData.avatar || "https://via.placeholder.com/100?text=Avatar"}
                 alt="Ảnh đại diện"
                 className="rounded-circle mb-3"
                 style={{ width: "100px", height: "100px", objectFit: "cover" }}
                 onError={(e) => (e.target.src = "https://via.placeholder.com/100?text=Avatar")}
               />
-              <p>
-                <strong>Tên hiển thị:</strong>{" "}
-                {profileData.displayName || "Không có"}
-              </p>
-              <p>
-                <strong>Tuổi:</strong>{" "}
-                {profileData.age || "Không có thông tin"}
-              </p>
-              <p>
-                <strong>Địa chỉ:</strong>{" "}
-                {profileData.address || "Không có thông tin"}
-              </p>
-              <p>
-                <strong>Đánh giá:</strong>{" "}
-                {profileData.rating
-                  ? profileData.rating.toFixed(2)
-                  : "Chưa có đánh giá"}
-              </p>
+              <p><strong>Tên hiển thị:</strong> {profileData.displayName || "Không có"}</p>
+              <p><strong>Tuổi:</strong> {profileData.age || "Không có thông tin"}</p>
+              <p><strong>Địa chỉ:</strong> {profileData.address || "Không có thông tin"}</p>
+              <p><strong>Đánh giá:</strong> {profileData.rating ? profileData.rating.toFixed(2) : "Chưa có đánh giá"}</p>
             </div>
           ) : (
             <p>Đang tải thông tin...</p>
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => setShowProfileModal(false)}
-          >
+          <Button variant="secondary" onClick={() => setShowProfileModal(false)}>
             Đóng
           </Button>
           <Button

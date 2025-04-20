@@ -52,7 +52,11 @@ const BorrowHistory = () => {
           },
         });
 
-        setHistories(response.data);
+        // Sắp xếp theo returnDate từ mới nhất đến cũ nhất
+        const sortedHistories = response.data
+          .sort((a, b) => new Date(b.returnDate) - new Date(a.returnDate));
+
+        setHistories(sortedHistories);
       } catch (error) {
         console.error("Lỗi khi lấy lịch sử trao đổi:", error);
         toast.error("Không thể tải lịch sử trao đổi!");

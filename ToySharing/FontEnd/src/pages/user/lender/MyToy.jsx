@@ -10,12 +10,92 @@ import {
 } from "react-bootstrap";
 import Header from "../../../components/Header";
 import SideMenu from "../../../components/SideMenu";
-import FilterPanel from "../../../components/FilterPanel";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./MyToy.scss";
+
+const FilterPanel = ({ showFilter, onToggle, filterValues, onChange, categories }) => {
+  return (
+    <div className={`filter-panel ${showFilter ? "show" : ""}`}>
+      <Button variant="outline-primary" onClick={onToggle}>
+        {showFilter ? "Ẩn bộ lọc" : "Hiện bộ lọc"}
+      </Button>
+      {showFilter && (
+        <Form className="filter-form mt-3">
+          <Form.Group controlId="filterName" className="mb-3">
+            <Form.Label>Tên đồ chơi</Form.Label>
+            <Form.Control
+              type="text"
+              name="name"
+              value={filterValues.name}
+              onChange={onChange}
+              placeholder="Nhập tên đồ chơi"
+            />
+          </Form.Group>
+          <Form.Group controlId="filterCondition" className="mb-3">
+            <Form.Label>Tình trạng</Form.Label>
+            <Form.Control
+              as="select"
+              name="condition"
+              value={filterValues.condition}
+              onChange={onChange}
+            >
+              <option value="">Tất cả</option>
+              <option value="Mới">Mới</option>
+              <option value="Cũ">Cũ</option>
+            </Form.Control>
+          </Form.Group>
+          <Form.Group controlId="filterCategory" className="mb-3">
+            <Form.Label>Danh mục</Form.Label>
+            <Form.Control
+              as="select"
+              name="category"
+              value={filterValues.category}
+              onChange={onChange}
+            >
+              <option value="">Tất cả</option>
+              {categories.map((cat, index) => (
+                <option key={index} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </Form.Control>
+          </Form.Group>
+          <Form.Group controlId="filterAgeRange" className="mb-3">
+            <Form.Label>Độ tuổi</Form.Label>
+            <Form.Control
+              as="select"
+              name="ageRange"
+              value={filterValues.ageRange}
+              onChange={onChange}
+            >
+              <option value="">Tất cả</option>
+              <option value="0-3">0-3 tuổi</option>
+              <option value="4-7">4-7 tuổi</option>
+              <option value="8-12">8-12 tuổi</option>
+              <option value="12+">12+ tuổi</option>
+            </Form.Control>
+          </Form.Group>
+          <Form.Group controlId="filterPriceSort" className="mb-3">
+            <Form.Label>Sắp xếp theo phí cho mượn</Form.Label>
+            <Form.Control
+              as="select"
+              name="priceSort"
+              value={filterValues.priceSort}
+              onChange={onChange}
+            >
+              <option value="">Mặc định</option>
+              <option value="asc">Từ thấp đến cao</option>
+              <option value="desc">Từ cao đến thấp</option>
+            </Form.Control>
+          </Form.Group>
+        </Form>
+      )}
+    </div>
+  );
+};
 
 const MyToy = () => {
   const navigate = useNavigate();
@@ -31,12 +111,11 @@ const MyToy = () => {
   const [visibleItems, setVisibleItems] = useState(6);
   const [showFilter, setShowFilter] = useState(false);
   const [filterValues, setFilterValues] = useState({
-    color: "",
+    name: "",
     condition: "",
     category: "",
     ageRange: "",
-    brand: "",
-    distance: "",
+    priceSort: "",
   });
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -83,20 +162,22 @@ const MyToy = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const formattedToys = response.data.map((toy) => ({
-          id: toy.productId,
-          image: toy.imagePaths && toy.imagePaths.length > 0 ? toy.imagePaths[0] : "https://via.placeholder.com/200",
-          name: toy.name,
-          postedDate: new Date(toy.createdAt).toISOString().split("T")[0],
-          borrowCount: toy.borrowCount || 0,
-          status: toy.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
-          categoryName: toy.categoryName,
-          productStatus: toy.productStatus === 0 ? "Mới" : toy.productStatus === 1 ? "Cũ" : "Không xác định",
-          suitableAge: toy.suitableAge,
-          price: `${toy.price} VND`,
-          productValue: `${toy.productValue} VND`,
-          description: toy.description,
-        }));
+        const formattedToys = response.data
+          .map((toy) => ({
+            id: toy.productId,
+            image: toy.imagePaths && toy.imagePaths.length > 0 ? toy.imagePaths[0] : "https://via.placeholder.com/200",
+            name: toy.name,
+            postedDate: new Date(toy.createdAt).toISOString().split("T")[0],
+            borrowCount: toy.borrowCount || 0,
+            status: toy.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
+            categoryName: toy.categoryName,
+            productStatus: toy.productStatus === 0 ? "Mới" : toy.productStatus === 1 ? "Cũ" : "Không xác định",
+            suitableAge: toy.suitableAge,
+            price: parseFloat(toy.price) || 0,
+            productValue: `${toy.productValue} VND`,
+            description: toy.description,
+          }))
+          .sort((a, b) => new Date(b.postedDate) - new Date(a.postedDate));
 
         setToys(formattedToys);
       } catch (error) {
@@ -136,14 +217,12 @@ const MyToy = () => {
     if (toyToEdit) {
       const parseCurrency = (value) => {
         if (!value || value === "0 VND" || value === "null VND" || value === "undefined VND") {
-          console.log("parseCurrency returning empty string for:", value);
           return "";
         }
-        const result = value.replace(" VND", ""); 
-        return result;
+        return value.replace(" VND", "");
       };
-  
-      const newEditToyData = {
+
+      setEditToyData({
         id: toyToEdit.id,
         imagePaths: [toyToEdit.image],
         files: [],
@@ -151,12 +230,11 @@ const MyToy = () => {
         categoryName: toyToEdit.categoryName || "",
         productStatus: toyToEdit.productStatus || "",
         suitableAge: toyToEdit.suitableAge ? String(toyToEdit.suitableAge) : "",
-        price: parseCurrency(toyToEdit.price),
+        price: toyToEdit.price.toString(),
         productValue: parseCurrency(toyToEdit.productValue),
         description: toyToEdit.description || "",
         available: toyToEdit.status === "Sẵn sàng cho mượn" ? 0 : 1,
-      };
-      setEditToyData(newEditToyData);
+      });
       setShowEditModal(true);
     }
   };
@@ -188,13 +266,9 @@ const MyToy = () => {
 
     const price = parseFloat(editToyData.price);
     const productValue = parseFloat(editToyData.productValue);
-    // Validation for price
-    if (price === "") {
-      toast.error("Phí cho mượn là bắt buộc!");
-      return;
-    }
-    if (isNaN(price)) {
-      toast.error("Phí cho mượn phải là một số!");
+
+    if (isNaN(price) || price === "") {
+      toast.error("Phí cho mượn là bắt buộc và phải là một số!");
       return;
     }
     if (price < 0) {
@@ -202,21 +276,16 @@ const MyToy = () => {
       return;
     }
     if (price > 0 && price < 1000) {
-      toast.error("Nếu nhập phí cho mượn lớn hơn 0, nó phải ít nhất là 1000!");
+      toast.error("Phí cho mượn phải ít nhất là 1000 nếu lớn hơn 0!");
       return;
     }
     if (price > productValue) {
-      toast.error("Phí cho mượn không được vượt quá giá trị đồ chơi");
+      toast.error("Phí cho mượn không được vượt quá giá trị đồ chơi!");
       return;
     }
 
-    // Validation for productValue
-    if (productValue === "") {
-      toast.error("Giá trị đồ chơi là bắt buộc!");
-      return;
-    }
-    if (isNaN(productValue)) {
-      toast.error("Giá trị đồ chơi phải là một số!");
+    if (isNaN(productValue) || productValue === "") {
+      toast.error("Giá trị đồ chơi là bắt buộc và phải là một số!");
       return;
     }
     if (productValue < 0) {
@@ -224,11 +293,7 @@ const MyToy = () => {
       return;
     }
     if (productValue > 0 && productValue < 1000) {
-      toast.error("Nếu nhập Giá trị đồ chơi lớn hơn 0, nó phải ít nhất là 1000!");
-      return;
-    }
-    if (productValue < price) {
-      toast.error("Giá trị đồ chơi không được vượt quá giá trị sản phẩm");
+      toast.error("Giá trị đồ chơi phải ít nhất là 1000 nếu lớn hơn 0!");
       return;
     }
 
@@ -240,8 +305,8 @@ const MyToy = () => {
       }
 
       const productStatusMap = {
-        "New": 0,
-        "Used": 1,
+        "Mới": 0,
+        "Cũ": 1,
         "": 0,
       };
       const productStatus = productStatusMap[editToyData.productStatus] || 0;
@@ -271,17 +336,17 @@ const MyToy = () => {
         prevToys.map((toy) =>
           toy.id === editToyData.id
             ? {
-              ...toy,
-              image: response.data.imagePaths[0] || toy.image,
-              name: response.data.name,
-              categoryName: response.data.categoryName,
-              productStatus: response.data.productStatus,
-              suitableAge: response.data.suitableAge,
-              price: `${response.data.price} VND`,
-              productValue: `${response.data.productValue} VND`,
-              description: response.data.description,
-              status: response.data.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
-            }
+                ...toy,
+                image: response.data.imagePaths[0] || toy.image,
+                name: response.data.name,
+                categoryName: response.data.categoryName,
+                productStatus: response.data.productStatus === 0 ? "Mới" : "Cũ",
+                suitableAge: response.data.suitableAge,
+                price: parseFloat(response.data.price),
+                productValue: `${response.data.productValue} VND`,
+                description: response.data.description,
+                status: response.data.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
+              }
             : toy
         )
       );
@@ -290,11 +355,7 @@ const MyToy = () => {
       setShowEditModal(false);
     } catch (error) {
       console.error("Lỗi khi cập nhật đồ chơi:", error);
-      if (error.response) {
-        toast.error(error.response.data.message || "Có lỗi xảy ra khi cập nhật đồ chơi!");
-      } else {
-        toast.error("Không thể kết nối đến server!");
-      }
+      toast.error(error.response?.data.message || "Có lỗi xảy ra khi cập nhật đồ chơi!");
     }
   };
 
@@ -321,11 +382,7 @@ const MyToy = () => {
       toast.success("Đã xóa đồ chơi thành công!");
     } catch (error) {
       console.error("Lỗi khi xóa đồ chơi:", error);
-      if (error.response) {
-        toast.error(error.response.data.message || "Có lỗi xảy ra khi xóa đồ chơi!");
-      } else {
-        toast.error("Không thể kết nối đến server!");
-      }
+      toast.error(error.response?.data.message || "Có lỗi xảy ra khi xóa đồ chơi!");
     } finally {
       setShowConfirmModal(false);
       setConfirmAction("");
@@ -347,7 +404,47 @@ const MyToy = () => {
     navigate("/addtoy");
   };
 
-  const visibleToys = toys.slice(0, visibleItems);
+  const filteredToys = toys
+    .filter((toy) => {
+      const matchesName = filterValues.name
+        ? toy.name.toLowerCase().includes(filterValues.name.toLowerCase())
+        : true;
+      const matchesCondition = filterValues.condition
+        ? toy.productStatus === filterValues.condition
+        : true;
+      const matchesCategory = filterValues.category
+        ? toy.categoryName === filterValues.category
+        : true;
+      const matchesAgeRange = filterValues.ageRange
+        ? (() => {
+            const age = parseInt(toy.suitableAge);
+            switch (filterValues.ageRange) {
+              case "0-3":
+                return age >= 0 && age <= 3;
+              case "4-7":
+                return age >= 4 && age <= 7;
+              case "8-12":
+                return age >= 8 && age <= 12;
+              case "12+":
+                return age >= 12;
+              default:
+                return true;
+            }
+          })()
+        : true;
+
+      return matchesName && matchesCondition && matchesCategory && matchesAgeRange;
+    })
+    .sort((a, b) => {
+      if (filterValues.priceSort === "asc") {
+        return a.price - b.price;
+      } else if (filterValues.priceSort === "desc") {
+        return b.price - a.price;
+      }
+      return new Date(b.postedDate) - new Date(a.postedDate); // Mặc định theo ngày
+    });
+
+  const visibleToys = filteredToys.slice(0, visibleItems);
 
   return (
     <div className="mytoy-page home-page">
@@ -369,18 +466,18 @@ const MyToy = () => {
                 <FilterPanel
                   showFilter={showFilter}
                   onToggle={() => setShowFilter(!showFilter)}
-                  onSubmit={(e) => e.preventDefault()}
                   filterValues={filterValues}
                   onChange={(e) => setFilterValues({ ...filterValues, [e.target.name]: e.target.value })}
+                  categories={categories}
                 />
               </div>
               <Button variant="primary" className="add-toy-btn ms-3" onClick={handleAddToy}>
                 Đăng đồ chơi mới
               </Button>
             </div>
-            {toys.length === 0 ? (
+            {filteredToys.length === 0 ? (
               <div className="text-center mt-5">
-                <h5>Không có đồ chơi nào</h5>
+                <h5>Không có đồ chơi nào phù hợp với bộ lọc</h5>
               </div>
             ) : (
               <>
@@ -407,6 +504,9 @@ const MyToy = () => {
                               {toy.status}
                             </span>
                           </Card.Text>
+                          <Card.Text className="toy-price">
+                            <strong>Phí cho mượn:</strong> {toy.price.toLocaleString("vi-VN")} VND
+                          </Card.Text>
                           <div className="card-actions">
                             <Button className="btn-edit" onClick={(e) => handleEdit(e, toy.id)}>
                               Sửa
@@ -422,7 +522,7 @@ const MyToy = () => {
                     </Col>
                   ))}
                 </Row>
-                {visibleToys.length < toys.length && (
+                {visibleToys.length < filteredToys.length && (
                   <div className="text-center">
                     <Button variant="outline-primary" className="view-more-btn" onClick={handleLoadMore}>
                       Xem thêm
@@ -493,15 +593,16 @@ const MyToy = () => {
                 value={editToyData.productStatus}
                 onChange={handleEditChange}
               >
-                <option value="0">Mới</option>
-                <option value="1">Cũ</option>
+                <option value="Mới">Mới</option>
+                <option value="Cũ">Cũ</option>
               </Form.Control>
             </Form.Group>
             <Form.Group controlId="editAgeGroup" className="mb-3">
               <Form.Label>Độ tuổi phù hợp <span className="text-danger">*</span></Form.Label>
               <Form.Control
                 type="number"
-                name="suitableAge"
+                name="suit
+ableAge"
                 value={editToyData.suitableAge}
                 onChange={handleEditChange}
                 min="0"
@@ -567,7 +668,7 @@ const MyToy = () => {
               <p><strong>Danh mục:</strong> {selectedToy.categoryName || "Không có"}</p>
               <p><strong>Tình trạng:</strong> {selectedToy.productStatus || "Không có"}</p>
               <p><strong>Độ tuổi phù hợp:</strong> {selectedToy.suitableAge}</p>
-              <p><strong>Phí cho mượn:</strong> {selectedToy.price}</p>
+              <p><strong>Phí cho mượn:</strong> {selectedToy.price.toLocaleString("vi-VN")} VND</p>
               <p><strong>Mô tả:</strong> {selectedToy.description || "Không có"}</p>
               <p><strong>Trạng thái:</strong> {selectedToy.status}</p>
               <p><strong>Lượt mượn:</strong> {selectedToy.borrowCount}</p>

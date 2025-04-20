@@ -56,19 +56,22 @@ const TransferHistory = () => {
           },
         });
 
-        const formattedData = response.data.map((item) => ({
-          id: item.requestId,
-          image: item.image || toy1,
-          name: item.productName,
-          price: item.price ? `${item.price.toLocaleString()} VND` : "Không xác định",
-          transferDate: item.returnDate ? new Date(item.returnDate).toISOString().split("T")[0] : "Không xác định",
-          status: item.requestStatus === "completed" ? 1 : 2,
-          partnerAvatar: item.borrowerAvatar || user,
-          partnerId: item.borrowerId,
-          rating: item.rating,
-          message: item.message,
-          isMock: false,
-        }));
+        const formattedData = response.data
+          .map((item) => ({
+            id: item.requestId,
+            image: item.image || toy1,
+            name: item.productName,
+            price: item.price ? `${item.price.toLocaleString()} VND` : "Không xác định",
+            transferDate: item.returnDate ? new Date(item.returnDate).toISOString().split("T")[0] : "Không xác định",
+            status: item.requestStatus === "completed" ? 1 : 2,
+            partnerAvatar: item.borrowerAvatar || user,
+            partnerId: item.borrowerId,
+            rating: item.rating,
+            message: item.message,
+            isMock: false,
+          }))
+          // Sắp xếp theo transferDate từ mới nhất đến cũ nhất
+          .sort((a, b) => new Date(b.transferDate) - new Date(a.transferDate));
 
         setTransferData(formattedData);
       } catch (error) {
