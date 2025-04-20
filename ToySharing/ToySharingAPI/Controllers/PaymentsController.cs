@@ -289,6 +289,7 @@ namespace ToySharingAPI.Controllers
                     TransactionType = transaction.TransactionType,
                     Amount = transaction.Amount,
                     RequestId = transaction.RequestId,
+                    Status = transaction.Status,
                     CreatedAt = transaction.CreatedAt.GetValueOrDefault(),
                     UpdatedAt = transaction.UpdatedAt.GetValueOrDefault()
                 });
