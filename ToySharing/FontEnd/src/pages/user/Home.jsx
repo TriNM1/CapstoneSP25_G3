@@ -16,10 +16,6 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import Header from "../../components/Header";
-import banner1 from "../../assets/banner1.jpg";
-import banner2 from "../../assets/banner2.jpg";
-import banner3 from "../../assets/banner3.jpg";
-import banner4 from "../../assets/banner4.jpg";
 import "./Home.scss";
 import Footer from "../../components/footer";
 
@@ -42,11 +38,11 @@ const Home = () => {
   const [userId, setUserId] = useState(null);
   const [userRequests, setUserRequests] = useState([]);
   const [isSending, setIsSending] = useState(false);
+  const [bannerList, setBannerList] = useState([]);
   const unreadMessages = 3;
   const notificationCount = 2;
 
   const API_BASE_URL = "https://localhost:7128/api";
-  const banners = [banner1, banner2, banner3, banner4];
 
   const getAuthToken = () => {
     return localStorage.getItem("token") || sessionStorage.getItem("token");
@@ -83,6 +79,23 @@ const Home = () => {
 
     if (userId) fetchUserRequests();
   }, [userId]);
+
+  useEffect(() => {
+    const fetchBanners = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/admin/banners`, {
+          headers: { Authorization: `Bearer ${getAuthToken()}` },
+        });
+        setBannerList(response.data);
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách banner:", error);
+        toast.error("Không thể tải banner. Vui lòng thử lại sau.");
+        setBannerList([]);
+      }
+    };
+
+    fetchBanners();
+  }, []);
 
   const fetchUserLocation = async () => {
     const token = getAuthToken();
@@ -294,6 +307,15 @@ const Home = () => {
     }
   };
 
+  const handleBannerClick = (linkUrl) => {
+    if (!linkUrl) return;
+    if (linkUrl.startsWith("http")) {
+      window.location.href = linkUrl;
+    } else {
+      navigate(linkUrl);
+    }
+  };
+
   const handleOpenBorrowModal = (toyId) => {
     if (!isLoggedIn) {
       toast.error("Vui lòng đăng nhập để mượn đồ chơi!");
@@ -322,7 +344,6 @@ const Home = () => {
     setIsSending(true);
     const token = getAuthToken();
 
-    // Check product availability
     try {
       const productResponse = await axios.get(`${API_BASE_URL}/Products/${selectedToyId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -532,14 +553,20 @@ const Home = () => {
         />
         <div className="banner-section">
           <Carousel indicators={false} controls={true} interval={3000}>
-            {banners.map((banner, index) => (
-              <Carousel.Item key={index}>
-                <img
-                  className="d-block w-100 banner-image"
-                  src={banner}
-                  alt={`Slide ${index + 1}`}
-                  loading="lazy"
-                />
+            {bannerList.map((banner) => (
+              <Carousel.Item key={banner.bannerId}>
+                <div
+                  className="banner-clickable"
+                  onClick={() => handleBannerClick(banner.linkUrl)}
+                  style={{ cursor: banner.linkUrl ? "pointer" : "default" }}
+                >
+                  <img
+                    className="d-block w-100 banner-image"
+                    src={banner.imageUrl}
+                    alt={banner.title}
+                    loading="lazy"
+                  />
+                </div>
               </Carousel.Item>
             ))}
           </Carousel>

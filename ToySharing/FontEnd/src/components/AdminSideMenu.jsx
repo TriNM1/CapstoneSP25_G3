@@ -7,7 +7,7 @@ import logo from "../assets/logo.png";
 import user from "../assets/user.png";
 import "./AdminSideMenu.scss";
 
-const AdminSideMenu = ({ menuItems, activelink, setActiveLink }) => {
+const AdminSideMenu = ({ menuItems = [], activelink, setActiveLink }) => {
   const location = useLocation();
   const currentPath = location.pathname;
 
@@ -25,27 +25,22 @@ const AdminSideMenu = ({ menuItems, activelink, setActiveLink }) => {
             <Dropdown.Item
               as={Link}
               to={"/adminprofile"}
-              onClick={() => setActiveLink("profile")}
+              onClick={() => setActiveLink && setActiveLink("profile")}
             >
               Thông tin cá nhân
             </Dropdown.Item>
             <Dropdown.Item
               as={Link}
               to="/logout"
-              onClick={() => setActiveLink("logout")}
+              onClick={() => setActiveLink && setActiveLink("logout")}
             >
               Đăng xuất
             </Dropdown.Item>
           </Dropdown.Menu>
         </Dropdown>
-        {/* <div className="icons">
-          <Link to="/adminprofile" className="icon-link">
-            <img src={userIcon} alt="User" className="user-icon" />
-          </Link>
-        </div> */}
       </div>
       <Nav className="flex-column menu-links">
-        {menuItems.map((item) => (
+        {Array.isArray(menuItems) && menuItems.map((item) => (
           <Nav.Link
             as={Link}
             to={item.link}
