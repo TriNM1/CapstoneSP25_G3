@@ -28,7 +28,7 @@ const InLending = () => {
   const [visibleItems, setVisibleItems] = useState(4);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileData, setProfileData] = useState(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0); // Thêm để làm mới dữ liệu
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const sideMenuItems = [
     { id: 2, label: "Danh sách đồ chơi của tôi", link: "/mytoy" },
@@ -55,18 +55,21 @@ const InLending = () => {
         },
       });
       const filteredLendings = response.data
-        .filter((req) => ["Accepted", "Paid", "PickedUp"].includes(req.requestStatus))
-        .map((req) => ({
-          id: req.requestId,
-          image: req.image || toy1,
-          name: req.productName,
-          borrowDate: new Date(req.rentDate).toISOString().split("T")[0],
-          returnDate: new Date(req.returnDate).toISOString().split("T")[0],
-          lenderId: req.userId,
-          lenderAvatar: req.borrowerAvatar || user,
-          status: req.requestStatus,
-          confirmReturn: req.confirmReturn || 0,
-        }));
+        .filter((req) => [1, 2, 3, 4, 7].includes(req.status))
+        .map((req) => {
+          console.log("Request from API:", req); // Debug API response
+          return {
+            id: req.requestId,
+            image: req.image || toy1,
+            name: req.productName,
+            borrowDate: new Date(req.rentDate).toISOString().split("T")[0],
+            returnDate: new Date(req.returnDate).toISOString().split("T")[0],
+            lenderId: req.userId,
+            lenderAvatar: req.borrowerAvatar || user,
+            status: req.status, // Lưu status dưới dạng số (1, 2, 3, 4, 7)
+            confirmReturn: req.confirmReturn || 0,
+          };
+        });
       setLendings(filteredLendings);
     } catch (error) {
       console.error("Lỗi khi lấy danh sách đồ chơi đang cho mượn:", error);
@@ -74,7 +77,7 @@ const InLending = () => {
         toast.error("Token không hợp lệ hoặc đã hết hạn! Vui lòng đăng nhập lại.");
         navigate("/login");
       } else {
-        toast.error("Không thể tải dữ liệu từ API!");
+        toast.error("Không thể tải dữ liệu từ API! " + (error.response?.data?.message || error.message));
       }
       setLendings([]);
     }
@@ -84,7 +87,6 @@ const InLending = () => {
     fetchLendings();
   }, [navigate, refreshTrigger]);
 
-  // Polling để làm mới dữ liệu mỗi 30 giây
   useEffect(() => {
     const interval = setInterval(() => {
       setRefreshTrigger((prev) => prev + 1);
@@ -176,8 +178,79 @@ const InLending = () => {
         return;
       }
 
-      await axios.put(
+      const response = await axios.put(
         `${API_BASE_URL}/Requests/${requestId}/confirm-return`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      setLendings((prev) => {
+        const newLendings = prev.map((item) =>
+          item.id === requestId
+            ? {
+                ...item,
+                confirmReturn: item.confirmReturn | 2,
+                status: (item.confirmReturn | 2) === 3 ? 4 : item.status, // Sử dụng số 4 cho Completed
+              }
+            : item
+        );
+        console.log("Updated lendings:", newLendings); // Debug state
+        return newLendings;
+      });
+
+      // Delay refresh để đảm bảo backend sync
+      setTimeout(() => {
+        setRefreshTrigger((prev) => prev + 1);
+      }, 500);
+
+      toast.success("Xác nhận trả thành công!");
+    } catch (error) {
+      console.error("Lỗi khi xác nhận trả:", error);
+      let errorMessage = "Không thể xác nhận trả!";
+      if (error.response) {
+        errorMessage = error.response.data.message || errorMessage;
+        if (error.response.status === 400 && errorMessage.includes("Bạn đã xác nhận trả trước đó")) {
+          // Xử lý trường hợp bấm lại nút
+          setLendings((prev) =>
+            prev.map((item) =>
+              item.id === requestId
+                ? {
+                    ...item,
+                    confirmReturn: item.confirmReturn | 2,
+                  }
+                : item
+            )
+          );
+          toast.info("Yêu cầu đã được xác nhận trước đó!");
+        } else if (error.response.status === 401) {
+          errorMessage = "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!";
+          navigate("/login");
+        } else if (error.response.status === 403) {
+          errorMessage = "Bạn không có quyền thực hiện hành động này!";
+        } else if (error.response.status === 404) {
+          errorMessage = "Yêu cầu không tồn tại!";
+        }
+      }
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleMarkNotReturned = async (requestId) => {
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) {
+        toast.error("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!");
+        navigate("/login");
+        return;
+      }
+
+      await axios.put(
+        `${API_BASE_URL}/Requests/${requestId}/mark-not-returned`,
         {},
         {
           headers: {
@@ -192,17 +265,17 @@ const InLending = () => {
           item.id === requestId
             ? {
                 ...item,
-                confirmReturn: item.confirmReturn | 2,
-                status: (item.confirmReturn | 2) === 3 ? "Completed" : item.status,
+                status: 7, // Sử dụng số 7 cho NotReturned
+                confirmReturn: item.confirmReturn,
               }
             : item
         )
       );
-      setRefreshTrigger((prev) => prev + 1); // Kích hoạt làm mới
-      toast.success("Xác nhận trả thành công!");
+      setRefreshTrigger((prev) => prev + 1);
+      toast.success("Đã đánh dấu yêu cầu là chưa trả!");
     } catch (error) {
-      console.error("Lỗi khi xác nhận trả:", error);
-      let errorMessage = "Không thể xác nhận trả!";
+      console.error("Lỗi khi đánh dấu chưa trả:", error);
+      let errorMessage = "Không thể đánh dấu yêu cầu là chưa trả!";
       if (error.response) {
         errorMessage = error.response.data.message || errorMessage;
         if (error.response.status === 401) {
@@ -222,6 +295,14 @@ const InLending = () => {
 
   const handleLoadMore = () => {
     setVisibleItems((prev) => prev + 3);
+  };
+
+  const isOverdue = (returnDate, confirmReturn) => {
+    const currentDate = new Date();
+    const parsedReturnDate = new Date(returnDate);
+    const daysOverdue = (currentDate - parsedReturnDate) / (1000 * 60 * 60 * 24);
+    console.log("isOverdue:", { returnDate, daysOverdue, confirmReturn }); // Debug overdue logic
+    return daysOverdue > 3 && (confirmReturn & 1) === 0;
   };
 
   const formattedFilterDate = selectedDate
@@ -290,14 +371,16 @@ const InLending = () => {
                           </Card.Text>
                           <Card.Text className="lending-status">
                             <strong>Trạng thái:</strong>{" "}
-                            <span className="in-progress">
-                              {item.status === "Accepted" ? "Đã chấp nhận" :
-                               item.status === "Paid" ? "Người dùng đã thanh toán" :
-                               item.status === "PickedUp" ? (
+                            <span className={`in-progress ${item.status === 7 ? "not-returned" : ""}`}>
+                              {item.status === 1 ? "Đã chấp nhận" :
+                               item.status === 2 ? "Người dùng đã thanh toán" :
+                               item.status === 3 ? (
                                  (item.confirmReturn & 2) !== 0 ? "Bạn đã xác nhận trả, chờ người mượn" :
-                                 (item.confirmReturn & 1) !== 0 ? "Chờ bạn xác nhận trả" : "Đã lấy, chưa xác nhận trả"
+                                 (item.confirmReturn & 1) !== 0 ? "Chờ bạn xác nhận trả" :
+                                 isOverdue(item.returnDate, item.confirmReturn) ? "Quá hạn, chưa trả" : "Đã lấy, chưa xác nhận trả"
                                ) :
-                               item.status === "Completed" ? "Hoàn thành" : "Không xác định"}
+                               item.status === 4 ? "Hoàn thành" :
+                               item.status === 7 ? "Chưa trả" : "Không xác định"}
                             </span>
                           </Card.Text>
                           <div className="lender-info">
@@ -316,14 +399,26 @@ const InLending = () => {
                             <Button className="btn-message" onClick={() => handleMessage(item.lenderId)}>
                               Nhắn tin
                             </Button>
-                            {item.status === "PickedUp" && (
-                              <Button
-                                variant="success"
-                                onClick={() => handleConfirmReturn(item.id)}
-                                disabled={(item.confirmReturn & 2) !== 0}
-                              >
-                                {(item.confirmReturn & 2) !== 0 ? "Đã xác nhận trả" : "Xác nhận trả"}
-                              </Button>
+                            {item.status === 3 && (
+                              <>
+                                <Button
+                                  variant="success"
+                                  onClick={() => handleConfirmReturn(item.id)}
+                                  disabled={(item.confirmReturn & 2) !== 0}
+                                  className="me-2"
+                                >
+                                  {(item.confirmReturn & 2) !== 0 ? "Đã xác nhận trả" : "Xác nhận trả"}
+                                </Button>
+                                {isOverdue(item.returnDate, item.confirmReturn) && (
+                                  <Button
+                                    variant="danger"
+                                    onClick={() => handleMarkNotReturned(item.id)}
+                                    disabled={item.status === 7}
+                                  >
+                                    {item.status === 7 ? "Đã đánh dấu chưa trả" : "Đánh dấu chưa trả"}
+                                  </Button>
+                                )}
+                              </>
                             )}
                           </div>
                         </Card.Body>

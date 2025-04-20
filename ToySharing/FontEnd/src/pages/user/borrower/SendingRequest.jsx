@@ -322,10 +322,10 @@ const SendingRequest = () => {
         prev.map((req) =>
           req.requestId === requestId
             ? {
-                ...req,
-                confirmReturn: req.confirmReturn | 1,
-                status: (req.confirmReturn | 1) === 3 ? 4 : req.status,
-              }
+              ...req,
+              confirmReturn: req.confirmReturn | 1,
+              status: (req.confirmReturn | 1) === 3 ? 4 : req.status,
+            }
             : req
         )
       );
@@ -387,14 +387,14 @@ const SendingRequest = () => {
 
   const filteredRequests = selectedDate
     ? requests.filter((request) => {
-        const requestDate = new Date(request.borrowDate);
-        return (
-          (request.status === 0 || request.status === 1 || request.status === 2 || request.status === 3) &&
-          requestDate.getDate() === selectedDate.getDate() &&
-          requestDate.getMonth() === selectedDate.getMonth() &&
-          requestDate.getFullYear() === selectedDate.getFullYear()
-        );
-      })
+      const requestDate = new Date(request.borrowDate);
+      return (
+        (request.status === 0 || request.status === 1 || request.status === 2 || request.status === 3) &&
+        requestDate.getDate() === selectedDate.getDate() &&
+        requestDate.getMonth() === selectedDate.getMonth() &&
+        requestDate.getFullYear() === selectedDate.getFullYear()
+      );
+    })
     : requests.filter((request) => request.status === 0 || request.status === 1 || request.status === 2 || request.status === 3);
 
   return (
@@ -453,20 +453,20 @@ const SendingRequest = () => {
                         <span
                           className={
                             request.status === 0 ? "pending" :
-                            request.status === 1 ? "accepted" :
-                            request.status === 2 ? "paid" :
-                            request.status === 3 ? "picked-up" :
-                            request.status === 4 ? "completed" : ""
+                              request.status === 1 ? "accepted" :
+                                request.status === 2 ? "paid" :
+                                  request.status === 3 ? "picked-up" :
+                                    request.status === 4 ? "completed" : ""
                           }
                         >
                           {request.status === 0 ? "Đang chờ chấp nhận" :
-                           request.status === 1 ? "Chấp nhận, chưa thanh toán" :
-                           request.status === 2 ? "Chấp nhận, đã thanh toán" :
-                           request.status === 3 ? (
-                             (request.confirmReturn & 1) !== 0 ? "Bạn đã xác nhận trả, chờ người cho mượn" :
-                             (request.confirmReturn & 2) !== 0 ? "Chờ bạn xác nhận trả" : "Đã lấy, chưa xác nhận trả"
-                           ) :
-                           request.status === 4 ? "Hoàn thành" : "Không xác định"}
+                            request.status === 1 ? "Chấp nhận, chưa thanh toán" :
+                              request.status === 2 ? "Chấp nhận, đã thanh toán" :
+                                request.status === 3 ? (
+                                  (request.confirmReturn & 1) !== 0 ? "Bạn đã xác nhận trả, chờ người cho mượn" :
+                                    (request.confirmReturn & 2) !== 0 ? "Chờ bạn xác nhận trả" : "Đã lấy, chưa xác nhận trả"
+                                ) :
+                                  request.status === 4 ? "Hoàn thành" : "Không xác định"}
                         </span>
                       </Card.Text>
                       <div className="lender-info d-flex align-items-center mb-2">
@@ -511,14 +511,22 @@ const SendingRequest = () => {
                           </>
                         )}
                         {request.status === 2 && (
-                          <Button
-                            variant="primary"
-                            onClick={() => handlePickedUpClick(request.requestId)}
-                            className="me-2"
-                            disabled={request.status === 3}
-                          >
-                            {request.status === 3 ? "Đã lấy" : "Đã lấy"}
-                          </Button>
+                          <>
+                            <Button
+                              variant="primary"
+                              onClick={() => handlePickedUpClick(request.requestId)}
+                              className="me-2"
+                              disabled={request.status === 3}
+                            >
+                              Đã lấy"
+                            </Button>
+                            <Button
+                              variant="danger"
+                              onClick={() => handleCancelClick(request.requestId)}
+                            >
+                              Hủy
+                            </Button>
+                            </>
                         )}
                         {request.status === 3 && (
                           <Button
