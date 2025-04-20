@@ -827,19 +827,35 @@ namespace ToySharingAPI.Controllers
 
             try
             {
-                request.Status = 6;
-                history.Status = 2; // Canceled
-                history.Message = formData.Reason;
-                history.ReturnDate = DateTime.Now;
-                request.Product.Available = 0;
+                if (history != null)
+                {
+                    history = new History
+                    {
+                        RequestId = requestId,
+                        UserId = mainUserId,
+                        ProductId = request.ProductId,
+                        Status = 2, // Canceled
+                        Message = formData.Reason,
+                        ReturnDate = DateTime.Now,
+                    };
+                    _context.Histories.Add(history);
+                }
+                else
+                {
+                    request.Status = 6;
+                    history.Status = 2; // Canceled
+                    history.Message = formData.Reason;
+                    history.ReturnDate = DateTime.Now;
+                    request.Product.Available = 0;
 
-                await _context.SaveChangesAsync();
-
+                    await _context.SaveChangesAsync();
+                }
                 var ownerId = request.Product.UserId;
                 var productName = request.Product.Name ?? "Sản phẩm không xác định";
                 await CreateNotification(ownerId, $"Yêu cầu mượn sản phẩm '{productName}' đã bị hủy bởi người mượn. Lý do: {formData.Reason}");
 
                 return Ok(new { message = "Hủy yêu cầu thành công." });
+
             }
             catch (Exception ex)
             {
@@ -970,7 +986,7 @@ namespace ToySharingAPI.Controllers
                 });
             }
         }
-    
+
         public class CancelRequestDTO
         {
             public string Reason { get; set; }
