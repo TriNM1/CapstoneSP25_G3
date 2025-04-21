@@ -89,7 +89,7 @@ const TransactionHistory = () => {
       />
       <Container className="mt-5">
         <Card className="p-4 shadow">
-          <h3 className="text-center mb-4">Lịch Sử Giao Dịch Thành Công</h3>
+          <h3 className="text-center mb-4">Lịch Sử Giao Dịch</h3>
           {transactions.length > 0 ? (
             <>
               <Table striped bordered hover responsive className="text-center">

@@ -217,7 +217,7 @@ const MyToy = () => {
     if (toyToEdit) {
       const parseCurrency = (value) => {
         if (!value || value === "0 VND" || value === "null VND" || value === "undefined VND") {
-          return "";
+          return "0";
         }
         return value.replace(" VND", "");
       };
@@ -601,8 +601,7 @@ const MyToy = () => {
               <Form.Label>Độ tuổi phù hợp <span className="text-danger">*</span></Form.Label>
               <Form.Control
                 type="number"
-                name="suit
-ableAge"
+                name="suitableAge"
                 value={editToyData.suitableAge}
                 onChange={handleEditChange}
                 min="0"
@@ -613,7 +612,7 @@ ableAge"
             <Form.Group controlId="editPrice" className="mb-3">
               <Form.Label>Phí mượn đồ chơi <span className="text-danger">*</span></Form.Label>
               <Form.Control
-                type="number"
+                type="text"
                 name="price"
                 value={editToyData.price}
                 onChange={handleEditChange}
@@ -623,7 +622,7 @@ ableAge"
             <Form.Group controlId="editProductValue" className="mb-3">
               <Form.Label>Giá trị đồ chơi <span className="text-danger">*</span></Form.Label>
               <Form.Control
-                type="number"
+                type="text"
                 name="productValue"
                 value={editToyData.productValue}
                 onChange={handleEditChange}

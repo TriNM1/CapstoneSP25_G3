@@ -289,7 +289,7 @@ const AddToy = () => {
                   Phí cho mượn <span className="required-asterisk">*</span>
                 </Form.Label>
                 <Form.Control
-                  type="number"
+                  type="text"
                   placeholder="Nhập phí cho mượn (ví dụ 10000 sẽ là 10.000VND)"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
@@ -301,7 +301,7 @@ const AddToy = () => {
                   Giá trị đồ chơi <span className="required-asterisk">*</span>
                 </Form.Label>
                 <Form.Control
-                  type="number"
+                  type="text"
                   placeholder="Nhập giá trị của đồ chơi (ví dụ 10000 sẽ là 10.000VND)"
                   value={productValue}
                   onChange={(e) => setProductValue(e.target.value)}
