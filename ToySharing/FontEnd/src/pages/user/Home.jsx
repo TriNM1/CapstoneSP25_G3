@@ -8,14 +8,109 @@ import {
   Button,
   Form,
   Modal,
+  Spinner,
 } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import Header from "../../components/Header";
-import "./Home.scss";
 import Footer from "../../components/footer";
+import "./Home.scss";
+
+// Component FilterPanel
+const FilterPanel = ({ showFilter, onToggle, filterValues, onChange, categories }) => {
+  return (
+    <div className={`filter-panel ${showFilter ? "show" : ""}`}>
+      <Button variant="outline-primary" onClick={onToggle} className="action-btn mb-2">
+        {showFilter ? "Ẩn bộ lọc" : "Hiện bộ lọc"}
+      </Button>
+      {showFilter && (
+        <Form className="filter-form">
+          <Row className="align-items-end">
+            <Col xs={12} md={3} lg={2} className="mb-2">
+              <Form.Group controlId="filterName">
+                <Form.Label>Tên đồ chơi</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="name"
+                  value={filterValues.name}
+                  onChange={onChange}
+                  placeholder="Nhập tên đồ chơi"
+                />
+              </Form.Group>
+            </Col>
+            <Col xs={12} md={3} lg={2} className="mb-2">
+              <Form.Group controlId="filterCondition">
+                <Form.Label>Tình trạng</Form.Label>
+                <Form.Control
+                  as="select"
+                  name="condition"
+                  value={filterValues.condition}
+                  onChange={onChange}
+                >
+                  <option value="">Tất cả</option>
+                  <option value="Mới">Mới</option>
+                  <option value="Cũ">Cũ</option>
+                </Form.Control>
+              </Form.Group>
+            </Col>
+            <Col xs={12} md={3} lg={2} className="mb-2">
+              <Form.Group controlId="filterCategory">
+                <Form.Label>Danh mục</Form.Label>
+                <Form.Control
+                  as="select"
+                  name="category"
+                  value={filterValues.category}
+                  onChange={onChange}
+                >
+                  <option value="">Tất cả</option>
+                  {categories.map((cat, index) => (
+                    <option key={index} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </Form.Control>
+              </Form.Group>
+            </Col>
+            <Col xs={12} md={3} lg={2} className="mb-2">
+              <Form.Group controlId="filterAgeRange">
+                <Form.Label>Độ tuổi</Form.Label>
+                <Form.Control
+                  as="select"
+                  name="ageRange"
+                  value={filterValues.ageRange}
+                  onChange={onChange}
+                >
+                  <option value="">Tất cả</option>
+                  <option value="0-3">0-3 tuổi</option>
+                  <option value="4-7">4-7 tuổi</option>
+                  <option value="8-12">8-12 tuổi</option>
+                  <option value="12+">12+ tuổi</option>
+                </Form.Control>
+              </Form.Group>
+            </Col>
+            <Col xs={12} md={3} lg={2} className="mb-2">
+              <Form.Group controlId="filterPriceSort">
+                <Form.Label>Sắp xếp theo giá</Form.Label>
+                <Form.Control
+                  as="select"
+                  name="priceSort"
+                  value={filterValues.priceSort}
+                  onChange={onChange}
+                >
+                  <option value="">Mặc định</option>
+                  <option value="asc">Thấp đến cao</option>
+                  <option value="desc">Cao đến thấp</option>
+                </Form.Control>
+              </Form.Group>
+            </Col>
+          </Row>
+        </Form>
+      )}
+    </div>
+  );
+};
 
 const Home = () => {
   const navigate = useNavigate();
@@ -24,8 +119,9 @@ const Home = () => {
   const [userLocation, setUserLocation] = useState(null);
   const [userAddress, setUserAddress] = useState(null);
   const [toyList, setToyList] = useState([]);
+  const [filteredToyList, setFilteredToyList] = useState([]);
   const [showBorrowModal, setShowBorrowModal] = useState(false);
-  const [borrowDuration, setBorrowDuration] = useState("1"); // Default to 1 day
+  const [borrowDuration, setBorrowDuration] = useState("1");
   const [note, setNote] = useState("");
   const [selectedToyId, setSelectedToyId] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -36,10 +132,20 @@ const Home = () => {
   const [userRequests, setUserRequests] = useState([]);
   const [isSending, setIsSending] = useState(false);
   const [bannerList, setBannerList] = useState([]);
-  const [userNames, setUserNames] = useState({}); // Store displayName for lenders
+  const [userNames, setUserNames] = useState({});
+  const [showFilter, setShowFilter] = useState(false);
+  const [filterValues, setFilterValues] = useState({
+    name: "",
+    condition: "",
+    category: "",
+    ageRange: "",
+    priceSort: "",
+  });
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const unreadMessages = 3;
   const notificationCount = 2;
-
   const API_BASE_URL = "https://localhost:7128/api";
 
   const durationOptions = [
@@ -63,6 +169,24 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const token = getAuthToken();
+        if (!token) return;
+        const response = await axios.get(`${API_BASE_URL}/Products/categories`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setCategories(response.data);
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách danh mục:", error);
+        toast.error("Không thể tải danh mục!");
+        setCategories([]);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
     fetchToyList();
   }, [isLoggedIn, userLocation, userAddress]);
 
@@ -80,7 +204,6 @@ const Home = () => {
         setUserRequests([]);
       }
     };
-
     if (userId) fetchUserRequests();
   }, [userId]);
 
@@ -93,22 +216,16 @@ const Home = () => {
         setBannerList(response.data);
       } catch (error) {
         console.error("Lỗi khi lấy danh sách banner:", error);
-        toast.error("Không thể tải banner. Vui lòng thử lại sau.");
+        toast.error("Không thể tải banner!");
         setBannerList([]);
       }
     };
-
     fetchBanners();
   }, []);
 
-  // Fetch displayName for lenders
   useEffect(() => {
     const uniqueLenderIds = Array.from(
-      new Set(
-        toyList
-          .map((t) => t.lenderId)
-          .filter((id) => id && !userNames[id])
-      )
+      new Set(toyList.map((t) => t.lenderId).filter((id) => id && !userNames[id]))
     );
     uniqueLenderIds.forEach(async (lenderId) => {
       try {
@@ -138,86 +255,49 @@ const Home = () => {
       setUserAddress(null);
       return;
     }
-
     try {
       const response = await axios.get(`${API_BASE_URL}/User/current/location`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       const { address, latitude, longitude } = response.data;
-
       if (latitude && longitude && !isNaN(latitude) && !isNaN(longitude)) {
         setUserLocation({ latitude, longitude });
         setUserAddress(address || "Địa chỉ không được cung cấp");
-        toast.info("Đã cập nhật vị trí hiện tại.");
         return;
       }
-
       if (address) {
         setUserAddress(address);
         const coordinates = await getCoordinatesFromAddress(address);
         if (coordinates) {
           setUserLocation(coordinates);
-          toast.info("Đã cập nhật vị trí hiện tại.");
           return;
         }
       }
-
       setUserLocation(null);
       setUserAddress(null);
-      toast.warn("Vị trí của bạn chưa được xác định trong hồ sơ.");
+      toast.warn("Vị trí chưa được xác định trong hồ sơ.");
     } catch (error) {
-      console.error("Lỗi khi lấy vị trí từ database:", error);
+      console.error("Lỗi khi lấy vị trí:", error);
       setUserLocation(null);
       setUserAddress(null);
       toast.warn("Vui lòng cung cấp vị trí để tính khoảng cách.");
     }
-
-    if (navigator.geolocation && !userLocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-          setUserAddress(null);
-          toast.info("Đã cập nhật vị trí hiện tại.");
-        },
-        (error) => {
-          console.error("Lỗi khi lấy vị trí từ Geolocation:", error);
-          if (!userLocation && !userAddress) {
-            toast.warn("Vui lòng cung cấp vị trí để tính khoảng cách.");
-          }
-        }
-      );
-    }
   };
 
   const getCoordinatesFromAddress = async (address) => {
-    if (!address) {
-      console.warn("Địa chỉ trống, không thể lấy tọa độ.");
-      return null;
-    }
+    if (!address) return null;
     try {
       const encodedAddress = encodeURIComponent(address);
       const response = await axios.get(
         `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=jsonv2`,
-        {
-          headers: {
-            "User-Agent": "ToySharingApp",
-          },
-        }
+        { headers: { "User-Agent": "ToySharingApp" } }
       );
       if (response.data && response.data.length > 0) {
         const { lat, lon } = response.data[0];
         if (lat && lon && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lon))) {
-          return {
-            latitude: parseFloat(lat),
-            longitude: parseFloat(lon),
-          };
+          return { latitude: parseFloat(lat), longitude: parseFloat(lon) };
         }
       }
-      console.warn(`Không tìm thấy tọa độ cho địa chỉ: ${address}`);
       return null;
     } catch (error) {
       console.error(`Lỗi khi lấy tọa độ cho địa chỉ ${address}:`, error);
@@ -225,7 +305,55 @@ const Home = () => {
     }
   };
 
+  const handleGetCurrentLocation = async () => {
+    if (!navigator.geolocation) {
+      toast.error("Trình duyệt không hỗ trợ định vị!");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        let address = "Địa chỉ từ định vị";
+        try {
+          const response = await axios.get(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=jsonv2`,
+            { headers: { "User-Agent": "ToySharingApp" } }
+          );
+          if (response.data && response.data.display_name) {
+            address = response.data.display_name;
+          }
+        } catch (error) {
+          console.error("Lỗi khi lấy địa chỉ từ tọa độ:", error);
+        }
+        try {
+          const token = getAuthToken();
+          if (!token) {
+            toast.error("Vui lòng đăng nhập để cập nhật vị trí!");
+            return;
+          }
+          await axios.put(
+            `${API_BASE_URL}/User/current/location`,
+            { address, latitude, longitude },
+            { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
+          );
+          setUserLocation({ latitude, longitude });
+          setUserAddress(address);
+          toast.success("Lấy vị trí thành công!");
+          fetchUserLocation();
+        } catch (error) {
+          console.error("Lỗi khi cập nhật vị trí:", error);
+          toast.error("Không thể cập nhật vị trí!");
+        }
+      },
+      (error) => {
+        console.error("Lỗi khi lấy vị trí hiện tại:", error);
+        toast.error("Không thể lấy vị trí hiện tại!");
+      }
+    );
+  };
+
   const fetchToyList = async () => {
+    setLoading(true);
     try {
       const token = getAuthToken();
       const response = await axios.get(`${API_BASE_URL}/Products`, {
@@ -234,20 +362,15 @@ const Home = () => {
 
       const formattedToys = await Promise.all(
         response.data
-          .filter(
-            (toy) => toy.available === 0 && toy.userId !== userId // Only available and not owned by user
-          )
+          .filter((toy) => toy.available === 0 && toy.userId !== userId)
           .map(async (toy) => {
             let distance;
             let lenderAvatar = toy.user?.avatar || "https://via.placeholder.com/50?text=Avatar";
-
             if (!toy.user?.avatar && toy.userId) {
               try {
                 const profileResponse = await axios.get(
                   `${API_BASE_URL}/User/profile/${toy.userId}`,
-                  {
-                    headers: { Authorization: `Bearer ${token}` },
-                  }
+                  { headers: { Authorization: `Bearer ${token}` } }
                 );
                 lenderAvatar =
                   profileResponse.data.userInfo?.avatar ||
@@ -261,20 +384,16 @@ const Home = () => {
               distance = "Vui lòng đăng nhập để biết khoảng cách";
             } else {
               let ownerAddress, ownerLatitude, ownerLongitude;
-
               try {
                 const ownerLocationResponse = await axios.get(
                   `${API_BASE_URL}/User/${toy.userId}/location`,
-                  {
-                    headers: { Authorization: `Bearer ${token}` },
-                  }
+                  { headers: { Authorization: `Bearer ${token}` } }
                 );
                 ownerAddress = ownerLocationResponse.data.address;
                 ownerLatitude = ownerLocationResponse.data.latitude;
                 ownerLongitude = ownerLocationResponse.data.longitude;
               } catch (error) {
-                console.error(`Lỗi khi lấy địa chỉ chủ sở hữu ${toy.userId}:`, error);
-                distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
+                distance = "Chưa xác định vị trí của người sở hữu";
                 return { ...toy, distance, lenderAvatar };
               }
 
@@ -285,11 +404,11 @@ const Home = () => {
                     ownerLatitude = ownerCoords.latitude;
                     ownerLongitude = ownerCoords.longitude;
                   } else {
-                    distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
+                    distance = "Chưa xác định vị trí của người sở hữu";
                     return { ...toy, distance, lenderAvatar };
                   }
                 } else {
-                  distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
+                  distance = "Chưa xác định vị trí của người sở hữu";
                   return { ...toy, distance, lenderAvatar };
                 }
               }
@@ -298,17 +417,11 @@ const Home = () => {
                 try {
                   const distResponse = await axios.get(
                     `${API_BASE_URL}/User/distance-to-product/${toy.productId}?myLatitude=${userLocation.latitude}&myLongitude=${userLocation.longitude}`,
-                    {
-                      headers: { Authorization: `Bearer ${token}` },
-                    }
+                    { headers: { Authorization: `Bearer ${token}` } }
                   );
                   distance = distResponse.data.distanceKilometers ?? "Không thể tính khoảng cách";
                 } catch (error) {
-                  console.error(`Lỗi khi tính khoảng cách cho đồ chơi ${toy.productId}:`, error);
-                  distance =
-                    error.response?.status === 400
-                      ? "Chưa xác định vị trí của người sở hữu đồ chơi"
-                      : "Không thể tính khoảng cách";
+                  distance = "Không thể tính khoảng cách";
                 }
               } else {
                 distance = "Chưa xác định vị trí của bạn";
@@ -322,7 +435,8 @@ const Home = () => {
                   ? toy.imagePaths[0]
                   : "https://via.placeholder.com/300x200?text=No+Image",
               name: toy.name || "Không có tên",
-              price: toy.price ? `${toy.price.toLocaleString("vi-VN")} VND` : "Không có giá",
+              price: parseFloat(toy.price) || 0,
+              priceString: toy.price ? `${toy.price.toLocaleString("vi-VN")} VND` : "Không có giá",
               status: toy.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
               distance,
               lenderAvatar,
@@ -341,10 +455,14 @@ const Home = () => {
       );
 
       setToyList(formattedToys);
+      setFilteredToyList(formattedToys);
     } catch (error) {
       console.error("Lỗi khi lấy danh sách đồ chơi:", error);
       toast.error("Không thể tải danh sách đồ chơi!");
       setToyList([]);
+      setFilteredToyList([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -364,7 +482,7 @@ const Home = () => {
       return;
     }
     setSelectedToyId(toyId);
-    setBorrowDuration("1"); // Reset to 1 day
+    setBorrowDuration("1");
     setNote("");
     setShowBorrowModal(true);
   };
@@ -422,17 +540,14 @@ const Home = () => {
           "Content-Type": "multipart/form-data",
         },
       });
-      setToyList((prevList) =>
-        prevList.filter((toy) => toy.id !== selectedToyId)
-      );
+      setToyList((prevList) => prevList.filter((toy) => toy.id !== selectedToyId));
+      setFilteredToyList((prevList) => prevList.filter((toy) => toy.id !== selectedToyId));
       setUserRequests((prev) => [...prev, response.data]);
       toast.success("Gửi yêu cầu mượn thành công!");
       handleCloseBorrowModal();
     } catch (error) {
       console.error("Lỗi khi gửi yêu cầu mượn:", error);
-      toast.error(
-        error.response?.data || "Có lỗi xảy ra khi gửi yêu cầu mượn!"
-      );
+      toast.error("Có lỗi xảy ra khi gửi yêu cầu mượn!");
     } finally {
       setIsSending(false);
     }
@@ -450,9 +565,7 @@ const Home = () => {
         try {
           const profileResponse = await axios.get(
             `${API_BASE_URL}/User/profile/${response.data.userId}`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
+            { headers: { Authorization: `Bearer ${token}` } }
           );
           lenderAvatar =
             profileResponse.data.userInfo?.avatar ||
@@ -481,8 +594,7 @@ const Home = () => {
           ? `${response.data.price.toLocaleString("vi-VN")} VND`
           : "Không có giá",
         description: response.data.description || "Không có mô tả",
-        status:
-          response.data.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
+        status: response.data.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
         lenderAvatar,
       });
       setShowDetailModal(true);
@@ -506,9 +618,7 @@ const Home = () => {
       const userInfo = response.data.userInfo || response.data;
       setProfileData({
         ...userInfo,
-        avatar:
-          userInfo.avatar ||
-          "https://via.placeholder.com/100?text=Avatar",
+        avatar: userInfo.avatar || "https://via.placeholder.com/100?text=Avatar",
       });
       setShowProfileModal(true);
     } catch (error) {
@@ -525,11 +635,9 @@ const Home = () => {
         navigate("/login");
         return;
       }
-
       const response = await axios.get(`${API_BASE_URL}/Conversations`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       const conversations = response.data;
       const currentUserId = parseInt(
         localStorage.getItem("userId") || sessionStorage.getItem("userId")
@@ -547,29 +655,60 @@ const Home = () => {
         const createResponse = await axios.post(
           `${API_BASE_URL}/Conversations`,
           { user2Id: lenderId },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
+          { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
         );
         conversationId = createResponse.data.conversationId;
       }
-
       navigate("/message", { state: { activeConversationId: conversationId } });
     } catch (error) {
       console.error("Lỗi khi xử lý nhắn tin:", error);
-      if (error.response?.status === 401) {
-        toast.error("Token không hợp lệ hoặc đã hết hạn! Vui lòng đăng nhập lại.");
-        navigate("/login");
-      } else {
-        toast.error(
-          error.response?.data?.message || "Không thể bắt đầu cuộc trò chuyện!"
-        );
-      }
+      toast.error("Không thể bắt đầu cuộc trò chuyện!");
     }
   };
+
+  const applyFilters = () => {
+    let filtered = toyList.filter((toy) => {
+      const matchesName = filterValues.name
+        ? toy.name.toLowerCase().includes(filterValues.name.toLowerCase())
+        : true;
+      const matchesCondition = filterValues.condition
+        ? toy.productStatus === filterValues.condition
+        : true;
+      const matchesCategory = filterValues.category
+        ? toy.categoryName === filterValues.category
+        : true;
+      const matchesAgeRange = filterValues.ageRange
+        ? (() => {
+            const age = parseInt(toy.suitableAge);
+            switch (filterValues.ageRange) {
+              case "0-3":
+                return age >= 0 && age <= 3;
+              case "4-7":
+                return age >= 4 && age <= 7;
+              case "8-12":
+                return age >= 8 && age <= 12;
+              case "12+":
+                return age >= 12;
+              default:
+                return true;
+            }
+          })()
+        : true;
+      return matchesName && matchesCondition && matchesCategory && matchesAgeRange;
+    });
+
+    if (filterValues.priceSort === "asc") {
+      filtered = filtered.sort((a, b) => a.price - b.price);
+    } else if (filterValues.priceSort === "desc") {
+      filtered = filtered.sort((a, b) => b.price - a.price);
+    }
+
+    setFilteredToyList(filtered);
+  };
+
+  useEffect(() => {
+    applyFilters();
+  }, [filterValues, toyList]);
 
   return (
     <div className="home-wrapper">
@@ -606,27 +745,36 @@ const Home = () => {
         </div>
         <Container fluid className="mt-4 main-content">
           <Row className="mb-3 align-items-center">
-            <Col xs={12} md={11}>
+            <Col xs={12} md={12}>
               <h2 className="section-title">Đồ chơi đề xuất</h2>
             </Col>
-            <Col xs={12} md={1} className="text-md-end">
-              <Button
-                variant="outline-primary"
-                onClick={fetchUserLocation}
-                className="action-btn"
-              >
-                Lấy vị trí hiện tại
-              </Button>
+          </Row>
+          <Row className="filter-and-actions mb-3">
+            <Col xs={12} md={12}>
+              <FilterPanel
+                showFilter={showFilter}
+                onToggle={() => setShowFilter(!showFilter)}
+                filterValues={filterValues}
+                onChange={(e) =>
+                  setFilterValues({ ...filterValues, [e.target.name]: e.target.value })
+                }
+                categories={categories}
+              />
             </Col>
           </Row>
-          {toyList.length === 0 ? (
+          {loading ? (
+            <div className="text-center mt-5">
+              <Spinner animation="border" variant="primary" />
+              <p className="mt-2">Đang tải dữ liệu...</p>
+            </div>
+          ) : filteredToyList.length === 0 ? (
             <div className="text-center mt-5">
               <p className="no-results">Không có đồ chơi nào để hiển thị.</p>
             </div>
           ) : (
             <>
               <Row>
-                {toyList.map((toy) => {
+                {filteredToyList.map((toy) => {
                   const hasSentRequest = userRequests.some(
                     (req) => req.productId === toy.id && req.userId === userId && req.status === 0
                   );
@@ -650,7 +798,7 @@ const Home = () => {
                         </div>
                         <Card.Body>
                           <Card.Title className="toy-name">{toy.name}</Card.Title>
-                          <Card.Text className="toy-price">{toy.price}</Card.Text>
+                          <Card.Text className="toy-price">{toy.priceString}</Card.Text>
                           <Card.Text className="toy-status">
                             <strong>Trạng thái: </strong>
                             <span className="available">{toy.status}</span>
@@ -720,8 +868,8 @@ const Home = () => {
                   );
                 })}
               </Row>
-              <div className="text-center">
-                <Button variant="outline-primary" className="view-more-btn">
+              <div className="text-center mt-4">
+                <Button variant="outline-primary" className="view-more-btn action-btn">
                   Xem thêm
                 </Button>
               </div>
@@ -775,11 +923,7 @@ const Home = () => {
             </Button>
           </Modal.Footer>
         </Modal>
-        <Modal
-          show={showDetailModal}
-          onHide={() => setShowDetailModal(false)}
-          centered
-        >
+        <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} centered>
           <Modal.Header closeButton>
             <Modal.Title>Chi tiết đồ chơi</Modal.Title>
           </Modal.Header>
@@ -798,28 +942,12 @@ const Home = () => {
                   />
                 </div>
                 <h5 className="mt-3">{selectedToy.name}</h5>
-                <p>
-                  <strong>Danh mục:</strong>{" "}
-                  {selectedToy.categoryName || "Không có"}
-                </p>
-                <p>
-                  <strong>Tình trạng:</strong>{" "}
-                  {selectedToy.productStatus || "Không có"}
-                </p>
-                <p>
-                  <strong>Độ tuổi phù hợp:</strong>{" "}
-                  {selectedToy.suitableAge || "Không có"}
-                </p>
-                <p>
-                  <strong>Giá:</strong> {selectedToy.price}
-                </p>
-                <p>
-                  <strong>Mô tả:</strong>{" "}
-                  {selectedToy.description || "Không có"}
-                </p>
-                <p>
-                  <strong>Trạng thái:</strong> {selectedToy.status}
-                </p>
+                <p><strong>Danh mục:</strong> {selectedToy.categoryName || "Không có"}</p>
+                <p><strong>Tình trạng:</strong> {selectedToy.productStatus || "Không có"}</p>
+                <p><strong>Độ tuổi phù hợp:</strong> {selectedToy.suitableAge || "Không có"}</p>
+                <p><strong>Giá:</strong> {selectedToy.price}</p>
+                <p><strong>Mô tả:</strong> {selectedToy.description || "Không có"}</p>
+                <p><strong>Trạng thái:</strong> {selectedToy.status}</p>
               </>
             )}
           </Modal.Body>
@@ -833,11 +961,7 @@ const Home = () => {
             </Button>
           </Modal.Footer>
         </Modal>
-        <Modal
-          show={showProfileModal}
-          onHide={() => setShowProfileModal(false)}
-          centered
-        >
+        <Modal show={showProfileModal} onHide={() => setShowProfileModal(false)} centered>
           <Modal.Header closeButton>
             <Modal.Title>Thông tin người cho mượn</Modal.Title>
           </Modal.Header>
@@ -854,23 +978,12 @@ const Home = () => {
                     (e.target.src = "https://via.placeholder.com/100?text=Avatar")
                   }
                 />
-                <p>
-                  <strong>Tên hiển thị:</strong>{" "}
-                  {profileData.displayName || "Không có tên"}
-                </p>
-                <p>
-                  <strong>Tuổi:</strong>{" "}
-                  {profileData.age || "Không có thông tin"}
-                </p>
-                <p>
-                  <strong>Địa chỉ:</strong>{" "}
-                  {profileData.address || "Không có thông tin"}
-                </p>
+                <p><strong>Tên hiển thị:</strong> {profileData.displayName || "Không có tên"}</p>
+                <p><strong>Tuổi:</strong> {profileData.age || "Không có thông tin"}</p>
+                <p><strong>Địa chỉ:</strong> {profileData.address || "Không có thông tin"}</p>
                 <p>
                   <strong>Đánh giá:</strong>{" "}
-                  {profileData.rating
-                    ? profileData.rating.toFixed(2)
-                    : "Chưa có đánh giá"}
+                  {profileData.rating ? profileData.rating.toFixed(2) : "Chưa có đánh giá"}
                 </p>
               </div>
             ) : (
