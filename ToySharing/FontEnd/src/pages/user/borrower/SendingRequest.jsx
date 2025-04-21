@@ -518,7 +518,7 @@ const SendingRequest = () => {
                               className="me-2"
                               disabled={request.status === 3}
                             >
-                              Đã lấy"
+                              Đã lấy
                             </Button>
                             <Button
                               variant="danger"

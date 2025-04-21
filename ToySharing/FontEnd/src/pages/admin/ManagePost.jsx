@@ -24,7 +24,7 @@ const ManagePost = () => {
   // State cho sản phẩm, phân trang ...
   const [products, setProducts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 9;
 
   // Mapping userId -> displayName
   const [userNames, setUserNames] = useState({});

@@ -38,7 +38,8 @@ const Header = ({
       .withUrl("https://localhost:7128/chatHub", {
         accessTokenFactory: () => token,
       })
-      .withAutomaticReconnect()
+      .withAutomaticReconnect([0, 1000, 5000, 10000])
+      .configureLogging(signalR.LogLevel.Information)
       .build();
 
     setConnection(newConnection);
@@ -74,23 +75,27 @@ const Header = ({
       connection
         .start()
         .then(() => {
-          console.log("SignalR Connected");
+          console.log("SignalR Connected, Connection ID:", connection.connectionId);
 
-          // Lắng nghe sự kiện receivemessage (viết thường để khớp với server)
-          connection.on("receivemessage", async (message) => {
-            console.log("Tin nhắn mới (receivemessage):", message);
-
-            // Kiểm tra kiểu dữ liệu của message
-            if (typeof message !== "object" || message === null) {
-              console.warn("Payload không phải object:", message);
-              return;
-            }
-
-            const { conversationId, senderId, content } = message;
+          // Lắng nghe sự kiện ReceiveMessage (khớp với Message.jsx và backend)
+          connection.on("ReceiveMessage", async (conversationId, senderId, content, sentAt, messageId) => {
+            console.log("Tin nhắn mới (ReceiveMessage):", {
+              conversationId,
+              senderId,
+              content,
+              sentAt,
+              messageId,
+            });
 
             // Kiểm tra dữ liệu hợp lệ
-            if (!conversationId || !content) {
-              console.warn("Dữ liệu tin nhắn không đầy đủ:", message);
+            if (!conversationId || !senderId || !content || !sentAt || !messageId) {
+              console.warn("Dữ liệu tin nhắn không đầy đủ:", {
+                conversationId,
+                senderId,
+                content,
+                sentAt,
+                messageId,
+              });
               return;
             }
 
@@ -108,6 +113,7 @@ const Header = ({
                       ? {
                           ...convo,
                           lastMessageContent: content,
+                          lastMessageAt: sentAt,
                           isRead: false,
                           lastSenderId: senderId,
                         }
@@ -120,6 +126,7 @@ const Header = ({
                     {
                       conversationId,
                       lastMessageContent: content,
+                      lastMessageAt: sentAt,
                       isRead: false,
                       lastSenderId: senderId,
                       otherUser: { name: senderName },
@@ -133,8 +140,8 @@ const Header = ({
             }
           });
 
-          // Thêm sự kiện khác nếu server gửi số lượng tin nhắn chưa đọc
-          connection.on("updateUnreadCount", (count) => {
+          // Xử lý sự kiện cập nhật số tin nhắn chưa đọc (nếu backend có gửi)
+          connection.on("UpdateUnreadCount", (count) => {
             console.log("Cập nhật số tin nhắn chưa đọc:", count);
             if (typeof count === "number") {
               setUnreadMessages(count);
@@ -146,9 +153,8 @@ const Header = ({
         });
 
       return () => {
-        connection.off("receivemessage");
-        connection.off("updateUnreadCount");
-        connection.stop();
+        connection.off("ReceiveMessage");
+        connection.off("UpdateUnreadCount");
       };
     }
   }, [connection, userId, token]);
@@ -431,7 +437,11 @@ const Header = ({
                     >
                       Thông tin cá nhân
                     </Dropdown.Item>
-                    <Dropdown.Item as={Link} to="/transaction-history" onClick={() => setActiveLink("transaction-history")}>
+                    <Dropdown.Item
+                      as={Link}
+                      to="/transaction-history"
+                      onClick={() => setActiveLink("transaction-history")}
+                    >
                       Lịch sử giao dịch
                     </Dropdown.Item>
                     <Dropdown.Item as={Link} to="/logout" onClick={() => setActiveLink("logout")}>
