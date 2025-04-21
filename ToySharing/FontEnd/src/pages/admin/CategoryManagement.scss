@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
 
-.banner-page.banner-management {
+.banner-page.category-management {
     background-color: #f7f9fc;
     font-family: 'Roboto', sans-serif;
     color: #333;
@@ -13,6 +13,7 @@
         min-height: calc(100vh - 80px);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
+
     h1 {
         font-size: 2rem;
         margin-bottom: 20px;
@@ -35,14 +36,8 @@
             margin-bottom: 5px;
         }
 
-        .form-control,
-        .form-select {
+        .form-control {
             border-radius: 8px;
-        }
-
-        textarea.form-control {
-            resize: vertical; /* Cho phép kéo dãn theo chiều dọc */
-            min-height: 80px;
         }
     }
 
@@ -60,19 +55,6 @@
             background-color: #f7f9fc;
             font-weight: 600;
             color: #333;
-        }
-
-        .banner-image {
-            width: 100px;
-            height: auto;
-            object-fit: cover;
-            border-radius: 4px;
-        }
-
-        .text-wrap {
-            white-space: normal !important;
-            word-break: break-all;
-            max-width: 200px; /* Giới hạn chiều rộng cột */
         }
     }
 

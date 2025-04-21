@@ -348,7 +348,7 @@ namespace ToySharingAPI.Controllers
         }
 
         [HttpPost("ban")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> BanUser([FromBody] BanUnbanRequestDTO request)
         {
             var user = await _context.Users.FindAsync(request.UserId);
@@ -449,38 +449,46 @@ namespace ToySharingAPI.Controllers
         }
 
         [HttpGet("role/user")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllUsersWithUserRole()
         {
-            var identityUsers = await _userManager.GetUsersInRoleAsync("User");
-            var result = new List<ListUserDTO>();
-
-            foreach (var identityUser in identityUsers)
+            try
             {
-                if (Guid.TryParse(identityUser.Id, out Guid authUserGuid))
-                {
-                    var roles = await _userManager.GetRolesAsync(identityUser);
-                    var roleStr = roles.FirstOrDefault() ?? string.Empty;
-                    var mainUser = await _context.Users
-                        .FirstOrDefaultAsync(u => u.AuthUserId == authUserGuid);
+                var currentUserId = await GetAuthenticatedUserId();
+                var identityUsers = await _userManager.Users.ToListAsync();
+                var result = new List<ListUserDTO>();
 
-                    if (mainUser != null)
+                foreach (var identityUser in identityUsers)
+                {
+                    if (Guid.TryParse(identityUser.Id, out Guid authUserGuid))
                     {
-                        result.Add(new ListUserDTO
+                        var mainUser = await _context.Users
+                            .FirstOrDefaultAsync(u => u.AuthUserId == authUserGuid);
+
+                        if (mainUser != null && mainUser.Id != currentUserId) 
                         {
-                            Id = mainUser.Id,
-                            Email = mainUser.Name,
-                            DisplayName = mainUser.Displayname,
-                            Gender = mainUser.Gender,
-                            Status = mainUser.Status,
-                            Role = roleStr,
-                            CreatedAt = mainUser.CreatedAt
-                        });
+                            var roles = await _userManager.GetRolesAsync(identityUser);
+                            var roleStr = roles.FirstOrDefault() ?? string.Empty;
+                            result.Add(new ListUserDTO
+                            {
+                                Id = mainUser.Id,
+                                Email = mainUser.Name,
+                                DisplayName = mainUser.Displayname,
+                                Gender = mainUser.Gender,
+                                Status = mainUser.Status,
+                                Role = roleStr,
+                                CreatedAt = mainUser.CreatedAt
+                            });
+                        }
                     }
                 }
-            }
 
-            return Ok(result);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
+            }
         }
     }
 }

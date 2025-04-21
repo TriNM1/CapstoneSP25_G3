@@ -73,7 +73,7 @@ const ChangePassword = () => {
       if (response.status === 200) {
         setSuccessMessage("Mật khẩu đã được thay đổi thành công!");
         setTimeout(() => {
-          navigate("/login");
+          navigate("/home");
         }, 3000);
       }
     } catch (error) {

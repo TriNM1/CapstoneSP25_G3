@@ -254,8 +254,9 @@ const ManagePost = () => {
                 { id: 1, label: "Trang chủ", link: "/adminpage" },
                 { id: 2, label: "Quản lý người dùng", link: "/manageuser" },
                 { id: 3, label: "Quản lý banner", link: "/banner-management" },
-                { id: 4, label: "Quản lý bài đăng", link: "/managepost" },
-                { id: 5, label: "Thống kê", link: "/statistic" },
+                { id: 4, label: "Quản lý danh mục", link: "/category-management" },
+                { id: 5, label: "Quản lý bài đăng", link: "/managepost" },
+                { id: 6, label: "Thống kê", link: "/statistic" },
               ]}
             />
           </Col>

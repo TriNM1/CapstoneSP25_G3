@@ -24,6 +24,7 @@ import SendingRequest from "./pages/user/borrower/SendingRequest";
 import ToyDetail from "./pages/user/generate/ToyDetail";
 import PaymentSuccess from "./pages/user/borrower/PaymentSuccess";
 import PaymentError from "./pages/user/borrower/PaymentError";
+import Banned from "./components/Banned";
 
 // Admin
 import AdminPage from "./pages/admin/AdminPage";
@@ -31,6 +32,7 @@ import ManageUser from "./pages/admin/ManageUser";
 import Statistic from "./pages/admin/Statistic";
 import ManagePost from "./pages/admin/ManagePost";
 import BannerManagement from "./pages/admin/BannerManagement";
+import CategoryManagement from "./pages/admin/CategoryManagement";
 import AdminProfile from "./pages/admin/AdminProfile";
 
 // Route wrapper
@@ -45,6 +47,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/logout" element={<Logout />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/home" element={<Home />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/validatemail" element={<ValidateMail />} />
@@ -52,10 +55,10 @@ function App() {
         <Route path="/policy" element={<Policy />} />
         <Route path="/userguide" element={<UserGuide />} />
         <Route path="/toydetail/:toyId" element={<ToyDetail />} />
+        <Route path="/banned" element={<Banned />} />
 
         {/* User Routes (Accessible only to logged-in Users) */}
         <Route element={<ProtectedRoute allowedRole="User"/>}>
-          <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/transaction-history" element={<TransactionHistory />} />
           <Route path="/listborrowrequests" element={<ListBorrowRequests />} />
           <Route path="/lending" element={<ListBorrowRequests />} />
@@ -83,6 +86,7 @@ function App() {
           <Route path="/managepost" element={<ManagePost />} />
           <Route path="/statistic" element={<Statistic />} />
           <Route path="/banner-management" element={<BannerManagement />} />
+          <Route path="/category-management" element={<CategoryManagement />} />
         </Route>
 
         {/* Default Route */}

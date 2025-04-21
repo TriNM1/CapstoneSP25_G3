@@ -99,6 +99,7 @@ namespace ToySharingAPI.Controllers
             {
                 AuthUserId = authUserGuid,
                 Name = request.Email,
+                Displayname = request.Email,
                 CreatedAt = DateTime.Now,
                 Address = string.Empty,
                 Latitude = 0,
@@ -121,43 +122,52 @@ namespace ToySharingAPI.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequestDTO loginRequestDTO)
         {
             var user = await userManager.FindByEmailAsync(loginRequestDTO.Username);
-            if (user != null)
+            if (user == null)
             {
-                var checkPasswordResult = await userManager.CheckPasswordAsync(user, loginRequestDTO.Password);
-
-                if (checkPasswordResult)
-                {
-                    // Get roles for this user
-                    var roles = await userManager.GetRolesAsync(user);
-                    if (roles != null)
-                    {
-                        // Create Token
-                        var jwtToken = tokenRepository.CreateJWTToken(user, roles.ToList());
-                        var mainUser = await mainContext.Users
-                        .FirstOrDefaultAsync(u => u.AuthUserId == Guid.Parse(user.Id));
-                        if (mainUser == null)
-                        {
-                            return BadRequest("Không tìm thấy người dùng trong database chính.");
-                        }
-
-                        bool isProfileCompleted =
-                            !string.IsNullOrEmpty(mainUser.Phone) &&
-                            !string.IsNullOrEmpty(mainUser.Address) &&
-                            !string.IsNullOrEmpty(mainUser.Displayname);
-
-                        var response = new LoginResponseDTO
-                        {
-                            JwtToken = jwtToken,
-                            UserId = mainUser.Id,
-                            IsProfileCompleted = isProfileCompleted,
-                            Role = roles.FirstOrDefault()
-                        };
-                        return Ok(response);
-                    }
-
-                }
+                return BadRequest(new { message = "Tài khoản chưa được đăng ký trên hệ thống." });
             }
-            return BadRequest("Username or password incorrect");
+
+            var checkPasswordResult = await userManager.CheckPasswordAsync(user, loginRequestDTO.Password);
+            if (!checkPasswordResult)
+            {
+                return BadRequest(new { message = "Mật khẩu không chính xác." });
+            }
+
+            var mainUser = await mainContext.Users
+                .FirstOrDefaultAsync(u => u.AuthUserId == Guid.Parse(user.Id));
+            if (mainUser == null)
+            {
+                return BadRequest(new { message = "Không tìm thấy người dùng trong cơ sở dữ liệu." });
+            }
+
+            if (mainUser.Status == 1)
+            {
+                return StatusCode(403, new { message = "Tài khoản của bạn đã bị cấm. Vui lòng liên hệ hỗ trợ để biết thêm chi tiết." });
+            }
+
+            var roles = await userManager.GetRolesAsync(user);
+            if (roles == null || !roles.Any())
+            {
+                return BadRequest(new { message = "Người dùng không có vai trò được gán." });
+            }
+
+            var jwtToken = tokenRepository.CreateJWTToken(user, roles.ToList());
+
+            bool isProfileCompleted =
+                !string.IsNullOrEmpty(mainUser.Phone) &&
+                !string.IsNullOrEmpty(mainUser.Address) &&
+                !string.IsNullOrEmpty(mainUser.Displayname);
+
+            var response = new LoginResponseDTO
+            {
+                JwtToken = jwtToken,
+                UserId = mainUser.Id,
+                IsProfileCompleted = isProfileCompleted,
+                Role = roles.FirstOrDefault(),
+                Status = mainUser.Status
+            };
+
+            return Ok(response);
         }
 
         [HttpPost("Logout")]

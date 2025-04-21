@@ -4,27 +4,23 @@ import axios from "axios";
 import AdminSideMenu from "../../components/AdminSideMenu";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import "./BannerManagement.scss";
+import "./CategoryManagement.scss";
 
 const API_BASE_URL = "https://localhost:7128/api/admin"; // Backend base URL
 
-const BannerManagement = () => {
-    const [banners, setBanners] = useState([]);
-    const [filteredBanners, setFilteredBanners] = useState([]);
+const CategoryManagement = () => {
+    const [categories, setCategories] = useState([]);
+    const [filteredCategories, setFilteredCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
-    const [currentBanner, setCurrentBanner] = useState(null);
+    const [currentCategory, setCurrentCategory] = useState(null);
     const [formData, setFormData] = useState({
-        title: "",
-        linkUrl: "",
-        status: "",
-        priority: "",
-        image: null,
+        categoryName: "",
     });
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(5); // Số banner mỗi trang
+    const [itemsPerPage] = useState(5); // Số danh mục mỗi trang
 
     const menuItems = [
         { id: 1, label: "Trang chủ", link: "/adminpage" },
@@ -35,155 +31,124 @@ const BannerManagement = () => {
         { id: 6, label: "Thống kê", link: "/statistic" },
     ];
 
-    const statusOptions = [
-        { value: "0", label: "Hiện" },
-        { value: "1", label: "Ẩn" },
-    ];
-
     useEffect(() => {
-        fetchBanners();
+        fetchCategories();
     }, []);
 
-    const fetchBanners = async () => {
+    const fetchCategories = async () => {
         setLoading(true);
         try {
-            const response = await axios.get(`${API_BASE_URL}/banners`, {
+            const response = await axios.get(`${API_BASE_URL}/categories`, {
                 headers: { Authorization: `Bearer ${localStorage.getItem("token") || sessionStorage.getItem("token")}` },
             });
             if (Array.isArray(response.data)) {
-                // Sắp xếp banner theo thời gian tạo (mới nhất lên đầu)
-                const sortedBanners = response.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-                setBanners(sortedBanners);
-                setFilteredBanners(sortedBanners);
+                setCategories(response.data);
+                setFilteredCategories(response.data);
             } else {
                 console.error("Expected an array from API but got:", response.data);
-                setBanners([]);
-                setFilteredBanners([]);
+                setCategories([]);
+                setFilteredCategories([]);
                 toast.error("Dữ liệu nhận được không đúng định dạng.");
             }
         } catch (error) {
-            console.error("Error fetching banners:", error);
-            setBanners([]);
-            setFilteredBanners([]);
+            console.error("Error fetching categories:", error);
+            setCategories([]);
+            setFilteredCategories([]);
             if (error.response?.status === 401) {
                 toast.error("Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn.");
             } else {
-                toast.error("Lỗi khi tải danh sách banner. Vui lòng thử lại.");
+                toast.error("Lỗi khi tải danh sách danh mục. Vui lòng thử lại.");
             }
         } finally {
             setLoading(false);
         }
     };
 
-    // Xử lý tìm kiếm
     useEffect(() => {
-        const filtered = banners.filter((banner) =>
-            banner.title.toLowerCase().includes(searchTerm.toLowerCase())
+        const filtered = categories.filter((category) =>
+            category.categoryName.toLowerCase().includes(searchTerm.toLowerCase())
         );
-        setFilteredBanners(filtered);
-        setCurrentPage(1); // Reset về trang đầu khi tìm kiếm
-    }, [searchTerm, banners]);
+        setFilteredCategories(filtered);
+        setCurrentPage(1);
+    }, [searchTerm, categories]);
 
-    // Phân trang
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = filteredBanners.slice(indexOfFirstItem, indexOfLastItem);
-    const totalPages = Math.ceil(filteredBanners.length / itemsPerPage);
+    const currentItems = filteredCategories.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-    const handleAddBanner = () => {
+    const handleAddCategory = () => {
         setIsEditing(false);
         setFormData({
-            title: "",
-            linkUrl: "",
-            status: "0", // Mặc định là "Hiện"
-            priority: "",
-            image: null,
+            categoryName: "",
         });
         setShowModal(true);
     };
 
-    const handleEditBanner = (banner) => {
+    const handleEditCategory = (category) => {
         setIsEditing(true);
-        setCurrentBanner(banner);
+        setCurrentCategory(category);
         setFormData({
-            title: banner.title,
-            linkUrl: banner.linkUrl || "",
-            status: banner.status.toString(),
-            priority: banner.priority || "",
-            image: null,
+            categoryName: category.categoryName,
         });
         setShowModal(true);
     };
 
-    const handleDeleteBanner = async (id) => {
+    const handleDeleteCategory = async (id) => {
         try {
-            await axios.delete(`${API_BASE_URL}/banners/${id}`, {
+            await axios.delete(`${API_BASE_URL}/categories/${id}`, {
                 headers: { Authorization: `Bearer ${localStorage.getItem("token") || sessionStorage.getItem("token")}` },
             });
-            toast.success("Xóa banner thành công!");
-            fetchBanners();
+            toast.success("Xóa danh mục thành công!");
+            fetchCategories();
         } catch (error) {
-            console.error("Error deleting banner:", error);
+            console.error("Error deleting category:", error);
             if (error.response?.status === 401) {
                 toast.error("Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn.");
             } else {
-                toast.error("Lỗi khi xóa banner. Vui lòng thử lại.");
+                toast.error("Lỗi khi xóa danh mục. Vui lòng thử lại.");
             }
         }
     };
 
     const handleSubmit = async () => {
-        // Validation for required fields
-        if (!formData.title.trim()) {
-            toast.error("Tiêu đề là bắt buộc.");
-            return;
-        }
-        if (formData.status === "") {
-            toast.error("Trạng thái là bắt buộc.");
-            return;
-        }
-        if (!isEditing && !formData.image) {
-            toast.error("Ảnh là bắt buộc khi thêm banner mới.");
+        if (!formData.categoryName.trim()) {
+            toast.error("Tên danh mục là bắt buộc.");
             return;
         }
 
-        const data = new FormData();
-        data.append("title", formData.title);
-        data.append("linkUrl", formData.linkUrl);
-        data.append("status", formData.status);
-        data.append("priority", formData.priority);
-        if (formData.image) {
-            data.append("image", formData.image);
-        }
+        const data = {
+            categoryName: formData.categoryName,
+        };
 
         try {
             if (isEditing) {
-                await axios.put(`${API_BASE_URL}/banners/${currentBanner.bannerId}`, data, {
+                await axios.put(`${API_BASE_URL}/categories/${currentCategory.categoryId}`, data, {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem("token") || sessionStorage.getItem("token")}`,
-                        "Content-Type": "multipart/form-data",
+                        "Content-Type": "application/json",
                     },
                 });
-                toast.success("Cập nhật banner thành công!");
+                toast.success("Cập nhật danh mục thành công!");
             } else {
-                await axios.post(`${API_BASE_URL}/banners`, data, {
+                await axios.post(`${API_BASE_URL}/categories`, data, {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem("token") || sessionStorage.getItem("token")}`,
-                        "Content-Type": "multipart/form-data",
+                        "Content-Type": "application/json",
                     },
                 });
-                toast.success("Thêm banner thành công!");
+                toast.success("Thêm danh mục thành công!");
             }
             setShowModal(false);
-            fetchBanners();
+            fetchCategories();
         } catch (error) {
-            console.error("Error saving banner:", error);
+            console.error("Error saving category:", error);
             if (error.response?.status === 401) {
                 toast.error("Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn.");
             } else {
-                toast.error("Lỗi khi lưu banner. Vui lòng thử lại.");
+                toast.error("Lỗi khi lưu danh mục. Vui lòng thử lại.");
             }
         }
     };
@@ -193,31 +158,27 @@ const BannerManagement = () => {
         setFormData({ ...formData, [name]: value });
     };
 
-    const handleFileChange = (e) => {
-        setFormData({ ...formData, image: e.target.files[0] });
-    };
-
     const handleSearchChange = (e) => {
         setSearchTerm(e.target.value);
     };
 
     return (
-        <div className="banner-page banner-management">
+        <div className="banner-page category-management">
             <Container fluid className="mt-4">
                 <Row>
                     <Col xs={12} md={2}>
                         <AdminSideMenu menuItems={menuItems} />
                     </Col>
                     <Col xs={12} md={10} className="main-content">
-                        <h1>Quản lý Banner</h1>
+                        <h1>Quản lý Danh mục</h1>
                         <div className="d-flex justify-content-between mb-3">
-                            <Button variant="primary" onClick={handleAddBanner}>
-                                Thêm Banner
+                            <Button variant="primary" onClick={handleAddCategory}>
+                                Thêm Danh mục
                             </Button>
-                            <Form className="d-flex" style={{ maxWidth: "300px" }}>
+                            <Form className="d-flex search-form">
                                 <Form.Control
                                     type="text"
-                                    placeholder="Tìm kiếm tiêu đề..."
+                                    placeholder="Tìm kiếm danh mục..."
                                     value={searchTerm}
                                     onChange={handleSearchChange}
                                 />
@@ -227,39 +188,31 @@ const BannerManagement = () => {
                             <thead>
                                 <tr>
                                     <th>Số thứ tự</th>
-                                    <th>Tiêu đề</th>
-                                    <th>Ảnh banner</th>
-                                    <th>Liên kết tới</th>
-                                    <th>Trạng thái</th>
+                                    <th>Tên danh mục</th>
                                     <th>Hành động</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {loading ? (
                                     <tr>
-                                        <td colSpan="6">Đang tải...</td>
+                                        <td colSpan="3">Đang tải...</td>
                                     </tr>
                                 ) : Array.isArray(currentItems) ? (
                                     currentItems.length > 0 ? (
-                                        currentItems.map((banner, index) => (
-                                            <tr key={banner.bannerId}>
+                                        currentItems.map((category, index) => (
+                                            <tr key={category.categoryId}>
                                                 <td>{indexOfFirstItem + index + 1}</td>
-                                                <td>{banner.title}</td>
-                                                <td>
-                                                    <img src={banner.imageUrl} alt={banner.title} width="100" className="banner-image" />
-                                                </td>
-                                                <td className="text-wrap">{banner.linkUrl || "Không có"}</td>
-                                                <td>{statusOptions.find(opt => opt.value === banner.status.toString())?.label || "Không xác định"}</td>
+                                                <td>{category.categoryName}</td>
                                                 <td>
                                                     <Button
                                                         variant="warning"
-                                                        onClick={() => handleEditBanner(banner)}
+                                                        onClick={() => handleEditCategory(category)}
                                                     >
                                                         Sửa
                                                     </Button>{" "}
                                                     <Button
                                                         variant="danger"
-                                                        onClick={() => handleDeleteBanner(banner.bannerId)}
+                                                        onClick={() => handleDeleteCategory(category.categoryId)}
                                                     >
                                                         Xóa
                                                     </Button>
@@ -268,18 +221,17 @@ const BannerManagement = () => {
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="6">Không tìm thấy banner nào.</td>
+                                            <td colSpan="3">Không tìm thấy danh mục nào.</td>
                                         </tr>
                                     )
                                 ) : (
                                     <tr>
-                                        <td colSpan="6">Lỗi khi tải dữ liệu banner.</td>
+                                        <td colSpan="3">Lỗi khi tải dữ liệu danh mục.</td>
                                     </tr>
                                 )}
                             </tbody>
                         </Table>
 
-                        {/* Phân trang */}
                         {totalPages > 1 && (
                             <Pagination className="justify-content-center">
                                 <Pagination.Prev
@@ -307,56 +259,19 @@ const BannerManagement = () => {
 
             <Modal show={showModal} onHide={() => setShowModal(false)}>
                 <Modal.Header closeButton>
-                    <Modal.Title>{isEditing ? "Sửa Banner" : "Thêm Banner"}</Modal.Title>
+                    <Modal.Title>{isEditing ? "Sửa Danh mục" : "Thêm Danh mục"}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <div>
                         <div className="mb-3">
-                            <label>Tiêu đề <span style={{ color: "red" }}>*</span></label>
+                            <label>Tên danh mục <span style={{ color: "red" }}>*</span></label>
                             <input
                                 type="text"
-                                name="title"
-                                value={formData.title}
+                                name="categoryName"
+                                value={formData.categoryName}
                                 onChange={handleChange}
                                 className="form-control"
                                 required
-                            />
-                        </div>
-                        <div className="mb-3">
-                            <label>Liên kết</label>
-                            <textarea
-                                name="linkUrl"
-                                value={formData.linkUrl}
-                                onChange={handleChange}
-                                className="form-control"
-                                rows="3"
-                                placeholder="Nhập liên kết..."
-                            />
-                        </div>
-                        <div className="mb-3">
-                            <label>Trạng thái <span style={{ color: "red" }}>*</span></label>
-                            <Form.Select
-                                name="status"
-                                value={formData.status}
-                                onChange={handleChange}
-                                required
-                            >
-                                <option value="">Chọn trạng thái</option>
-                                {statusOptions.map((option) => (
-                                    <option key={option.value} value={option.value}>
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </Form.Select>
-                        </div>
-                        <div className="mb-3">
-                            <label>Ảnh {isEditing ? "" : <span style={{ color: "red" }}>*</span>}</label>
-                            <input
-                                type="file"
-                                onChange={handleFileChange}
-                                className="form-control"
-                                accept="image/*"
-                                required={!isEditing}
                             />
                         </div>
                         <Button variant="primary" onClick={handleSubmit}>
@@ -380,4 +295,4 @@ const BannerManagement = () => {
     );
 };
 
-export default BannerManagement;
+export default CategoryManagement;
