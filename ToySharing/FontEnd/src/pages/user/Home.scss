@@ -60,6 +60,68 @@ $danger-hover: #c82333;
     margin-bottom: 1.5rem;
   }
 
+  .filter-and-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    margin: 10px;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  .filter-panel {
+    width: 100%;
+    max-width: 100%;
+    transition: max-height 0.3s ease-in-out;
+    overflow: hidden;
+
+    &.show {
+      max-height: 500px;
+    }
+
+    &:not(.show) {
+      max-height: 40px;
+    }
+
+    .action-btn {
+      margin-bottom: 10px;
+    }
+
+    .filter-form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+
+      .form-group {
+        flex: 1;
+        min-width: 150px;
+
+        label {
+          font-size: 0.9rem;
+          color: #333;
+          margin-bottom: 5px;
+        }
+
+        .form-control {
+          font-size: 0.9rem;
+          padding: 8px;
+          border-radius: 5px;
+          border: 1px solid #ddd;
+          height: 38px;
+
+          &:focus {
+            border-color: $primary-color;
+            box-shadow: 0 0 5px rgba($primary-color, 0.3);
+          }
+        }
+      }
+    }
+  }
+
   .toy-card {
     border: 1px solid #ddd;
     border-radius: 8px;
@@ -137,7 +199,7 @@ $danger-hover: #c82333;
     }
 
     .toy-actions {
-      margin-top: 10px;
+      margin-top: 20px;
 
       .action-btn {
         min-width: 120px;
@@ -183,7 +245,7 @@ $danger-hover: #c82333;
 
   .action-btn {
     min-width: 120px;
-    padding: 8px 16px;
+    padding: 5px 16px;
     font-size: 1rem;
     border-radius: 5px;
 

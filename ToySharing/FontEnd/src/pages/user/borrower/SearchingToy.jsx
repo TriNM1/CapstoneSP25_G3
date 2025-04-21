@@ -18,6 +18,42 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./SearchingToy.scss";
 
+// Hàm phân tích địa chỉ
+const parseAddress = (address) => {
+  if (!address || typeof address !== "string") {
+    return { ward: "", district: "", city: "" };
+  }
+
+  // Tách chuỗi địa chỉ thành mảng dựa trên dấu phẩy
+  const parts = address
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part);
+
+  // Mặc định các giá trị
+  let ward = "";
+  let district = "";
+  let city = "";
+
+  // Xử lý dựa trên số lượng thành phần
+  if (parts.length >= 3) {
+    // Ví dụ: "Văn Quán, Hà Đông, Hà Nội"
+    ward = parts[0];
+    district = parts[1];
+    city = parts[parts.length - 1];
+  } else if (parts.length === 2) {
+    // Ví dụ: "Hà Đông, Hà Nội"
+    district = parts[0];
+    city = parts[1];
+  } else if (parts.length === 1) {
+    // Ví dụ: "Hà Nội"
+    city = parts[0];
+  }
+
+  return { ward, district, city };
+};
+
+// Component FilterPanel (giữ nguyên)
 const FilterPanel = ({ showFilter, onToggle, filterValues, onChange, categories }) => {
   return (
     <div className={`filter-panel ${showFilter ? "show" : ""}`}>
@@ -128,8 +164,6 @@ const SearchingToy = () => {
   const [categories, setCategories] = useState([]);
   const [showUpdateLocationModal, setShowUpdateLocationModal] = useState(false);
   const [locationForm, setLocationForm] = useState({
-    houseNumber: "",
-    street: "",
     ward: "",
     district: "",
     city: "",
@@ -163,16 +197,26 @@ const SearchingToy = () => {
     if (token) fetchUserLocation();
   }, [navigate]);
 
+  // Cập nhật locationForm khi userAddress thay đổi
+  useEffect(() => {
+    if (userAddress) {
+      const parsed = parseAddress(userAddress);
+      setLocationForm({
+        ward: parsed.ward,
+        district: parsed.district,
+        city: parsed.city,
+      });
+    }
+  }, [userAddress]);
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const token = getAuthToken();
         if (!token) return;
-
         const response = await axios.get(`${API_BASE_URL}/Products/categories`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-
         setCategories(response.data);
       } catch (error) {
         console.error("Lỗi khi lấy danh sách danh mục:", error);
@@ -180,7 +224,6 @@ const SearchingToy = () => {
         setCategories([]);
       }
     };
-
     fetchCategories();
   }, []);
 
@@ -191,20 +234,16 @@ const SearchingToy = () => {
       setUserAddress(null);
       return;
     }
-
     try {
       const response = await axios.get(`${API_BASE_URL}/User/current/location`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       const { address, latitude, longitude } = response.data;
-
       if (latitude && longitude && !isNaN(latitude) && !isNaN(longitude)) {
         setUserLocation({ latitude, longitude });
         setUserAddress(address || "Địa chỉ không được cung cấp");
         return;
       }
-
       if (address) {
         setUserAddress(address);
         const coordinates = await getCoordinatesFromAddress(address);
@@ -213,7 +252,6 @@ const SearchingToy = () => {
           return;
         }
       }
-
       setUserLocation(null);
       setUserAddress(null);
       toast.warn("Vị trí của bạn chưa được xác định trong hồ sơ.");
@@ -251,12 +289,10 @@ const SearchingToy = () => {
       toast.error("Trình duyệt của bạn không hỗ trợ định vị!");
       return;
     }
-
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
         let address = "Địa chỉ từ định vị";
-
         try {
           const response = await axios.get(
             `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=jsonv2`,
@@ -268,20 +304,17 @@ const SearchingToy = () => {
         } catch (error) {
           console.error("Lỗi khi lấy địa chỉ từ tọa độ:", error);
         }
-
         try {
           const token = getAuthToken();
           if (!token) {
             toast.error("Vui lòng đăng nhập để cập nhật vị trí!");
             return;
           }
-
           await axios.put(
             `${API_BASE_URL}/User/current/location`,
             { address, latitude, longitude },
             { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
           );
-
           setUserLocation({ latitude, longitude });
           setUserAddress(address);
           toast.success("Lấy vị trí hiện tại thành công!");
@@ -308,14 +341,12 @@ const SearchingToy = () => {
   };
 
   const handleSubmitLocation = async () => {
-    const { houseNumber, street, ward, district, city } = locationForm;
+    const { ward, district, city } = locationForm;
     if (!ward || !district || !city) {
-      toast.error("Vui lòng nhập ít nhất Phường, Quận và Thành phố!");
+      toast.error("Vui lòng nhập đầy đủ Phường, Quận và Thành phố!");
       return;
     }
-
-    const fullAddress = `${houseNumber ? houseNumber + ", " : ""}${street ? street + ", " : ""}${ward}, ${district}, ${city}`;
-
+    const fullAddress = `${ward}, ${district}, ${city}`;
     try {
       const token = getAuthToken();
       if (!token) {
@@ -323,29 +354,23 @@ const SearchingToy = () => {
         setShowUpdateLocationModal(false);
         return;
       }
-
       let latitude = null;
       let longitude = null;
-
       const coordinates = await getCoordinatesFromAddress(fullAddress);
       if (coordinates) {
         latitude = coordinates.latitude;
         longitude = coordinates.longitude;
       }
-
       await axios.put(
         `${API_BASE_URL}/User/current/location`,
         { address: fullAddress, latitude, longitude },
         { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
       );
-
       toast.success("Cập nhật vị trí thành công!");
       setUserAddress(fullAddress);
       setUserLocation(coordinates || null);
       setShowUpdateLocationModal(false);
       setLocationForm({
-        houseNumber: "",
-        street: "",
         ward: "",
         district: "",
         city: "",
@@ -362,24 +387,19 @@ const SearchingToy = () => {
       try {
         const token = getAuthToken();
         if (!token || !mainUserId) return;
-
         const response = await axios.get(`${API_BASE_URL}/Products/recommendations`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-
         if (!Array.isArray(response.data)) {
           console.error("Dữ liệu API không phải mảng:", response.data);
           setToys([]);
           return;
         }
-
         const formattedToys = await Promise.all(
           response.data.map(async (toy) => {
             let distance = isLoggedIn ? null : "Vui lòng đăng nhập để biết khoảng cách";
-
             if (isLoggedIn) {
               let ownerAddress, ownerLatitude, ownerLongitude;
-
               try {
                 const ownerLocationResponse = await axios.get(
                   `${API_BASE_URL}/User/${toy.userId}/location`,
@@ -392,7 +412,6 @@ const SearchingToy = () => {
                 distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
                 return { ...toy, distance };
               }
-
               if (!ownerLatitude || !ownerLongitude) {
                 if (ownerAddress) {
                   const ownerCoords = await getCoordinatesFromAddress(ownerAddress);
@@ -408,7 +427,6 @@ const SearchingToy = () => {
                   return { ...toy, distance };
                 }
               }
-
               if (userLocation && userLocation.latitude && userLocation.longitude) {
                 try {
                   const distResponse = await axios.get(
@@ -417,26 +435,34 @@ const SearchingToy = () => {
                   );
                   distance = distResponse.data.distanceKilometers ?? "Không thể tính khoảng cách";
                 } catch (error) {
-                  distance = error.response?.status === 400
-                    ? "Chưa xác định vị trí của người sở hữu đồ chơi"
-                    : "Không thể tính khoảng cách";
+                  distance =
+                    error.response?.status === 400
+                      ? "Chưa xác định vị trí của người sở hữu đồ chơi"
+                      : "Không thể tính khoảng cách";
                 }
               } else {
                 distance = "Chưa xác định vị trí của bạn";
               }
             }
-
             return {
               productId: toy.productId,
               userId: toy.userId,
-              image: toy.imagePaths && toy.imagePaths.length > 0
-                ? toy.imagePaths[0]
-                : "https://via.placeholder.com/300x200?text=No+Image",
+              image:
+                toy.imagePaths && toy.imagePaths.length > 0
+                  ? toy.imagePaths[0]
+                  : "https://via.placeholder.com/300x200?text=No+Image",
               name: toy.name || "Không có tên",
               ownerAvatar: toy.ownerAvatar || "https://via.placeholder.com/50?text=Avatar",
-              createdAt: toy.createdAt ? new Date(toy.createdAt).toISOString().split("T")[0] : "Không có ngày",
+              createdAt: toy.createdAt
+                ? new Date(toy.createdAt).toISOString().split("T")[0]
+                : "Không có ngày",
               categoryName: toy.categoryName || "Không có danh mục",
-              productStatus: toy.productStatus === 0 ? "Mới" : toy.productStatus === 1 ? "Cũ" : "Không xác định",
+              productStatus:
+                toy.productStatus === 0
+                  ? "Mới"
+                  : toy.productStatus === 1
+                  ? "Cũ"
+                  : "Không xác định",
               suitableAge: toy.suitableAge || "Không xác định",
               price: parseFloat(toy.price) || 0,
               description: toy.description || "Không có mô tả",
@@ -447,8 +473,9 @@ const SearchingToy = () => {
             };
           })
         );
-
-        const sortedToys = formattedToys.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        const sortedToys = formattedToys.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
         setToys(sortedToys);
       } catch (error) {
         console.error("Lỗi khi lấy danh sách đồ chơi:", error);
@@ -456,7 +483,6 @@ const SearchingToy = () => {
         setToys([]);
       }
     };
-
     if (mainUserId) fetchToys();
   }, [mainUserId, userLocation, userAddress, isLoggedIn]);
 
@@ -473,7 +499,6 @@ const SearchingToy = () => {
         setUserRequests([]);
       }
     };
-
     if (mainUserId) fetchUserRequests();
   }, [mainUserId]);
 
@@ -498,7 +523,6 @@ const SearchingToy = () => {
       toast.error("Vui lòng điền đầy đủ thông tin mượn.");
       return;
     }
-
     try {
       const token = getAuthToken();
       const formData = new FormData();
@@ -507,14 +531,12 @@ const SearchingToy = () => {
       formData.append("RentDate", borrowStart.toISOString());
       formData.append("ReturnDate", borrowEnd.toISOString());
       formData.append("Message", note || "");
-
       const response = await axios.post(`${API_BASE_URL}/Requests`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
       });
-
       setUserRequests([...userRequests, response.data]);
       toast.success("Gửi yêu cầu mượn thành công!");
       handleCloseBorrowModal();
@@ -532,12 +554,18 @@ const SearchingToy = () => {
       });
       setSelectedToy({
         productId: response.data.productId,
-        image: response.data.imagePaths && response.data.imagePaths.length > 0
-          ? response.data.imagePaths[0]
-          : "https://via.placeholder.com/300x200?text=No+Image",
+        image:
+          response.data.imagePaths && response.data.imagePaths.length > 0
+            ? response.data.imagePaths[0]
+            : "https://via.placeholder.com/300x200?text=No+Image",
         name: response.data.name || "Không có tên",
         categoryName: response.data.categoryName || "Không có danh mục",
-        productStatus: response.data.productStatus === 0 ? "Mới" : response.data.productStatus === 1 ? "Cũ" : "Không xác định",
+        productStatus:
+          response.data.productStatus === 0
+            ? "Mới"
+            : response.data.productStatus === 1
+            ? "Cũ"
+            : "Không xác định",
         suitableAge: response.data.suitableAge || "Không xác định",
         price: parseFloat(response.data.price) || 0,
         description: response.data.description || "Không có mô tả",
@@ -578,30 +606,24 @@ const SearchingToy = () => {
         navigate("/login");
         return;
       }
-
       if (!ownerId || isNaN(ownerId)) {
         toast.error("ID người dùng không hợp lệ!");
         return;
       }
-
       if (ownerId === mainUserId) {
         toast.error("Bạn không thể nhắn tin cho chính mình!");
         return;
       }
-
       const response = await axios.get(`${API_BASE_URL}/Conversations`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       const conversations = response.data;
       const existingConversation = conversations.find(
         (convo) =>
           (convo.user1Id === ownerId && convo.user2Id === mainUserId) ||
           (convo.user2Id === ownerId && convo.user1Id === mainUserId)
       );
-
       let conversationId;
-
       if (existingConversation) {
         conversationId = existingConversation.conversationId;
       } else {
@@ -615,10 +637,8 @@ const SearchingToy = () => {
             },
           }
         );
-
         conversationId = createResponse.data.conversationId;
       }
-
       navigate("/message", { state: { activeConversationId: conversationId } });
     } catch (error) {
       console.error("Lỗi khi xử lý nhắn tin:", error);
@@ -658,7 +678,6 @@ const SearchingToy = () => {
             }
           })()
         : true;
-
       return matchesName && matchesCondition && matchesCategory && matchesAgeRange;
     })
     .sort((a, b) => {
@@ -709,33 +728,35 @@ const SearchingToy = () => {
             <SideMenu menuItems={sideMenuItems} activeItem={1} />
           </Col>
           <Col xs={12} md={10} className="main-content">
-          <div className="filter-and-actions d-flex align-items-center mb-3">
-            <div className="filter-panel-wrapper">
-              <FilterPanel
-                showFilter={showFilter}
-                onToggle={() => setShowFilter(!showFilter)}
-                filterValues={filterValues}
-                onChange={(e) => setFilterValues({ ...filterValues, [e.target.name]: e.target.value })}
-                categories={categories}
-              />
+            <div className="filter-and-actions d-flex align-items-center mb-3">
+              <div className="filter-panel-wrapper">
+                <FilterPanel
+                  showFilter={showFilter}
+                  onToggle={() => setShowFilter(!showFilter)}
+                  filterValues={filterValues}
+                  onChange={(e) =>
+                    setFilterValues({ ...filterValues, [e.target.name]: e.target.value })
+                  }
+                  categories={categories}
+                />
+              </div>
+              <div className="action-buttons d-flex align-items-center ms-3">
+                <Button
+                  variant="outline-primary"
+                  className="action-btn me-2"
+                  onClick={handleGetCurrentLocation}
+                >
+                  Lấy vị trí hiện tại
+                </Button>
+                <Button
+                  variant="outline-primary"
+                  className="action-btn"
+                  onClick={handleUpdateLocation}
+                >
+                  Cập nhật vị trí
+                </Button>
+              </div>
             </div>
-            <div className="action-buttons d-flex align-items-center ms-3">
-              <Button
-                variant="outline-primary"
-                className="action-btn me-2"
-                onClick={handleGetCurrentLocation}
-              >
-                Lấy vị trí hiện tại
-              </Button>
-              <Button
-                variant="outline-primary"
-                className="action-btn"
-                onClick={handleUpdateLocation}
-              >
-                Cập nhật vị trí
-              </Button>
-            </div>
-          </div>
             <Row className="request-items-section">
               {filteredToys.length === 0 ? (
                 <Col className="text-center">
@@ -761,7 +782,9 @@ const SearchingToy = () => {
                             variant="top"
                             src={toy.image}
                             className="toy-image"
-                            onError={(e) => (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")}
+                            onError={(e) =>
+                              (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")
+                            }
                           />
                         </div>
                         <Card.Body>
@@ -775,20 +798,26 @@ const SearchingToy = () => {
                           </Card.Text>
                           <Card.Text className="status">
                             <strong>Trạng thái:</strong>{" "}
-                            <span className={toy.available === 0 ? "available" : "unavailable"}>
+                            <span
+                              className={toy.available === 0 ? "available" : "unavailable"}
+                            >
                               {toy.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn"}
                             </span>
                           </Card.Text>
                           <Card.Text className="distance">
                             <strong>Khoảng cách:</strong>{" "}
-                            {typeof toy.distance === "number" ? `${toy.distance.toFixed(2)} km` : toy.distance}
+                            {typeof toy.distance === "number"
+                              ? `${toy.distance.toFixed(2)} km`
+                              : toy.distance}
                           </Card.Text>
                           <div className="lender-info d-flex align-items-center mb-2">
                             <img
                               src={toy.ownerAvatar}
                               alt="Ảnh đại diện người cho mượn"
                               className="lender-avatar"
-                              onError={(e) => (e.target.src = "https://via.placeholder.com/50?text=Avatar")}
+                              onError={(e) =>
+                                (e.target.src = "https://via.placeholder.com/50?text=Avatar")
+                              }
                             />
                             <Button
                               variant="link"
@@ -835,7 +864,11 @@ const SearchingToy = () => {
           </Col>
         </Row>
       </Container>
-      <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} centered>
+      <Modal
+        show={showDetailModal}
+        onHide={() => setShowDetailModal(false)}
+        centered
+      >
         <Modal.Header closeButton>
           <Modal.Title>Chi tiết đồ chơi</Modal.Title>
         </Modal.Header>
@@ -847,29 +880,58 @@ const SearchingToy = () => {
                   src={selectedToy.image}
                   alt={selectedToy.name}
                   className="detail-image"
-                  onError={(e) => (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")}
+                  onError={(e) =>
+                    (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")
+                  }
                 />
               </div>
               <h5 className="mt-3">{selectedToy.name}</h5>
-              <p><strong>Danh mục:</strong> {selectedToy.categoryName || "Không có"}</p>
-              <p><strong>Tình trạng:</strong> {selectedToy.productStatus || "Không có"}</p>
-              <p><strong>Độ tuổi phù hợp:</strong> {selectedToy.suitableAge || "Không có"}</p>
-              <p><strong>Phí cho mượn:</strong> {selectedToy.price.toLocaleString("vi-VN")} VND</p>
-              <p><strong>Mô tả:</strong> {selectedToy.description || "Không có"}</p>
-              <p><strong>Trạng thái:</strong> {selectedToy.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn"}</p>
-              {userRequests.some((req) => req.productId === selectedToy.productId && req.status === 0) && (
-                <p className="text-success">Bạn đã gửi yêu cầu mượn cho đồ chơi này.</p>
+              <p>
+                <strong>Danh mục:</strong> {selectedToy.categoryName || "Không có"}
+              </p>
+              <p>
+                <strong>Tình trạng:</strong> {selectedToy.productStatus || "Không có"}
+              </p>
+              <p>
+                <strong>Độ tuổi phù hợp:</strong>{" "}
+                {selectedToy.suitableAge || "Không có"}
+              </p>
+              <p>
+                <strong>Phí cho mượn:</strong>{" "}
+                {selectedToy.price.toLocaleString("vi-VN")} VND
+              </p>
+              <p>
+                <strong>Mô tả:</strong> {selectedToy.description || "Không có"}
+              </p>
+              <p>
+                <strong>Trạng thái:</strong>{" "}
+                {selectedToy.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn"}
+              </p>
+              {userRequests.some(
+                (req) => req.productId === selectedToy.productId && req.status === 0
+              ) && (
+                <p className="text-success">
+                  Bạn đã gửi yêu cầu mượn cho đồ chơi này.
+                </p>
               )}
             </>
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" className="action-btn" onClick={() => setShowDetailModal(false)}>
+          <Button
+            variant="secondary"
+            className="action-btn"
+            onClick={() => setShowDetailModal(false)}
+          >
             Đóng
           </Button>
         </Modal.Footer>
       </Modal>
-      <Modal show={showBorrowModal} onHide={handleCloseBorrowModal} centered>
+      <Modal
+        show={showBorrowModal}
+        onHide={handleCloseBorrowModal}
+        centered
+      >
         <Modal.Header closeButton>
           <Modal.Title>Nhập thông tin mượn</Modal.Title>
         </Modal.Header>
@@ -910,15 +972,27 @@ const SearchingToy = () => {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" className="action-btn" onClick={handleCloseBorrowModal}>
+          <Button
+            variant="secondary"
+            className="action-btn"
+            onClick={handleCloseBorrowModal}
+          >
             Quay lại
           </Button>
-          <Button variant="primary" className="action-btn" onClick={handleSendRequest}>
+          <Button
+            variant="primary"
+            className="action-btn"
+            onClick={handleSendRequest}
+          >
             Gửi yêu cầu
           </Button>
         </Modal.Footer>
       </Modal>
-      <Modal show={showProfileModal} onHide={() => setShowProfileModal(false)} centered>
+      <Modal
+        show={showProfileModal}
+        onHide={() => setShowProfileModal(false)}
+        centered
+      >
         <Modal.Header closeButton>
           <Modal.Title>Thông tin người cho mượn</Modal.Title>
         </Modal.Header>
@@ -926,61 +1000,72 @@ const SearchingToy = () => {
           {profileData ? (
             <div>
               <img
-                src={profileData.avatar || "https://via.placeholder.com/100?text=Avatar"}
+                src={
+                  profileData.avatar ||
+                  "https://via.placeholder.com/100?text=Avatar"
+                }
                 alt="Ảnh đại diện"
                 className="rounded-circle mb-3"
                 style={{ width: "100px", height: "100px", objectFit: "cover" }}
-                onError={(e) => (e.target.src = "https://via.placeholder.com/100?text=Avatar")}
+                onError={(e) =>
+                  (e.target.src = "https://via.placeholder.com/100?text=Avatar")
+                }
               />
-              <p><strong>Tên hiển thị:</strong> {profileData.displayName || "Không có"}</p>
-              <p><strong>Tuổi:</strong> {profileData.age || "Không có thông tin"}</p>
-              <p><strong>Địa chỉ:</strong> {profileData.address || "Không có thông tin"}</p>
-              <p><strong>Đánh giá:</strong> {profileData.rating ? profileData.rating.toFixed(2) : "Chưa có đánh giá"}</p>
+              <p>
+                <strong>Tên hiển thị:</strong>{" "}
+                {profileData.displayName || "Không có"}
+              </p>
+              <p>
+                <strong>Tuổi:</strong> {profileData.age || "Không có thông tin"}
+              </p>
+              <p>
+                <strong>Địa chỉ:</strong>{" "}
+                {profileData.address || "Không có thông tin"}
+              </p>
+              <p>
+                <strong>Đánh giá:</strong>{" "}
+                {profileData.rating
+                  ? profileData.rating.toFixed(2)
+                  : "Chưa có đánh giá"}
+              </p>
             </div>
           ) : (
             <p>Đang tải thông tin...</p>
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" className="action-btn" onClick={() => setShowProfileModal(false)}>
+          <Button
+            variant="secondary"
+            className="action-btn"
+            onClick={() => setShowProfileModal(false)}
+          >
             Đóng
           </Button>
           <Button
             variant="primary"
             className="action-btn"
             onClick={() => handleMessage(profileData?.userId)}
-            disabled={!profileData || !isLoggedIn || !profileData?.userId || profileData?.userId === mainUserId}
+            disabled={
+              !profileData ||
+              !isLoggedIn ||
+              !profileData?.userId ||
+              profileData?.userId === mainUserId
+            }
           >
             Nhắn tin
           </Button>
         </Modal.Footer>
       </Modal>
-      <Modal show={showUpdateLocationModal} onHide={() => setShowUpdateLocationModal(false)} centered>
+      <Modal
+        show={showUpdateLocationModal}
+        onHide={() => setShowUpdateLocationModal(false)}
+        centered
+      >
         <Modal.Header closeButton>
           <Modal.Title>Cập nhật vị trí</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
-            <Form.Group controlId="houseNumber" className="mb-3">
-              <Form.Label>Số nhà</Form.Label>
-              <Form.Control
-                type="text"
-                name="houseNumber"
-                value={locationForm.houseNumber}
-                onChange={handleLocationFormChange}
-                placeholder="Ví dụ: 123"
-              />
-            </Form.Group>
-            <Form.Group controlId="street" className="mb-3">
-              <Form.Label>Tên đường</Form.Label>
-              <Form.Control
-                type="text"
-                name="street"
-                value={locationForm.street}
-                onChange={handleLocationFormChange}
-                placeholder="Ví dụ: Lê Lợi"
-              />
-            </Form.Group>
             <Form.Group controlId="ward" className="mb-3">
               <Form.Label>
                 Phường <span className="required-asterisk">*</span>
@@ -990,7 +1075,7 @@ const SearchingToy = () => {
                 name="ward"
                 value={locationForm.ward}
                 onChange={handleLocationFormChange}
-                placeholder="Ví dụ: Phường 1"
+                placeholder="Ví dụ: Văn Quán"
                 required
               />
             </Form.Group>
@@ -1003,7 +1088,7 @@ const SearchingToy = () => {
                 name="district"
                 value={locationForm.district}
                 onChange={handleLocationFormChange}
-                placeholder="Ví dụ: Quận 1"
+                placeholder="Ví dụ: Hà Đông"
                 required
               />
             </Form.Group>
@@ -1016,7 +1101,7 @@ const SearchingToy = () => {
                 name="city"
                 value={locationForm.city}
                 onChange={handleLocationFormChange}
-                placeholder="Ví dụ: Hồ Chí Minh"
+                placeholder="Ví dụ: Hà Nội"
                 required
               />
             </Form.Group>
