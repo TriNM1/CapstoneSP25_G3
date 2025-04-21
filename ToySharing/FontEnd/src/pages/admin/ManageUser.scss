@@ -1,57 +1,161 @@
-@import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700;800&display=swap');
-
-.manage-user-page {
-  background-color: #f7f9fc;
-  font-family: 'Comic Neue', sans-serif;
-  color: #444;
-  padding-bottom: 40px;
-
-  // Main Content được đặt cố định rộng 70vw và căn giữa
+.manage-user {
   .main-content {
-    width: 40vw;
+    padding: 20px;
+    max-width: 1200px;
     margin: 0 auto;
-    background-color: #fff;
-    border-radius: 12px;
-    padding: 30px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
-  // Thanh tìm kiếm và bộ lọc
-  form {
+  h1 {
+    font-family: 'Roboto', sans-serif;
+    font-size: 32px;
+    font-weight: 500;
+    color: #ff6f61;
     margin-bottom: 20px;
-    .form-control,
-    .form-select {
-      font-size: 1rem;
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      &::placeholder {
-        opacity: 0.3;
-      }
-    }
-    button {
-      font-size: 1rem;
-      font-weight: 700;
-      padding: 10px 20px;
-      border-radius: 8px;
-      margin-top: 10px;
-    }
   }
 
-  table {
-    th,
-    td {
-      font-size: 0.95rem;
+  .search-input,
+  .form-select,
+  .date-picker {
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+  }
+
+  .search-input::placeholder {
+    color: #6c757d;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 16px;
+  }
+
+  .form-select option[disabled] {
+    color: #6c757d;
+    font-style: italic;
+    font-size: 16px;
+  }
+
+  .date-picker::placeholder {
+    color: #6c757d;
+    font-style: italic;
+    font-size: 16px;
+  }
+
+  .table {
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+
+    th, td {
       text-align: center;
       vertical-align: middle;
+    }
+
+    th {
+      color: #333;
+      font-weight: 700;
+    }
+
+    td {
+      color: #333;
     }
   }
 
   .pagination-container {
     margin-top: 20px;
-    button {
-      font-size: 0.9rem;
-      padding: 5px 12px;
+
+    .pagination {
+      justify-content: center;
+
+      .page-item.active .page-link {
+        background-color: #ff6f61;
+        border-color: #ff6f61;
+        color: white;
+      }
+
+      .page-link {
+        color: #ff6f61;
+        &:hover {
+          background-color: #f8f9fa;
+          border-color: #ff6f61;
+        }
+      }
+    }
+  }
+
+  .modal-content {
+    font-family: 'Roboto', sans-serif;
+
+    .modal-title {
+      font-weight: 700;
+      color: #333;
+    }
+
+    label {
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .form-control,
+    .form-select {
+      font-size: 16px;
+      color: #333;
+
+      &::placeholder {
+        color: #6c757d;
+        font-style: italic;
+        font-size: 16px;
+      }
+
+      &.is-invalid {
+        border-color: #dc3545;
+        &:focus {
+          border-color: #dc3545;
+          box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+      }
+    }
+
+    .invalid-feedback {
+      color: #dc3545;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .btn-primary {
+      background-color: #ff6f61;
+      border-color: #ff6f61;
+      &:hover {
+        background-color: #e65b50;
+        border-color: #e65b50;
+      }
+    }
+  }
+
+  .btn-primary {
+    background-color: #ff6f61;
+    border-color: #ff6f61;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
+    &:hover {
+      background-color: #e65b50;
+      border-color: #e65b50;
+    }
+  }
+
+  .btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    &:hover {
+      background-color: #c82333;
+      border-color: #c82333;
+    }
+  }
+
+  .btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+    &:hover {
+      background-color: #218838;
+      border-color: #218838;
     }
   }
 }

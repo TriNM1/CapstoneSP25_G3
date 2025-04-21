@@ -48,7 +48,7 @@ const ValidateMail = () => {
   return (
     <div className="container signup-wrapper">
       <div className="row justify-content-center align-items-center min-vh-100">
-        <div className="col-md-8 p-0">
+        <div className="col-md-10 p-0">
           <div className="signup-container row no-gutters h-100">
             <div className="col-md-6 banner">
               <img src={banner} alt="Banner" className="img-fluid h-100" />

@@ -2,7 +2,7 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import { Container, Navbar, Nav, Badge, Dropdown } from "react-bootstrap";
-import { FaEnvelope, FaBell } from "react-icons/fa";
+import { FaEnvelope, FaFacebookMessenger, FaBell } from "react-icons/fa";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import * as signalR from "@microsoft/signalr";
@@ -364,7 +364,7 @@ const Header = ({
               <>
                 <Dropdown align="end" className="message-dropdown me-2">
                   <Dropdown.Toggle variant="link" id="dropdown-messages" className="p-0 position-relative">
-                    <FaEnvelope size={20} />
+                    <FaFacebookMessenger size={20} />
                     {unreadMessages > 0 && (
                       <Badge
                         bg="danger"
@@ -443,6 +443,13 @@ const Header = ({
                       onClick={() => setActiveLink("transaction-history")}
                     >
                       Lịch sử giao dịch
+                    </Dropdown.Item>
+                    <Dropdown.Item
+                      as={Link}
+                      to="/change-password"
+                      onClick={() => setActiveLink("change-password")}
+                    >
+                      Đổi mật khẩu
                     </Dropdown.Item>
                     <Dropdown.Item as={Link} to="/logout" onClick={() => setActiveLink("logout")}>
                       Đăng xuất

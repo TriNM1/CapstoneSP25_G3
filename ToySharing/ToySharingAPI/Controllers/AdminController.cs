@@ -20,12 +20,14 @@ namespace ToySharingAPI.Controllers
     public class AdminController : ControllerBase
     {
         private readonly ToySharingVer3Context _context;
+        private readonly UserManager<IdentityUser> _userManager;
         private readonly AwsSettings _awsSettings;
         private readonly IAmazonS3 _s3Client;
 
-        public AdminController(ToySharingVer3Context context, IOptions<AwsSettings> awsSettings)
+        public AdminController(ToySharingVer3Context context, IOptions<AwsSettings> awsSettings, UserManager<IdentityUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
             _awsSettings = awsSettings.Value;
             var credentials = new BasicAWSCredentials(_awsSettings.AccessKey, _awsSettings.SecretKey);
             _s3Client = new AmazonS3Client(credentials, RegionEndpoint.GetBySystemName(_awsSettings.Region));
@@ -78,7 +80,7 @@ namespace ToySharingAPI.Controllers
         }
 
         // Xem tất cả banner
-        [HttpGet("banners")] 
+        [HttpGet("banners")]
         public async Task<ActionResult<IEnumerable<Banner>>> GetBanners()
         {
             return await _context.Banners.ToListAsync();
@@ -177,6 +179,135 @@ namespace ToySharingAPI.Controllers
                 await DeleteImageFromS3(imageUrl);
             }
             return NoContent();
+        }
+
+        // Xem tất cả category
+        [HttpGet("categories")]
+        public async Task<ActionResult<IEnumerable<Category>>> GetCategories()
+        {
+            return await _context.Categories.ToListAsync();
+        }
+
+        // Xem category theo ID
+        [HttpGet("categories/{id}")]
+        public async Task<ActionResult<Category>> GetCategory(int id)
+        {
+            var category = await _context.Categories.FindAsync(id);
+            if (category == null)
+            {
+                return NotFound("Không tìm thấy danh mục.");
+            }
+            return category;
+        }
+
+        // Thêm category mới
+        [HttpPost("categories")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<Category>> CreateCategory([FromBody] CreateCategoryDTO categoryDto)
+        {
+            try
+            {
+                var category = new Category
+                {
+                    CategoryName = categoryDto.CategoryName,
+                };
+                _context.Categories.Add(category);
+                await _context.SaveChangesAsync();
+                return CreatedAtAction(nameof(GetCategory), new { id = category.CategoryId }, category);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
+        }
+
+        // Sửa category
+        [HttpPut("categories/{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateCategory(int id, [FromBody] UpdateCategoryDTO categoryDto)
+        {
+            var category = await _context.Categories.FindAsync(id);
+            if (category == null)
+            {
+                return NotFound("Không tìm thấy danh mục.");
+            }
+
+            if (!string.IsNullOrEmpty(categoryDto.CategoryName))
+            {
+                category.CategoryName = categoryDto.CategoryName;
+            }
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        // Xóa category
+        [HttpDelete("categories/{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteCategory(int id)
+        {
+            var category = await _context.Categories.FindAsync(id);
+            if (category == null)
+            {
+                return NotFound("Không tìm thấy danh mục.");
+            }
+
+            _context.Categories.Remove(category);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpPost("users")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CreateUser([FromBody] CreateUserDTO request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(new { message = "Dữ liệu không hợp lệ.", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
+
+                var userExists = await _userManager.FindByEmailAsync(request.Email);
+                if (userExists != null)
+                    return BadRequest(new { message = "Email đã được đăng ký!" });
+
+                var identityUser = new IdentityUser { UserName = request.Email, Email = request.Email };
+                var result = await _userManager.CreateAsync(identityUser, request.Password);
+                if (!result.Succeeded)
+                    return BadRequest(new { message = "Không thể tạo tài khoản.", errors = result.Errors.Select(e => e.Description) });
+
+                if (request.Role != "User" && request.Role != "Admin")
+                    return BadRequest(new { message = "Vai trò không hợp lệ. Chỉ chấp nhận 'User' hoặc 'Admin'." });
+
+                await _userManager.AddToRoleAsync(identityUser, request.Role);
+
+                if (!Guid.TryParse(identityUser.Id, out Guid authUserGuid))
+                    return BadRequest(new { message = "Định dạng ID người dùng không hợp lệ." });
+
+                var newUser = new User
+                {
+                    AuthUserId = authUserGuid,
+                    Name = request.Email,
+                    Displayname = request.DisplayName,
+                    CreatedAt = DateTime.Now,
+                    Address = string.Empty,
+                    Latitude = 0,
+                    Longtitude = 0,
+                    Status = 0,
+                    Avatar = string.Empty,
+                    Gender = request.Gender,
+                    Age = 0,
+                    Rating = null
+                };
+
+                _context.Users.Add(newUser);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Tài khoản đã được tạo thành công." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
+            }
         }
     }
 }
