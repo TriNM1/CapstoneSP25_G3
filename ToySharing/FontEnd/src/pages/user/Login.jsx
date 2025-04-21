@@ -73,7 +73,7 @@ const Login = () => {
     }
   } catch (error) {
     console.error("Lỗi khi đăng nhập:", error);
-    setError("Không thể kết nối đến máy chủ. Hãy thử lại sau!");
+    setError("Tài khoản hoặc mật khẩu không chính xác!");
   }
 };
 

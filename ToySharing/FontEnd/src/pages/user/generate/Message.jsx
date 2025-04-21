@@ -15,11 +15,30 @@ const Message = () => {
   const [activeConversation, setActiveConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const userId = parseInt(localStorage.getItem("userId") || sessionStorage.getItem("userId"));
   const token = localStorage.getItem("token") || sessionStorage.getItem("token");
   const connectionRef = useRef(null);
-  const messagesRef = useRef(null); // Ref để focus vào danh sách tin nhắn
-  const location = useLocation(); // Nhận state từ navigate
+  const messagesRef = useRef(null);
+  const textareaRef = useRef(null);
+  const location = useLocation();
+
+  // Hàm cuộn xuống tin nhắn mới nhất
+  const scrollToBottom = () => {
+    if (messagesRef.current) {
+      messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+    }
+  };
+
+  // Điều chỉnh chiều cao textarea tự động
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 100)}px`; // Giới hạn chiều cao tối đa 100px
+    }
+  }, [newMessage]);
 
   // Khởi tạo SignalR
   useEffect(() => {
@@ -98,6 +117,12 @@ const Message = () => {
 
     const handleReceiveMessage = (conversationId, senderId, content, sentAt, messageId) => {
       console.log("Received message:", { conversationId, senderId, content, sentAt, messageId });
+
+      if (conversationId !== activeConversation?.conversationId) {
+        console.log("Message ignored: Not from active conversation");
+        return;
+      }
+
       const newMsg = {
         messageId: messageId || Date.now(),
         conversationId,
@@ -109,9 +134,12 @@ const Message = () => {
 
       setMessages((prevMessages) => {
         if (prevMessages.some((msg) => msg.messageId === newMsg.messageId)) {
+          console.log("Message already exists, skipping:", newMsg.messageId);
           return prevMessages;
         }
-        return [...prevMessages, newMsg].sort((a, b) => new Date(a.sentAt) - new Date(b.sentAt));
+        const updatedMessages = [...prevMessages, newMsg].sort((a, b) => new Date(a.sentAt) - new Date(b.sentAt));
+        setTimeout(scrollToBottom, 0);
+        return updatedMessages;
       });
 
       setConversations((prevConversations) => {
@@ -129,16 +157,13 @@ const Message = () => {
       });
     };
 
-    if (!signalRConnection._methods?.["receivemessage"]) {
-      signalRConnection.on("ReceiveMessage", handleReceiveMessage);
-    }
-
+    signalRConnection.on("ReceiveMessage", handleReceiveMessage);
     startConnection();
 
     return () => {
       signalRConnection.off("ReceiveMessage", handleReceiveMessage);
     };
-  }, [token, userId]);
+  }, [token, userId, activeConversation]);
 
   // Lấy danh sách cuộc trò chuyện và chọn activeConversation từ state
   useEffect(() => {
@@ -152,7 +177,6 @@ const Message = () => {
         );
         setConversations(sortedConversations);
 
-        // Kiểm tra nếu có activeConversationId từ Header
         const activeConvoId = location.state?.activeConversationId;
         if (activeConvoId) {
           const activeConvo = sortedConversations.find(
@@ -162,7 +186,7 @@ const Message = () => {
             setActiveConversation(activeConvo);
           }
         } else if (sortedConversations.length > 0 && !activeConversation) {
-          setActiveConversation(sortedConversations[0]); // Mặc định chọn cuộc đầu tiên
+          setActiveConversation(sortedConversations[0]);
         }
       } catch (error) {
         console.error("Lỗi khi lấy danh sách cuộc trò chuyện:", error);
@@ -171,30 +195,65 @@ const Message = () => {
     fetchConversations();
   }, [token, location.state]);
 
-  // Lấy tin nhắn và focus vào danh sách tin nhắn
+  // Load tin nhắn khi thay đổi activeConversation
   useEffect(() => {
     if (!activeConversation) return;
 
-    const fetchMessages = async () => {
-      try {
-        const response = await axios.get(
-          `https://localhost:7128/api/conversations/${activeConversation.conversationId}/messages?page=1&pageSize=10`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const sortedMessages = response.data.sort((a, b) => new Date(a.sentAt) - new Date(b.sentAt));
-        setMessages(sortedMessages);
-
-        // Focus vào khu vực tin nhắn
-        if (messagesRef.current) {
-          messagesRef.current.scrollTop = messagesRef.current.scrollHeight; // Cuộn xuống dưới cùng
-        }
-      } catch (error) {
-        console.error("Lỗi khi lấy danh sách tin nhắn:", error);
-      }
-    };
-    fetchMessages();
+    setMessages([]);
+    setPage(1);
+    setHasMore(true);
+    loadMessages(1);
   }, [activeConversation, token]);
 
+  // Cuộn xuống tin nhắn mới (dự phòng)
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // Hàm load tin nhắn
+  const loadMessages = async (pageNum) => {
+    try {
+      const response = await axios.get(
+        `https://localhost:7128/api/conversations/${activeConversation.conversationId}/messages?page=${pageNum}&pageSize=10`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const newMessages = response.data;
+
+      if (newMessages.length < 10) {
+        setHasMore(false);
+      }
+
+      setMessages((prevMessages) => {
+        const allMessages = [...newMessages, ...prevMessages]; // Thêm tin nhắn cũ vào đầu
+        const uniqueMessages = Array.from(
+          new Map(allMessages.map((msg) => [msg.messageId, msg])).values()
+        );
+        const sortedMessages = uniqueMessages.sort((a, b) => new Date(a.sentAt) - new Date(b.sentAt));
+        return sortedMessages;
+      });
+    } catch (error) {
+      console.error("Lỗi khi load tin nhắn:", error);
+    }
+  };
+
+  // Xử lý cuộn để load thêm tin nhắn
+  const handleScroll = () => {
+    if (messagesRef.current.scrollTop <= 100 && hasMore) {
+      const currentScrollHeight = messagesRef.current.scrollHeight;
+      setPage((prevPage) => {
+        const nextPage = prevPage + 1;
+        loadMessages(nextPage).then(() => {
+          // Duy trì vị trí cuộn sau khi load
+          if (messagesRef.current) {
+            messagesRef.current.scrollTop = messagesRef.current.scrollHeight - currentScrollHeight;
+          }
+        });
+        return nextPage;
+      });
+    }
+  };
+
+  // Gửi tin nhắn
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !activeConversation) return;
 
@@ -204,11 +263,14 @@ const Message = () => {
         { content: newMessage },
         { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
       );
+
       setMessages((prevMessages) => {
         if (prevMessages.some((msg) => msg.messageId === response.data.messageId)) {
           return prevMessages;
         }
-        return [...prevMessages, response.data].sort((a, b) => new Date(a.sentAt) - new Date(b.sentAt));
+        const updatedMessages = [...prevMessages, response.data].sort((a, b) => new Date(a.sentAt) - new Date(b.sentAt));
+        setTimeout(scrollToBottom, 0);
+        return updatedMessages;
       });
 
       setConversations((prevConversations) => {
@@ -226,10 +288,6 @@ const Message = () => {
       });
 
       setNewMessage("");
-      // Cuộn xuống dưới sau khi gửi tin nhắn
-      if (messagesRef.current) {
-        messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
-      }
     } catch (error) {
       console.error("Lỗi khi gửi tin nhắn:", error);
     }
@@ -245,7 +303,7 @@ const Message = () => {
           (count, convo) =>
             count + (convo.lastMessageContent && !convo.isRead && convo.lastSenderId !== userId ? 1 : 0),
           0
-        )} // Cập nhật động số tin nhắn chưa đọc
+        )}
         notificationCount={2}
       />
       <div className="message-page">
@@ -292,12 +350,11 @@ const Message = () => {
                 />
                 <h3>{activeConversation.otherUser.name}</h3>
               </div>
-              <div className="chat-messages" ref={messagesRef}>
+              <div className="chat-messages" ref={messagesRef} onScroll={handleScroll}>
                 {messages
                   .filter((message) => message.conversationId === activeConversation.conversationId)
                   .map((message) => {
                     const isMe = message.senderId === userId;
-                    // console.log("userId:", userId, "senderId:", message.senderId, "isMe:", isMe);
                     return (
                       <div
                         key={message.messageId}
@@ -312,12 +369,17 @@ const Message = () => {
                   })}
               </div>
               <div className="chat-input">
-                <input
-                  type="text"
+                <textarea
+                  ref={textareaRef}
                   placeholder="Nhập tin nhắn..."
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
                 />
                 <button onClick={handleSendMessage}>Gửi</button>
               </div>

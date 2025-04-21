@@ -30,6 +30,11 @@ const BannerManagement = () => {
         { id: 5, label: "Thống kê", link: "/statistic" },
     ];
 
+    const statusTypeMap = {
+        0: "Hiện",
+        1: "Ẩn",
+      };
+
     useEffect(() => {
         fetchBanners();
     }, []);
@@ -197,7 +202,6 @@ const BannerManagement = () => {
                                     <th>Ảnh banner</th>
                                     <th>Liên kết tới</th>
                                     <th>Trạng thái</th>
-                                    <th>Mức độ ưu tiên</th>
                                     <th>Hành động</th>
                                 </tr>
                             </thead>
@@ -216,8 +220,7 @@ const BannerManagement = () => {
                                                     <img src={banner.imageUrl} alt={banner.title} width="100" />
                                                 </td>
                                                 <td>{banner.linkUrl || "Không có"}</td>
-                                                <td>{banner.status}</td>
-                                                <td>{banner.priority || 0}</td>
+                                                <td>{statusTypeMap[banner.status] || "Không xác định"}</td>
                                                 <td>
                                                     <Button
                                                         variant="warning"
@@ -280,7 +283,7 @@ const BannerManagement = () => {
                         <div className="mb-3">
                             <label>Trạng thái <span style={{ color: "red" }}>*</span></label>
                             <input
-                                type="number"
+                                type="text"
                                 name="status"
                                 value={formData.status}
                                 onChange={handleChange}
@@ -292,7 +295,7 @@ const BannerManagement = () => {
                         <div className="mb-3">
                             <label>Ưu tiên <span style={{ color: "red" }}>*</span></label>
                             <input
-                                type="number"
+                                type="text"
                                 name="priority"
                                 value={formData.priority}
                                 onChange={handleChange}

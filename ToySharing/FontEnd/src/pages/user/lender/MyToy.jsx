@@ -230,13 +230,8 @@ const MyToy = () => {
     const toyToEdit = toys.find((toy) => toy.id === id);
     if (toyToEdit) {
       const parseCurrency = (value) => {
-        if (
-          !value ||
-          value === "0 VND" ||
-          value === "null VND" ||
-          value === "undefined VND"
-        ) {
-          return "";
+        if (!value || value === "0 VND" || value === "null VND" || value === "undefined VND") {
+          return "0";
         }
         return value.replace(" VND", "");
       };
@@ -694,7 +689,7 @@ const MyToy = () => {
                 Phí mượn đồ chơi <span className="required-asterisk">*</span>
               </Form.Label>
               <Form.Control
-                type="number"
+                type="text"
                 name="price"
                 value={editToyData.price}
                 onChange={handleEditChange}
@@ -706,7 +701,7 @@ const MyToy = () => {
                 Giá trị đồ chơi <span className="required-asterisk">*</span>
               </Form.Label>
               <Form.Control
-                type="number"
+                type="text"
                 name="productValue"
                 value={editToyData.productValue}
                 onChange={handleEditChange}
