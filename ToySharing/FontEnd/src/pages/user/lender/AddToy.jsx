@@ -158,11 +158,6 @@ const AddToy = () => {
       formData.append("Description", description || "");
       formData.append("Files", imageFile);
 
-      console.log("FormData being sent:");
-      for (let [key, value] of formData.entries()) {
-        console.log(`${key}:`, value);
-      }
-
       const response = await axios.post(`${API_BASE_URL}/Products`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -171,7 +166,8 @@ const AddToy = () => {
       });
 
       toast.success("Đăng tải đồ chơi thành công!");
-      navigate("/mytoy");
+      // Navigate to MyToy with the new toy's ID
+      navigate("/mytoy", { state: { newToyId: response.data.productId } });
       // Reset form
       setPreviewImage(null);
       setImageFile(null);
@@ -182,9 +178,6 @@ const AddToy = () => {
       setPrice("");
       setProductValue("");
       setDescription("");
-
-      // Chuyển hướng đến trang "Danh sách đồ chơi của tôi"
-      navigate("/mytoy");
     } catch (error) {
       console.error("Error creating product:", error);
       const errorMessage = error.response?.data?.message || "Có lỗi xảy ra khi gửi yêu cầu!";
@@ -218,7 +211,9 @@ const AddToy = () => {
                 </Form.Label>
                 <Form.Control type="file" accept="image/*" onChange={handleImageChange} />
                 {previewImage && (
-                  <img src={previewImage} alt="Preview" className="preview-image mt-2" />
+                  <div className="image-frame mt-2">
+                    <img src={previewImage} alt="Preview" className="preview-image" />
+                  </div>
                 )}
               </Form.Group>
 
@@ -319,7 +314,7 @@ const AddToy = () => {
                 />
               </Form.Group>
 
-              <Button variant="primary" type="submit" className="submit-btn">
+              <Button variant="primary" type="submit" className="action-btn">
                 Đăng đồ chơi
               </Button>
             </Form>
@@ -333,10 +328,10 @@ const AddToy = () => {
         </Modal.Header>
         <Modal.Body>Bạn có chắc chắn muốn gửi yêu cầu này không?</Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>
+          <Button variant="secondary" className="action-btn" onClick={() => setShowConfirmModal(false)}>
             Hủy
           </Button>
-          <Button variant="primary" onClick={confirmSubmit}>
+          <Button variant="primary" className="action-btn" onClick={confirmSubmit}>
             Xác nhận
           </Button>
         </Modal.Footer>

@@ -1,10 +1,11 @@
-@use '../../../styles/ToyCard' as toyCard;
-@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto&display=swap');
-@import './../../../styles/CommonStyle.scss';
+@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
 
 $primary-color: #ff6f61;
+$primary-hover: #e65b50;
 $success-color: #28a745;
+$success-hover: #218838;
 $danger-color: #dc3545;
+$danger-hover: #c82333;
 
 .borrow-history-page {
   background-color: #f7f9fc;
@@ -26,7 +27,7 @@ $danger-color: #dc3545;
     background: #fff;
     padding: 1rem;
     border-right: 1px solid #ddd;
-    height: 100vh;
+    height: 100%;
     margin-top: 1rem;
 
     ul {
@@ -82,52 +83,183 @@ $danger-color: #dc3545;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
-  .date-picker-input {
-    width: 100%;
-    padding: 0.5rem;
-    font-size: 1rem;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    color: #333;
-    background: #fff;
+  .filter-section {
+    margin-bottom: 20px;
+
+    .form-group {
+      .form-label {
+        font-weight: bold;
+        font-size: 1rem;
+        margin-bottom: 5px;
+      }
+
+      .status-filter {
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        transition: border-color 0.3s;
+        font-size: 1rem;
+        padding: 8px;
+
+        &:focus {
+          border-color: $primary-color;
+          box-shadow: 0 0 5px rgba(255, 107, 97, 0.5);
+        }
+      }
+    }
   }
 
   .request-items-section {
-    .toy-name {
-      font-family: 'Noto Sans', cursive;
-      font-size: 1.5rem;
-      color: $primary-color;
-      margin-bottom: 10px;
-    }
-
-    .return-date,
-    .transfer-status,
-    .rating,
-    .message {
-      font-size: 1rem;
-      margin-bottom: 5px;
-      color: #333;
-    }
-
-    .transfer-status {
-      strong {
-        font-weight: bold;
-      }
-
-      .completed {
-        color: $success-color;
-      }
-
-      .pending {
-        color: $danger-color;
-      }
-    }
-
-    .view-more-btn {
-      margin-top: 1rem;
-      font-size: 1rem;
-      padding: 10px 20px;
+    .request-card {
+      border: 1px solid #ddd;
       border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      transition: box-shadow 0.3s;
+
+      &:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .image-frame {
+        width: 100%;
+        height: 200px;
+        overflow: hidden;
+        border-radius: 8px 8px 0 0;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #f8f8f8;
+      }
+
+      .toy-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .card-body {
+        padding: 15px;
+
+        .toy-name {
+          font-size: 1.5rem;
+          color: $primary-color;
+          margin-bottom: 10px;
+        }
+
+        .return-date,
+        .transfer-status,
+        .rating,
+        .message {
+          font-size: 1rem;
+          margin-bottom: 5px;
+          color: #333;
+        }
+
+        .transfer-status {
+          .completed {
+            color: $success-color;
+          }
+          .canceled {
+            color: $danger-color;
+          }
+        }
+
+        .lender-info {
+          .lender-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 10px;
+          }
+
+          .lender-link {
+            color: $primary-color;
+            font-size: 1rem;
+
+            &:hover {
+              color: $primary-hover;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .no-results {
+    font-size: 1.2rem;
+    color: #666;
+    margin-top: 20px;
+  }
+
+  .view-more-btn {
+    margin-top: 20px;
+    font-size: 1rem;
+    padding: 10px 20px;
+    border-radius: 8px;
+
+    &.btn-outline-primary {
+      border-color: $primary-color;
+      color: $primary-color;
+
+      &:hover {
+        background-color: $primary-color;
+        color: #fff;
+      }
+    }
+  }
+
+  .action-btn {
+    min-width: 120px;
+    padding: 8px 16px;
+    font-size: 1rem;
+    border-radius: 5px;
+
+    &.btn-outline-primary {
+      border-color: $primary-color;
+      color: $primary-color;
+
+      &:hover {
+        background-color: $primary-color;
+        color: #fff;
+      }
+    }
+
+    &.btn-secondary {
+      background-color: #6c757d;
+      border-color: #6c757d;
+
+      &:hover {
+        background-color: #5a6268;
+        border-color: #5a6268;
+      }
+    }
+  }
+
+  .modal {
+    .modal-body {
+      padding: 20px;
+
+      img {
+        display: block;
+        margin: 0 auto 15px;
+      }
+
+      p {
+        font-size: 1rem;
+        margin-bottom: 10px;
+
+        strong {
+          color: #333;
+        }
+      }
+    }
+
+    .modal-footer {
+      .action-btn {
+        min-width: 100px;
+      }
     }
   }
 }

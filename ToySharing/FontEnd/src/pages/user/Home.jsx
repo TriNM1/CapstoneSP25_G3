@@ -9,8 +9,6 @@ import {
   Form,
   Modal,
 } from "react-bootstrap";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -27,8 +25,7 @@ const Home = () => {
   const [userAddress, setUserAddress] = useState(null);
   const [toyList, setToyList] = useState([]);
   const [showBorrowModal, setShowBorrowModal] = useState(false);
-  const [borrowStart, setBorrowStart] = useState(null);
-  const [borrowEnd, setBorrowEnd] = useState(null);
+  const [borrowDuration, setBorrowDuration] = useState("1"); // Default to 1 day
   const [note, setNote] = useState("");
   const [selectedToyId, setSelectedToyId] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -39,10 +36,17 @@ const Home = () => {
   const [userRequests, setUserRequests] = useState([]);
   const [isSending, setIsSending] = useState(false);
   const [bannerList, setBannerList] = useState([]);
+  const [userNames, setUserNames] = useState({}); // Store displayName for lenders
   const unreadMessages = 3;
   const notificationCount = 2;
 
   const API_BASE_URL = "https://localhost:7128/api";
+
+  const durationOptions = [
+    { value: "1", label: "1 ngày" },
+    { value: "3", label: "3 ngày" },
+    { value: "7", label: "7 ngày" },
+  ];
 
   const getAuthToken = () => {
     return localStorage.getItem("token") || sessionStorage.getItem("token");
@@ -97,6 +101,36 @@ const Home = () => {
     fetchBanners();
   }, []);
 
+  // Fetch displayName for lenders
+  useEffect(() => {
+    const uniqueLenderIds = Array.from(
+      new Set(
+        toyList
+          .map((t) => t.lenderId)
+          .filter((id) => id && !userNames[id])
+      )
+    );
+    uniqueLenderIds.forEach(async (lenderId) => {
+      try {
+        const token = getAuthToken();
+        const response = await axios.get(`${API_BASE_URL}/User/profile/${lenderId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const userInfo = response.data.userInfo || response.data;
+        setUserNames((prev) => ({
+          ...prev,
+          [lenderId]: userInfo.displayName || "Không xác định",
+        }));
+      } catch (error) {
+        console.error(`Lỗi khi lấy displayName cho user ${lenderId}:`, error);
+        setUserNames((prev) => ({
+          ...prev,
+          [lenderId]: "Không xác định",
+        }));
+      }
+    });
+  }, [toyList]);
+
   const fetchUserLocation = async () => {
     const token = getAuthToken();
     if (!token) {
@@ -115,6 +149,7 @@ const Home = () => {
       if (latitude && longitude && !isNaN(latitude) && !isNaN(longitude)) {
         setUserLocation({ latitude, longitude });
         setUserAddress(address || "Địa chỉ không được cung cấp");
+        toast.info("Đã cập nhật vị trí hiện tại.");
         return;
       }
 
@@ -123,6 +158,7 @@ const Home = () => {
         const coordinates = await getCoordinatesFromAddress(address);
         if (coordinates) {
           setUserLocation(coordinates);
+          toast.info("Đã cập nhật vị trí hiện tại.");
           return;
         }
       }
@@ -145,6 +181,7 @@ const Home = () => {
             longitude: position.coords.longitude,
           });
           setUserAddress(null);
+          toast.info("Đã cập nhật vị trí hiện tại.");
         },
         (error) => {
           console.error("Lỗi khi lấy vị trí từ Geolocation:", error);
@@ -196,107 +233,111 @@ const Home = () => {
       });
 
       const formattedToys = await Promise.all(
-        response.data.map(async (toy) => {
-          let distance;
-          let lenderAvatar = toy.user?.avatar || "https://placehold.co/50x50?text=No+Avatar";
+        response.data
+          .filter(
+            (toy) => toy.available === 0 && toy.userId !== userId // Only available and not owned by user
+          )
+          .map(async (toy) => {
+            let distance;
+            let lenderAvatar = toy.user?.avatar || "https://via.placeholder.com/50?text=Avatar";
 
-          if (!toy.user?.avatar && toy.userId) {
-            try {
-              const profileResponse = await axios.get(
-                `${API_BASE_URL}/User/profile/${toy.userId}`,
-                {
-                  headers: { Authorization: `Bearer ${token}` },
-                }
-              );
-              lenderAvatar =
-                profileResponse.data.userInfo?.avatar ||
-                "https://placehold.co/50x50?text=No+Avatar";
-            } catch (error) {
-              console.error(`Lỗi khi lấy avatar của user ${toy.userId}:`, error);
-            }
-          }
-
-          if (!isLoggedIn) {
-            distance = "Vui lòng đăng nhập để biết khoảng cách";
-          } else {
-            let ownerAddress, ownerLatitude, ownerLongitude;
-
-            try {
-              const ownerLocationResponse = await axios.get(
-                `${API_BASE_URL}/User/${toy.userId}/location`,
-                {
-                  headers: { Authorization: `Bearer ${token}` },
-                }
-              );
-              ownerAddress = ownerLocationResponse.data.address;
-              ownerLatitude = ownerLocationResponse.data.latitude;
-              ownerLongitude = ownerLocationResponse.data.longitude;
-            } catch (error) {
-              console.error(`Lỗi khi lấy địa chỉ chủ sở hữu ${toy.userId}:`, error);
-              distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
-              return { ...toy, distance, lenderAvatar };
-            }
-
-            if (!ownerLatitude || !ownerLongitude) {
-              if (ownerAddress) {
-                const ownerCoords = await getCoordinatesFromAddress(ownerAddress);
-                if (ownerCoords) {
-                  ownerLatitude = ownerCoords.latitude;
-                  ownerLongitude = ownerCoords.longitude;
-                } else {
-                  distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
-                  return { ...toy, distance, lenderAvatar };
-                }
-              } else {
-                distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
-                return { ...toy, distance, lenderAvatar };
-              }
-            }
-
-            if (userLocation && userLocation.latitude && userLocation.longitude) {
+            if (!toy.user?.avatar && toy.userId) {
               try {
-                const distResponse = await axios.get(
-                  `${API_BASE_URL}/User/distance-to-product/${toy.productId}?myLatitude=${userLocation.latitude}&myLongitude=${userLocation.longitude}`,
+                const profileResponse = await axios.get(
+                  `${API_BASE_URL}/User/profile/${toy.userId}`,
                   {
                     headers: { Authorization: `Bearer ${token}` },
                   }
                 );
-                distance = distResponse.data.distanceKilometers ?? "Không thể tính khoảng cách";
+                lenderAvatar =
+                  profileResponse.data.userInfo?.avatar ||
+                  "https://via.placeholder.com/50?text=Avatar";
               } catch (error) {
-                console.error(`Lỗi khi tính khoảng cách cho đồ chơi ${toy.productId}:`, error);
-                distance =
-                  error.response?.status === 400
-                    ? "Chưa xác định vị trí của người sở hữu đồ chơi"
-                    : "Không thể tính khoảng cách";
+                console.error(`Lỗi khi lấy avatar của user ${toy.userId}:`, error);
               }
-            } else {
-              distance = "Chưa xác định vị trí của bạn";
             }
-          }
 
-          return {
-            id: toy.productId,
-            image:
-              toy.imagePaths && toy.imagePaths.length > 0
-                ? toy.imagePaths[0]
-                : "https://placehold.co/300x200?text=No+Image",
-            name: toy.name || "Không có tên",
-            price: toy.price ? `${toy.price.toLocaleString("vi-VN")} VND` : "Không có giá",
-            status: toy.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
-            distance,
-            lenderAvatar,
-            lenderId: toy.userId,
-            categoryName: toy.categoryName || "Không có danh mục",
-            productStatus:
-              toy.productStatus === 0
-                ? "Mới"
-                : toy.productStatus === 1
-                ? "Cũ"
-                : "Không xác định",
-            suitableAge: toy.suitableAge || "Không xác định",
-            description: toy.description || "Không có mô tả",
-          };
-        })
+            if (!isLoggedIn) {
+              distance = "Vui lòng đăng nhập để biết khoảng cách";
+            } else {
+              let ownerAddress, ownerLatitude, ownerLongitude;
+
+              try {
+                const ownerLocationResponse = await axios.get(
+                  `${API_BASE_URL}/User/${toy.userId}/location`,
+                  {
+                    headers: { Authorization: `Bearer ${token}` },
+                  }
+                );
+                ownerAddress = ownerLocationResponse.data.address;
+                ownerLatitude = ownerLocationResponse.data.latitude;
+                ownerLongitude = ownerLocationResponse.data.longitude;
+              } catch (error) {
+                console.error(`Lỗi khi lấy địa chỉ chủ sở hữu ${toy.userId}:`, error);
+                distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
+                return { ...toy, distance, lenderAvatar };
+              }
+
+              if (!ownerLatitude || !ownerLongitude) {
+                if (ownerAddress) {
+                  const ownerCoords = await getCoordinatesFromAddress(ownerAddress);
+                  if (ownerCoords) {
+                    ownerLatitude = ownerCoords.latitude;
+                    ownerLongitude = ownerCoords.longitude;
+                  } else {
+                    distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
+                    return { ...toy, distance, lenderAvatar };
+                  }
+                } else {
+                  distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
+                  return { ...toy, distance, lenderAvatar };
+                }
+              }
+
+              if (userLocation && userLocation.latitude && userLocation.longitude) {
+                try {
+                  const distResponse = await axios.get(
+                    `${API_BASE_URL}/User/distance-to-product/${toy.productId}?myLatitude=${userLocation.latitude}&myLongitude=${userLocation.longitude}`,
+                    {
+                      headers: { Authorization: `Bearer ${token}` },
+                    }
+                  );
+                  distance = distResponse.data.distanceKilometers ?? "Không thể tính khoảng cách";
+                } catch (error) {
+                  console.error(`Lỗi khi tính khoảng cách cho đồ chơi ${toy.productId}:`, error);
+                  distance =
+                    error.response?.status === 400
+                      ? "Chưa xác định vị trí của người sở hữu đồ chơi"
+                      : "Không thể tính khoảng cách";
+                }
+              } else {
+                distance = "Chưa xác định vị trí của bạn";
+              }
+            }
+
+            return {
+              id: toy.productId,
+              image:
+                toy.imagePaths && toy.imagePaths.length > 0
+                  ? toy.imagePaths[0]
+                  : "https://via.placeholder.com/300x200?text=No+Image",
+              name: toy.name || "Không có tên",
+              price: toy.price ? `${toy.price.toLocaleString("vi-VN")} VND` : "Không có giá",
+              status: toy.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
+              distance,
+              lenderAvatar,
+              lenderId: toy.userId,
+              categoryName: toy.categoryName || "Không có danh mục",
+              productStatus:
+                toy.productStatus === 0
+                  ? "Mới"
+                  : toy.productStatus === 1
+                  ? "Cũ"
+                  : "Không xác định",
+              suitableAge: toy.suitableAge || "Không xác định",
+              description: toy.description || "Không có mô tả",
+            };
+          })
       );
 
       setToyList(formattedToys);
@@ -323,24 +364,22 @@ const Home = () => {
       return;
     }
     setSelectedToyId(toyId);
-    const today = new Date();
-    setBorrowStart(today); // Đặt ngày mượn là hôm nay
-    setBorrowEnd(today); // Đặt ngày trả là hôm nay
+    setBorrowDuration("1"); // Reset to 1 day
+    setNote("");
     setShowBorrowModal(true);
   };
 
   const handleCloseBorrowModal = () => {
     setShowBorrowModal(false);
-    setBorrowStart(null);
-    setBorrowEnd(null);
+    setBorrowDuration("1");
     setNote("");
     setSelectedToyId(null);
   };
 
   const handleSendRequest = async () => {
     if (isSending) return;
-    if (!borrowStart || !borrowEnd) {
-      toast.error("Vui lòng chọn ngày bắt đầu và ngày kết thúc!");
+    if (!borrowDuration) {
+      toast.error("Vui lòng chọn thời gian mượn!");
       return;
     }
 
@@ -364,11 +403,16 @@ const Home = () => {
       return;
     }
 
+    const today = new Date();
+    const rentDate = today;
+    const returnDate = new Date(today);
+    returnDate.setDate(today.getDate() + parseInt(borrowDuration));
+
     const formData = new FormData();
     formData.append("ProductId", selectedToyId);
-    formData.append("RequestDate", new Date().toISOString());
-    formData.append("RentDate", borrowStart.toISOString());
-    formData.append("ReturnDate", borrowEnd.toISOString());
+    formData.append("RequestDate", today.toISOString());
+    formData.append("RentDate", rentDate.toISOString());
+    formData.append("ReturnDate", returnDate.toISOString());
     formData.append("Message", note || "");
 
     try {
@@ -401,7 +445,7 @@ const Home = () => {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
-      let lenderAvatar = response.data.user?.avatar || "https://placehold.co/50x50?text=No+Avatar";
+      let lenderAvatar = response.data.user?.avatar || "https://via.placeholder.com/50?text=Avatar";
       if (!response.data.user?.avatar && response.data.userId) {
         try {
           const profileResponse = await axios.get(
@@ -412,7 +456,7 @@ const Home = () => {
           );
           lenderAvatar =
             profileResponse.data.userInfo?.avatar ||
-            "https://placehold.co/50x50?text=No+Avatar";
+            "https://via.placeholder.com/50?text=Avatar";
         } catch (error) {
           console.error(`Lỗi khi lấy avatar của user ${response.data.userId}:`, error);
         }
@@ -423,7 +467,7 @@ const Home = () => {
         image:
           response.data.imagePaths && response.data.imagePaths.length > 0
             ? response.data.imagePaths[0]
-            : "https://placehold.co/300x200?text=No+Image",
+            : "https://via.placeholder.com/300x200?text=No+Image",
         name: response.data.name || "Không có tên",
         categoryName: response.data.categoryName || "Không có danh mục",
         productStatus:
@@ -459,11 +503,12 @@ const Home = () => {
       const response = await axios.get(`${API_BASE_URL}/User/profile/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      const userInfo = response.data.userInfo || response.data;
       setProfileData({
-        ...response.data.userInfo,
+        ...userInfo,
         avatar:
-          response.data.userInfo.avatar ||
-          "https://placehold.co/100x100?text=No+Avatar",
+          userInfo.avatar ||
+          "https://via.placeholder.com/100?text=Avatar",
       });
       setShowProfileModal(true);
     } catch (error) {
@@ -526,24 +571,6 @@ const Home = () => {
     }
   };
 
-  const handleUpdateLocation = async (newAddress) => {
-    try {
-      const token = getAuthToken();
-      const response = await axios.put(
-        `${API_BASE_URL}/User/${userId}/location`,
-        { address: newAddress },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      toast.success("Cập nhật vị trí thành công!");
-      fetchUserLocation();
-    } catch (error) {
-      console.error("Lỗi khi cập nhật vị trí:", error);
-      toast.error("Không thể cập nhật vị trí!");
-    }
-  };
-
   return (
     <div className="home-wrapper">
       <div className="home-page">
@@ -568,136 +595,138 @@ const Home = () => {
                     src={banner.imageUrl}
                     alt={banner.title}
                     loading="lazy"
+                    onError={(e) =>
+                      (e.target.src = "https://via.placeholder.com/1200x400?text=No+Banner")
+                    }
                   />
                 </div>
               </Carousel.Item>
             ))}
           </Carousel>
         </div>
-        <Container fluid className="mt-4">
-          <h2 className="section-title">Đồ chơi đề xuất</h2>
-          <Button
-            variant="outline-primary"
-            className="mb-3"
-            onClick={() => {
-              const newAddress = prompt("Nhập địa chỉ mới:");
-              if (newAddress) handleUpdateLocation(newAddress);
-            }}
-          >
-            Cập nhật vị trí
-          </Button>
-          <Row>
-            {toyList.length === 0 ? (
-              <Col className="text-center">
-                <h5>Không có đồ chơi nào để hiển thị</h5>
-              </Col>
-            ) : (
-              toyList.map((toy) => {
-                const hasSentRequest = userRequests.some(
-                  (req) => req.productId === toy.id && req.userId === userId && req.status === 0
-                );
-                return (
-                  <Col key={toy.id} xs={12} md={4} className="mb-4">
-                    <Card
-                      className="toy-card"
-                      onClick={() => handleViewDetail(toy.id)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      <Card.Img
-                        variant="top"
-                        src={toy.image}
-                        className="toy-image"
-                        loading="lazy"
-                        onError={(e) =>
-                          (e.target.src = "https://placehold.co/300x200?text=No+Image")
-                        }
-                      />
-                      <Card.Body>
-                        <Card.Title className="toy-name">{toy.name}</Card.Title>
-                        <Card.Text className="toy-price">{toy.price}</Card.Text>
-                        <Card.Text className="toy-status">
-                          <strong>Trạng thái: </strong>
-                          <span
-                            className={
-                              toy.status === "Sẵn sàng cho mượn"
-                                ? "available"
-                                : "unavailable"
-                            }
-                          >
-                            {toy.status}
-                          </span>
-                        </Card.Text>
-                        <Card.Text className="toy-condition">
-                          <strong>Tình trạng: </strong>
-                          {toy.productStatus}
-                        </Card.Text>
-                        <Card.Text className="toy-distance">
-                          <strong>Khoảng cách: </strong>
-                          {typeof toy.distance === "number"
-                            ? `${toy.distance.toFixed(2)} km`
-                            : toy.distance}
-                        </Card.Text>
-                        <div className="lender-info d-flex align-items-center mb-2">
-                          <img
-                            src={toy.lenderAvatar}
-                            alt="Ảnh đại diện người cho mượn"
-                            className="lender-avatar"
+        <Container fluid className="mt-4 main-content">
+          <Row className="mb-3 align-items-center">
+            <Col xs={12} md={11}>
+              <h2 className="section-title">Đồ chơi đề xuất</h2>
+            </Col>
+            <Col xs={12} md={1} className="text-md-end">
+              <Button
+                variant="outline-primary"
+                onClick={fetchUserLocation}
+                className="action-btn"
+              >
+                Lấy vị trí hiện tại
+              </Button>
+            </Col>
+          </Row>
+          {toyList.length === 0 ? (
+            <div className="text-center mt-5">
+              <p className="no-results">Không có đồ chơi nào để hiển thị.</p>
+            </div>
+          ) : (
+            <>
+              <Row>
+                {toyList.map((toy) => {
+                  const hasSentRequest = userRequests.some(
+                    (req) => req.productId === toy.id && req.userId === userId && req.status === 0
+                  );
+                  return (
+                    <Col key={toy.id} xs={12} md={4} className="mb-4">
+                      <Card
+                        className="toy-card"
+                        onClick={() => handleViewDetail(toy.id)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <div className="image-frame">
+                          <Card.Img
+                            variant="top"
+                            src={toy.image}
+                            className="toy-image"
                             loading="lazy"
                             onError={(e) =>
-                              (e.target.src = "https://placehold.co/50x50?text=No+Avatar")
+                              (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")
                             }
                           />
-                          <Button
-                            variant="link"
-                            className="ms-2 p-0 text-decoration-none"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleViewProfile(toy.lenderId);
-                            }}
-                          >
-                            Thông tin người cho mượn
-                          </Button>
                         </div>
-                        <div className="toy-actions d-flex justify-content-between">
-                          <Button
-                            variant="primary"
-                            size="lg"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenBorrowModal(toy.id);
-                            }}
-                            disabled={
-                              toy.status !== "Sẵn sàng cho mượn" ||
-                              toy.lenderId === userId ||
-                              hasSentRequest
-                            }
-                          >
-                            {hasSentRequest ? "Đã gửi yêu cầu" : "Mượn"}
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            size="lg"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleMessage(toy.lenderId);
-                            }}
-                            disabled={toy.lenderId === userId}
-                          >
-                            Nhắn tin
-                          </Button>
-                        </div>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                );
-              })
-            )}
-          </Row>
-          <div className="text-center">
-            <Button variant="outline-primary" className="view-more-btn">
-              Xem thêm
-            </Button>
-          </div>
+                        <Card.Body>
+                          <Card.Title className="toy-name">{toy.name}</Card.Title>
+                          <Card.Text className="toy-price">{toy.price}</Card.Text>
+                          <Card.Text className="toy-status">
+                            <strong>Trạng thái: </strong>
+                            <span className="available">{toy.status}</span>
+                          </Card.Text>
+                          <Card.Text className="toy-condition">
+                            <strong>Tình trạng: </strong>
+                            {toy.productStatus}
+                          </Card.Text>
+                          <Card.Text className="toy-distance">
+                            <strong>Khoảng cách: </strong>
+                            {typeof toy.distance === "number"
+                              ? `${toy.distance.toFixed(2)} km`
+                              : toy.distance}
+                          </Card.Text>
+                          <div className="lender-info d-flex align-items-center mb-2">
+                            <img
+                              src={toy.lenderAvatar}
+                              alt="Ảnh đại diện người cho mượn"
+                              className="lender-avatar"
+                              loading="lazy"
+                              onError={(e) =>
+                                (e.target.src = "https://via.placeholder.com/50?text=Avatar")
+                              }
+                            />
+                            <Button
+                              variant="link"
+                              className="lender-link ms-2 p-0 text-decoration-none"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewProfile(toy.lenderId);
+                              }}
+                            >
+                              {userNames[toy.lenderId] || "Đang tải..."}
+                            </Button>
+                          </div>
+                          <div className="toy-actions d-flex justify-content-between">
+                            <Button
+                              variant="primary"
+                              className="action-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenBorrowModal(toy.id);
+                              }}
+                              disabled={
+                                toy.status !== "Sẵn sàng cho mượn" ||
+                                toy.lenderId === userId ||
+                                hasSentRequest
+                              }
+                            >
+                              {hasSentRequest ? "Đã gửi yêu cầu" : "Mượn"}
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              className="action-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMessage(toy.lenderId);
+                              }}
+                              disabled={toy.lenderId === userId}
+                            >
+                              Nhắn tin
+                            </Button>
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  );
+                })}
+              </Row>
+              <div className="text-center">
+                <Button variant="outline-primary" className="view-more-btn">
+                  Xem thêm
+                </Button>
+              </div>
+            </>
+          )}
           <Footer />
         </Container>
         <Modal show={showBorrowModal} onHide={handleCloseBorrowModal} centered>
@@ -706,27 +735,19 @@ const Home = () => {
           </Modal.Header>
           <Modal.Body>
             <Form>
-              <Form.Group controlId="borrowStartDate" className="mb-3">
-                <Form.Label>Ngày bắt đầu mượn</Form.Label>
-                <DatePicker
-                  selected={borrowStart}
-                  onChange={(date) => setBorrowStart(date)}
-                  dateFormat="yyyy-MM-dd"
-                  className="form-control"
-                  placeholderText="Chọn ngày bắt đầu"
-                  minDate={new Date()}
-                />
-              </Form.Group>
-              <Form.Group controlId="borrowEndDate" className="mb-3">
-                <Form.Label>Ngày kết thúc mượn</Form.Label>
-                <DatePicker
-                  selected={borrowEnd}
-                  onChange={(date) => setBorrowEnd(date)}
-                  dateFormat="yyyy-MM-dd"
-                  className="form-control"
-                  placeholderText="Chọn ngày kết thúc"
-                  minDate={borrowStart || new Date()}
-                />
+              <Form.Group controlId="borrowDuration" className="mb-3">
+                <Form.Label>Thời gian mượn</Form.Label>
+                <Form.Control
+                  as="select"
+                  value={borrowDuration}
+                  onChange={(e) => setBorrowDuration(e.target.value)}
+                >
+                  {durationOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Form.Control>
               </Form.Group>
               <Form.Group controlId="borrowNote">
                 <Form.Label>Ghi chú</Form.Label>
@@ -741,11 +762,12 @@ const Home = () => {
             </Form>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={handleCloseBorrowModal}>
+            <Button variant="secondary" className="action-btn" onClick={handleCloseBorrowModal}>
               Quay lại
             </Button>
             <Button
               variant="primary"
+              className="action-btn"
               onClick={handleSendRequest}
               disabled={isSending}
             >
@@ -764,20 +786,17 @@ const Home = () => {
           <Modal.Body>
             {selectedToy && (
               <>
-                <img
-                  src={selectedToy.image}
-                  alt={selectedToy.name}
-                  style={{
-                    width: "100%",
-                    height: "auto",
-                    maxHeight: "200px",
-                    objectFit: "cover",
-                  }}
-                  loading="lazy"
-                  onError={(e) =>
-                    (e.target.src = "https://placehold.co/300x200?text=No+Image")
-                  }
-                />
+                <div className="image-frame">
+                  <img
+                    src={selectedToy.image}
+                    alt={selectedToy.name}
+                    className="detail-image"
+                    loading="lazy"
+                    onError={(e) =>
+                      (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")
+                    }
+                  />
+                </div>
                 <h5 className="mt-3">{selectedToy.name}</h5>
                 <p>
                   <strong>Danh mục:</strong>{" "}
@@ -807,6 +826,7 @@ const Home = () => {
           <Modal.Footer>
             <Button
               variant="secondary"
+              className="action-btn"
               onClick={() => setShowDetailModal(false)}
             >
               Đóng
@@ -825,17 +845,18 @@ const Home = () => {
             {profileData ? (
               <div>
                 <img
-                  src={
-                    profileData.avatar ||
-                    "https://placehold.co/100x100?text=No+Avatar"
-                  }
+                  src={profileData.avatar}
                   alt="Ảnh đại diện"
                   className="rounded-circle mb-3"
-                  style={{ width: "100px", height: "100px" }}
+                  style={{ width: "100px", height: "100px", objectFit: "cover" }}
                   loading="lazy"
+                  onError={(e) =>
+                    (e.target.src = "https://via.placeholder.com/100?text=Avatar")
+                  }
                 />
                 <p>
-                  <strong>Tên:</strong> {profileData.displayName || "Không có"}
+                  <strong>Tên hiển thị:</strong>{" "}
+                  {profileData.displayName || "Không có tên"}
                 </p>
                 <p>
                   <strong>Tuổi:</strong>{" "}
@@ -859,6 +880,7 @@ const Home = () => {
           <Modal.Footer>
             <Button
               variant="secondary"
+              className="action-btn"
               onClick={() => setShowProfileModal(false)}
             >
               Đóng

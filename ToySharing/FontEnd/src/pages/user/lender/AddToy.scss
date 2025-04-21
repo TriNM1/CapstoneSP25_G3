@@ -1,14 +1,27 @@
-@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
 
 $primary-color: #ff6f61;
+$primary-hover: #e65b50;
 $success-color: #28a745;
+$success-hover: #218838;
 $danger-color: #dc3545;
+$danger-hover: #c82333;
 
 .add-toy-page {
   background-color: #f7f9fc;
   font-family: 'Roboto', sans-serif;
   color: #333;
   padding-bottom: 40px;
+
+  .container-fluid {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .row {
+    flex: 1;
+  }
 
   .side-menu {
     background: #fff;
@@ -71,78 +84,79 @@ $danger-color: #dc3545;
   }
 
   .page-title {
-    font-family: 'Roboto', cursive;
-    font-size: 2rem;
+    font-size: 1.8rem;
+    font-weight: bold;
     color: $primary-color;
-    margin-bottom: 10px; // Reduced margin to bring notice closer
-  }
-
-  .required-notice {
-    font-size: 0.9rem;
-    color: $danger-color; // Red color for the notice
-    font-style: italic;
-    margin-bottom: 20px;
+    margin-bottom: 1.5rem;
   }
 
   .form-group {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-
-    .form-control {
-      width: 100%;
-      max-width: 500px; // Limit width for better alignment
-      padding: 0.5rem;
+    .form-label {
+      font-weight: bold;
       font-size: 1rem;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      color: #555; // Lighter color for input text
-      background: #f9f9f9; // Light background for inputs
+      margin-bottom: 5px;
 
-      &:focus {
-        border-color: $primary-color;
-        box-shadow: 0 0 5px rgba(255, 111, 97, 0.3);
-        background: #fff;
+      .required-asterisk {
+        color: $danger-color;
       }
     }
 
-    textarea.form-control {
-      resize: vertical;
+    .form-control,
+    .form-select {
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      transition: border-color 0.3s;
+
+      &:focus {
+        border-color: $primary-color;
+        box-shadow: 0 0 5px rgba(255, 107, 97, 0.5);
+      }
+    }
+
+    .preview-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .image-frame {
+      width: 100%;
+      height: 200px;
+      overflow: hidden;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #f8f8f8;
     }
   }
 
-  label {
+  .action-btn {
+    min-width: 120px;
+    padding: 8px 16px;
     font-size: 1rem;
-    font-weight: bold;
-    color: #0c101d; // Darker color for labels
-    margin-bottom: 5px;
-  }
-  .required-asterisk {
-    color: $danger-color; // Red color for asterisks
-    font-size: 1.2rem;
-    margin-left: 3px;
-  }
+    border-radius: 5px;
 
-  .preview-image {
-    max-width: 200px;
-    max-height: 200px;
-    object-fit: cover;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    margin-top: 10px;
-  }
+    &.btn-primary {
+      background-color: $primary-color;
+      border-color: $primary-color;
 
-  .submit-btn {
-    font-size: 1rem;
-    padding: 10px 20px;
-    border-radius: 8px;
-    border: none;
-    background-color: #007bff;
-    color: #fff;
-    transition: background-color 0.3s;
+      &:hover {
+        background-color: $primary-hover;
+        border-color: $primary-hover;
+      }
+    }
 
-    &:hover {
-      background-color: #0056b3;
+    &.btn-secondary {
+      background-color: #6c757d;
+      border-color: #6c757d;
+
+      &:hover {
+        background-color: #5a6268;
+        border-color: #5a6268;
+      }
     }
   }
 }

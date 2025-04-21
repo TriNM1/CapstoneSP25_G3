@@ -13,13 +13,13 @@ import SideMenu from "../../../components/SideMenu";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./MyToy.scss";
 
 const FilterPanel = ({ showFilter, onToggle, filterValues, onChange, categories }) => {
   return (
     <div className={`filter-panel ${showFilter ? "show" : ""}`}>
-      <Button variant="outline-primary" onClick={onToggle}>
+      <Button variant="outline-primary" onClick={onToggle} className="action-btn">
         {showFilter ? "Ẩn bộ lọc" : "Hiện bộ lọc"}
       </Button>
       {showFilter && (
@@ -99,6 +99,8 @@ const FilterPanel = ({ showFilter, onToggle, filterValues, onChange, categories 
 
 const MyToy = () => {
   const navigate = useNavigate();
+  const { state } = useLocation();
+  const newToyId = state?.newToyId;
   const [activeLink, setActiveLink] = useState("mytoy");
   const sideMenuItems = [
     { id: 2, label: "Danh sách đồ chơi của tôi", link: "/mytoy" },
@@ -149,6 +151,15 @@ const MyToy = () => {
   };
 
   useEffect(() => {
+    if (newToyId) {
+      const timer = setTimeout(() => {
+        navigate("/mytoy", { replace: true, state: {} }); // Clear state
+      }, 30000); // 30 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [newToyId, navigate]);
+
+  useEffect(() => {
     const fetchToys = async () => {
       try {
         const token = getAuthToken();
@@ -165,20 +176,23 @@ const MyToy = () => {
         const formattedToys = response.data
           .map((toy) => ({
             id: toy.productId,
-            image: toy.imagePaths && toy.imagePaths.length > 0 ? toy.imagePaths[0] : "https://via.placeholder.com/200",
-            name: toy.name,
+            image:
+              toy.imagePaths && toy.imagePaths.length > 0
+                ? toy.imagePaths[0]
+                : "https://via.placeholder.com/300x200?text=No+Image",
+            name: toy.name || "Không có tên",
             postedDate: new Date(toy.createdAt).toISOString().split("T")[0],
+            createdDate: new Date(toy.createdAt), // For sorting
             borrowCount: toy.borrowCount || 0,
             status: toy.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
-            categoryName: toy.categoryName,
-            productStatus: toy.productStatus === 0 ? "Mới" : toy.productStatus === 1 ? "Cũ" : "Không xác định",
-            suitableAge: toy.suitableAge,
+            categoryName: toy.categoryName || "Không có danh mục",
+            productStatus: toy.productStatus === 0 ? "Mới" : "Cũ",
+            suitableAge: toy.suitableAge || "Không xác định",
             price: parseFloat(toy.price) || 0,
-            productValue: `${toy.productValue} VND`,
-            description: toy.description,
+            productValue: `${toy.productValue || 0} VND`,
+            description: toy.description || "Không có mô tả",
           }))
-          .sort((a, b) => new Date(b.postedDate) - new Date(a.postedDate));
-
+          .sort((a, b) => b.createdDate - a.createdDate); // Sort by newest first
         setToys(formattedToys);
       } catch (error) {
         console.error("Lỗi khi lấy danh sách đồ chơi:", error);
@@ -216,7 +230,12 @@ const MyToy = () => {
     const toyToEdit = toys.find((toy) => toy.id === id);
     if (toyToEdit) {
       const parseCurrency = (value) => {
-        if (!value || value === "0 VND" || value === "null VND" || value === "undefined VND") {
+        if (
+          !value ||
+          value === "0 VND" ||
+          value === "null VND" ||
+          value === "undefined VND"
+        ) {
           return "";
         }
         return value.replace(" VND", "");
@@ -305,8 +324,8 @@ const MyToy = () => {
       }
 
       const productStatusMap = {
-        "Mới": 0,
-        "Cũ": 1,
+        Mới: 0,
+        Cũ: 1,
         "": 0,
       };
       const productStatus = productStatusMap[editToyData.productStatus] || 0;
@@ -325,12 +344,16 @@ const MyToy = () => {
         editToyData.files.forEach((file) => formData.append("Files", file));
       }
 
-      const response = await axios.put(`${API_BASE_URL}/Products/${editToyData.id}`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const response = await axios.put(
+        `${API_BASE_URL}/Products/${editToyData.id}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       setToys((prevToys) =>
         prevToys.map((toy) =>
@@ -355,7 +378,9 @@ const MyToy = () => {
       setShowEditModal(false);
     } catch (error) {
       console.error("Lỗi khi cập nhật đồ chơi:", error);
-      toast.error(error.response?.data.message || "Có lỗi xảy ra khi cập nhật đồ chơi!");
+      toast.error(
+        error.response?.data.message || "Có lỗi xảy ra khi cập nhật đồ chơi!"
+      );
     }
   };
 
@@ -382,7 +407,9 @@ const MyToy = () => {
       toast.success("Đã xóa đồ chơi thành công!");
     } catch (error) {
       console.error("Lỗi khi xóa đồ chơi:", error);
-      toast.error(error.response?.data.message || "Có lỗi xảy ra khi xóa đồ chơi!");
+      toast.error(
+        error.response?.data.message || "Có lỗi xảy ra khi xóa đồ chơi!"
+      );
     } finally {
       setShowConfirmModal(false);
       setConfirmAction("");
@@ -441,7 +468,7 @@ const MyToy = () => {
       } else if (filterValues.priceSort === "desc") {
         return b.price - a.price;
       }
-      return new Date(b.postedDate) - new Date(a.postedDate); // Mặc định theo ngày
+      return b.createdDate - a.createdDate; // Default: newest first
     });
 
   const visibleToys = filteredToys.slice(0, visibleItems);
@@ -467,17 +494,27 @@ const MyToy = () => {
                   showFilter={showFilter}
                   onToggle={() => setShowFilter(!showFilter)}
                   filterValues={filterValues}
-                  onChange={(e) => setFilterValues({ ...filterValues, [e.target.name]: e.target.value })}
+                  onChange={(e) =>
+                    setFilterValues({ ...filterValues, [e.target.name]: e.target.value })
+                  }
                   categories={categories}
                 />
               </div>
-              <Button variant="primary" className="add-toy-btn ms-3" onClick={handleAddToy}>
+              <Button
+                variant="success"
+                className="add-toy-btn ms-3 action-btn"
+                onClick={handleAddToy}
+              >
                 Đăng đồ chơi mới
               </Button>
             </div>
-            {filteredToys.length === 0 ? (
+            {toys.length === 0 ? (
               <div className="text-center mt-5">
-                <h5>Không có đồ chơi nào phù hợp với bộ lọc</h5>
+                <p className="no-results">Bạn chưa đăng đồ chơi nào.</p>
+              </div>
+            ) : filteredToys.length === 0 ? (
+              <div className="text-center mt-5">
+                <p className="no-results">Không có đồ chơi nào phù hợp với bộ lọc.</p>
               </div>
             ) : (
               <>
@@ -489,7 +526,17 @@ const MyToy = () => {
                         onClick={() => handleViewDetail(toy.id)}
                         style={{ cursor: "pointer" }}
                       >
-                        <Card.Img variant="top" src={toy.image} className="toy-image" />
+                        <div className="image-frame">
+                          <Card.Img
+                            variant="top"
+                            src={toy.image}
+                            className="toy-image"
+                            onError={(e) =>
+                              (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")
+                            }
+                          />
+                          {newToyId === toy.id && <span className="new-badge">Mới đăng</span>}
+                        </div>
                         <Card.Body className="card-body">
                           <Card.Title className="toy-name">{toy.name}</Card.Title>
                           <Card.Text className="posted-date">
@@ -500,19 +547,34 @@ const MyToy = () => {
                           </Card.Text>
                           <Card.Text className="toy-status">
                             <strong>Trạng thái:</strong>{" "}
-                            <span className={toy.status === "Sẵn sàng cho mượn" ? "available" : "unavailable"}>
+                            <span
+                              className={
+                                toy.status === "Sẵn sàng cho mượn"
+                                  ? "available"
+                                  : "unavailable"
+                              }
+                            >
                               {toy.status}
                             </span>
                           </Card.Text>
                           <Card.Text className="toy-price">
-                            <strong>Phí cho mượn:</strong> {toy.price.toLocaleString("vi-VN")} VND
+                            <strong>Phí cho mượn:</strong>{" "}
+                            {toy.price.toLocaleString("vi-VN")} VND
                           </Card.Text>
                           <div className="card-actions">
-                            <Button className="btn-edit" onClick={(e) => handleEdit(e, toy.id)}>
+                            <Button
+                              variant="primary"
+                              className="action-btn btn-edit"
+                              onClick={(e) => handleEdit(e, toy.id)}
+                            >
                               Sửa
                             </Button>
                             {toy.status === "Sẵn sàng cho mượn" && (
-                              <Button className="btn-delete" onClick={(e) => handleDelete(e, toy.id)}>
+                              <Button
+                                variant="danger"
+                                className="action-btn btn-delete"
+                                onClick={(e) => handleDelete(e, toy.id)}
+                              >
                                 Xóa
                               </Button>
                             )}
@@ -524,7 +586,11 @@ const MyToy = () => {
                 </Row>
                 {visibleToys.length < filteredToys.length && (
                   <div className="text-center">
-                    <Button variant="outline-primary" className="view-more-btn" onClick={handleLoadMore}>
+                    <Button
+                      variant="outline-primary"
+                      className="view-more-btn action-btn"
+                      onClick={handleLoadMore}
+                    >
                       Xem thêm
                     </Button>
                   </div>
@@ -548,7 +614,12 @@ const MyToy = () => {
                     key={index}
                     src={path}
                     alt={`Old image ${index}`}
-                    style={{ width: "100px", height: "100px", objectFit: "cover", marginRight: "10px" }}
+                    style={{
+                      width: "100px",
+                      height: "100px",
+                      objectFit: "cover",
+                      marginRight: "10px",
+                    }}
                   />
                 ))
               ) : (
@@ -560,7 +631,9 @@ const MyToy = () => {
               <Form.Control type="file" multiple onChange={handleEditImageChange} />
             </Form.Group>
             <Form.Group controlId="editToyName" className="mb-3">
-              <Form.Label>Tên đồ chơi <span className="text-danger">*</span></Form.Label>
+              <Form.Label>
+                Tên đồ chơi <span className="required-asterisk">*</span>
+              </Form.Label>
               <Form.Control
                 type="text"
                 name="name"
@@ -570,7 +643,9 @@ const MyToy = () => {
               />
             </Form.Group>
             <Form.Group controlId="editCategory" className="mb-3">
-              <Form.Label>Danh mục</Form.Label>
+              <Form.Label>
+                Danh mục <span className="required-asterisk">*</span>
+              </Form.Label>
               <Form.Control
                 as="select"
                 name="categoryName"
@@ -586,23 +661,27 @@ const MyToy = () => {
               </Form.Control>
             </Form.Group>
             <Form.Group controlId="editCondition" className="mb-3">
-              <Form.Label>Tình trạng</Form.Label>
+              <Form.Label>
+                Tình trạng <span className="required-asterisk">*</span>
+              </Form.Label>
               <Form.Control
                 as="select"
                 name="productStatus"
                 value={editToyData.productStatus}
                 onChange={handleEditChange}
               >
+                <option value="">Chọn tình trạng</option>
                 <option value="Mới">Mới</option>
                 <option value="Cũ">Cũ</option>
               </Form.Control>
             </Form.Group>
             <Form.Group controlId="editAgeGroup" className="mb-3">
-              <Form.Label>Độ tuổi phù hợp <span className="text-danger">*</span></Form.Label>
+              <Form.Label>
+                Độ tuổi phù hợp <span className="required-asterisk">*</span>
+              </Form.Label>
               <Form.Control
                 type="number"
-                name="suit
-ableAge"
+                name="suitableAge"
                 value={editToyData.suitableAge}
                 onChange={handleEditChange}
                 min="0"
@@ -611,7 +690,9 @@ ableAge"
               />
             </Form.Group>
             <Form.Group controlId="editPrice" className="mb-3">
-              <Form.Label>Phí mượn đồ chơi <span className="text-danger">*</span></Form.Label>
+              <Form.Label>
+                Phí mượn đồ chơi <span className="required-asterisk">*</span>
+              </Form.Label>
               <Form.Control
                 type="number"
                 name="price"
@@ -621,7 +702,9 @@ ableAge"
               />
             </Form.Group>
             <Form.Group controlId="editProductValue" className="mb-3">
-              <Form.Label>Giá trị đồ chơi <span className="text-danger">*</span></Form.Label>
+              <Form.Label>
+                Giá trị đồ chơi <span className="required-asterisk">*</span>
+              </Form.Label>
               <Form.Control
                 type="number"
                 name="productValue"
@@ -644,11 +727,11 @@ ableAge"
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+          <Button variant="secondary" className="action-btn" onClick={() => setShowEditModal(false)}>
             Hủy
           </Button>
-          <Button variant="primary" onClick={handleUpdateToy}>
-            Update
+          <Button variant="primary" className="action-btn" onClick={handleUpdateToy}>
+            Cập nhật
           </Button>
         </Modal.Footer>
       </Modal>
@@ -659,39 +742,66 @@ ableAge"
         <Modal.Body>
           {selectedToy && (
             <>
-              <img
-                src={selectedToy.image}
-                alt={selectedToy.name}
-                style={{ width: "100%", height: "auto", maxHeight: "200px", objectFit: "cover" }}
-              />
+              <div className="image-frame">
+                <img
+                  src={selectedToy.image}
+                  alt={selectedToy.name}
+                  className="detail-image"
+                  onError={(e) =>
+                    (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")
+                  }
+                />
+                {newToyId === selectedToy.id && <span className="new-badge">Mới đăng</span>}
+              </div>
               <h5 className="mt-3">{selectedToy.name}</h5>
-              <p><strong>Danh mục:</strong> {selectedToy.categoryName || "Không có"}</p>
-              <p><strong>Tình trạng:</strong> {selectedToy.productStatus || "Không có"}</p>
-              <p><strong>Độ tuổi phù hợp:</strong> {selectedToy.suitableAge}</p>
-              <p><strong>Phí cho mượn:</strong> {selectedToy.price.toLocaleString("vi-VN")} VND</p>
-              <p><strong>Mô tả:</strong> {selectedToy.description || "Không có"}</p>
-              <p><strong>Trạng thái:</strong> {selectedToy.status}</p>
-              <p><strong>Lượt mượn:</strong> {selectedToy.borrowCount}</p>
-              <p><strong>Ngày đăng:</strong> {selectedToy.postedDate}</p>
+              <p>
+                <strong>Danh mục:</strong> {selectedToy.categoryName || "Không có"}
+              </p>
+              <p>
+                <strong>Tình trạng:</strong> {selectedToy.productStatus || "Không có"}
+              </p>
+              <p>
+                <strong>Độ tuổi phù hợp:</strong> {selectedToy.suitableAge}
+              </p>
+              <p>
+                <strong>Phí cho mượn:</strong>{" "}
+                {selectedToy.price.toLocaleString("vi-VN")} VND
+              </p>
+              <p>
+                <strong>Mô tả:</strong> {selectedToy.description || "Không có"}
+              </p>
+              <p>
+                <strong>Trạng thái:</strong> {selectedToy.status}
+              </p>
+              <p>
+                <strong>Lượt mượn:</strong> {selectedToy.borrowCount}
+              </p>
+              <p>
+                <strong>Ngày đăng:</strong> {selectedToy.postedDate}
+              </p>
             </>
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
+          <Button variant="secondary" className="action-btn" onClick={() => setShowDetailModal(false)}>
             Đóng
           </Button>
         </Modal.Footer>
       </Modal>
-      <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)} centered>
+      <Modal
+        show={showConfirmModal}
+        onHide={() => setShowConfirmModal(false)}
+        centered
+      >
         <Modal.Header closeButton>
           <Modal.Title>Xác nhận</Modal.Title>
         </Modal.Header>
         <Modal.Body>Bạn có chắc muốn xóa đồ chơi này?</Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>
+          <Button variant="secondary" className="action-btn" onClick={() => setShowConfirmModal(false)}>
             Hủy
           </Button>
-          <Button variant="primary" onClick={handleConfirm}>
+          <Button variant="primary" className="action-btn" onClick={handleConfirm}>
             Xác nhận
           </Button>
         </Modal.Footer>

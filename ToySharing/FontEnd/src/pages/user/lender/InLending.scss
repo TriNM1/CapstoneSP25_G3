@@ -1,16 +1,12 @@
-@use '../../../styles/ToyCard' as toyCard;
-
-@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
 
 $primary-color: #ff6f61;
+$primary-hover: #e65b50;
 $success-color: #28a745;
+$success-hover: #218838;
 $danger-color: #dc3545;
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  background-color: #6c757d; /* Gray out the button */
-  border-color: #6c757d;
-}
+$danger-hover: #c82333;
+
 .inlending-page {
   background-color: #f7f9fc;
   font-family: 'Roboto', sans-serif;
@@ -20,11 +16,11 @@ button:disabled {
   .container-fluid {
     display: flex;
     flex-direction: column;
-    min-height: 100vh; // Đảm bảo container chiếm toàn bộ chiều cao
+    min-height: 100vh;
   }
 
   .row {
-    flex: 1; // Row chiếm toàn bộ không gian còn lại
+    flex: 1;
   }
 
   .side-menu {
@@ -85,158 +81,182 @@ button:disabled {
     border-radius: 12px;
     padding: 30px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    min-height: calc(100vh - 150px); // Đảm bảo chiều cao đủ lớn để căn giữa
+  }
+
+  .filter-section {
     display: flex;
-    flex-direction: column;
-  }
+    align-items: flex-end;
 
-  .main-content.empty {
-    justify-content: center; // Căn giữa dọc
-    align-items: center; // Căn giữa ngang
-    text-align: center;
-    padding: 20px;
-  }
-
-  .empty-message {
-    width: 100%;
-    max-width: 600px; // Giới hạn chiều rộng
-    margin: 0 auto;
-  }
-
-  .empty-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-
-    svg {
-      margin-bottom: 20px;
-      fill: #999;
+    .form-group {
+      width: 100%;
     }
 
-    h5 {
-      font-size: 1.2rem;
-      color: #666;
-      font-weight: 500;
-      background-color: #f8f9fa;
-      padding: 15px 30px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-  }
+    .form-control,
+    .form-select {
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      transition: border-color 0.3s;
 
-  .date-picker-input {
-    width: 100%;
-    padding: 0.5rem;
-    font-size: 1rem;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    color: #333;
-    background: #fff;
+      &:focus {
+        border-color: $primary-color;
+        box-shadow: 0 0 5px rgba(255, 107, 97, 0.5);
+      }
+    }
+
+    .form-label {
+      font-weight: bold;
+      font-size: 1rem;
+      margin-bottom: 5px;
+    }
   }
 
   .lending-items-section {
     .toy-card {
-      background-color: #fff;
-      border: none;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      transition: transform 0.2s;
-      margin-bottom: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      transition: box-shadow 0.3s;
 
       &:hover {
-        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .image-frame {
+        width: 100%;
+        height: 200px;
+        overflow: hidden;
+        border-radius: 8px 8px 0 0;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #f8f8f8;
       }
 
       .toy-image {
-        height: 200px;
+        width: 100%;
+        height: 100%;
         object-fit: cover;
+        display: block;
+      }
+    }
+
+    .card-body {
+      padding: 15px;
+    }
+
+    .toy-name {
+      font-family: 'Roboto', sans-serif;
+      font-size: 1.5rem;
+      color: $primary-color;
+      margin-bottom: 10px;
+    }
+
+    .borrow-date,
+    .return-date,
+    .lending-status {
+      font-size: 1rem;
+      margin-bottom: 5px;
+      color: #333;
+    }
+
+    .lending-status {
+      .in-progress {
+        color: #ffc107;
+      }
+      .completed {
+        color: $success-color;
+      }
+      .not-returned {
+        color: $danger-color;
+      }
+    }
+
+    .no-results {
+      font-size: 1.2rem;
+      color: #6c757d;
+      margin-top: 20px;
+    }
+
+    .lender-info {
+      .lender-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: 10px;
       }
 
-      .toy-name {
-        font-family: 'Fredoka One', cursive;
-        font-size: 1.5rem;
+      .lender-link {
         color: $primary-color;
-        margin-bottom: 10px;
-      }
-
-      .borrow-date,
-      .return-date,
-      .lending-status {
         font-size: 1rem;
-        margin-bottom: 5px;
-        color: #333;
-      }
 
-      .lending-status {
-        strong {
-          font-weight: bold;
-        }
-
-        .in-progress {
-          color: $success-color;
-        }
-      }
-
-      .lender-info {
-        margin-top: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        .lender-avatar {
-          width: 35px;
-          height: 35px;
-          border-radius: 50%;
-          object-fit: cover;
-          border: 1px solid #ddd;
-        }
-
-        span {
-          margin-left: 8px;
-        }
-      }
-
-      .card-actions {
-        margin-top: 15px;
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-
-        .btn-message {
-          background-color: #17a2b8;
-          color: #fff;
-
-          &:hover {
-            background-color: #138496;
-          }
-        }
-
-        .btn-return {
-          background-color: $success-color;
-          color: #fff;
-
-          &:hover {
-            background-color: #218838;
-          }
-        }
-
-        .btn-cancel {
-          background-color: $danger-color;
-          color: #fff;
-
-          &:hover {
-            background-color: #c82333;
-          }
+        &:hover {
+          color: $primary-hover;
         }
       }
     }
-  }
 
-  .view-more-btn {
-    margin-top: 1rem;
-    font-size: 1rem;
-    padding: 10px 20px;
-    border-radius: 8px;
+    .card-actions {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+
+      .action-btn {
+        min-width: 120px;
+        padding: 8px 16px;
+        font-size: 1rem;
+        border-radius: 5px;
+        text-align: center;
+      }
+
+      .btn-message {
+        background-color: $primary-color;
+        border-color: $primary-color;
+
+        &:hover {
+          background-color: $primary-hover;
+          border-color: $primary-hover;
+        }
+      }
+
+      .btn-success {
+        background-color: $success-color;
+        border-color: $success-color;
+
+        &:hover {
+          background-color: $success-hover;
+          border-color: $success-hover;
+        }
+
+        &:disabled {
+          background-color: #6c757d;
+          border-color: #6c757d;
+        }
+      }
+
+      .btn-danger {
+        background-color: $danger-color;
+        border-color: $danger-color;
+
+        &:hover {
+          background-color: $danger-hover;
+          border-color: $danger-hover;
+        }
+
+        &:disabled {
+          background-color: #6c757d;
+          border-color: #6c757d;
+        }
+      }
+    }
+
+    .view-more-btn {
+      margin-top: 1rem;
+      font-size: 1rem;
+      padding: 10px 20px;
+      border-radius: 8px;
+    }
   }
 }

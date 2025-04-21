@@ -160,7 +160,7 @@ namespace ToySharingAPI.Controllers
                         Address = u.Address,
                         Avatar = u.Avatar,
                         Rating = _context.Histories
-                            .Where(h => h.Product.UserId == u.Id && h.Status == 1 || h.Status == 2)
+                            .Where(h => h.UserId == u.Id && h.Status == 1)
                             .Average(h => (double?)h.Rating) ?? 0
                     }
                 })

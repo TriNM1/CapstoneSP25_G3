@@ -3,8 +3,11 @@
 @import './../../../styles/CommonStyle.scss';
 
 $primary-color: #ff6f61;
+$primary-hover: #e65b50; // Replaced darken($primary-color, 10%)
 $success-color: #28a745;
+$success-hover: #218838; // Replaced darken($success-color, 10%)
 $danger-color: #dc3545;
+$danger-hover: #c82333; // Replaced darken($danger-color, 10%)
 
 .sending-request-page {
   background-color: #f7f9fc;
@@ -82,6 +85,19 @@ $danger-color: #dc3545;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
+  .filter-section {
+    .form-control,
+    .form-select {
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      transition: border-color 0.3s;
+      &:focus {
+        border-color: $primary-color;
+        box-shadow: 0 0 5px rgba(255, 107, 97, 0.5);
+      }
+    }
+  }
+
   .date-picker-input {
     width: 100%;
     padding: 0.5rem;
@@ -93,8 +109,38 @@ $danger-color: #dc3545;
   }
 
   .request-items-section {
+    .request-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      transition: box-shadow 0.3s;
+
+      &:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .image-frame {
+        width: 100%;
+        height: 200px; // Fixed height for images
+        overflow: hidden;
+        border-radius: 8px 8px 0 0;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #f8f8f8;
+      }
+
+      .toy-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover; // Scale image to cover frame
+        display: block;
+      }
+    }
+
     .toy-name {
-      font-family: 'Noto Sans', cursive;
+      font-family: 'Roboto', sans-serif;
       font-size: 1.5rem;
       color: $primary-color;
       margin-bottom: 10px;
@@ -109,36 +155,87 @@ $danger-color: #dc3545;
       color: #333;
     }
 
+    .status {
+      .pending {
+        color: #ffc107;
+      }
+      .accepted {
+        color: #17a2b8;
+      }
+      .paid {
+        color: #007bff;
+      }
+      .picked-up {
+        color: $success-color;
+      }
+      .completed {
+        color: #6c757d;
+      }
+    }
+
+    .lender-info {
+      .lender-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: 10px;
+      }
+
+      .lender-link {
+        color: $primary-color;
+        font-size: 1rem;
+        &:hover {
+          color: $primary-hover;
+        }
+      }
+    }
+
     .request-actions {
       margin-top: 15px;
       display: flex;
       justify-content: center;
       gap: 10px;
+      flex-wrap: wrap;
+
+      .action-btn {
+        min-width: 120px;
+        padding: 8px 16px;
+        font-size: 1rem;
+        border-radius: 5px;
+        text-align: center;
+      }
 
       .btn-primary {
         background-color: $primary-color;
+        border-color: $primary-color;
         color: #fff;
 
         &:hover {
-          background-color: darken($primary-color, 10%);
+          background-color: $primary-hover;
+          border-color: $primary-hover;
         }
       }
 
       .btn-success {
         background-color: $success-color;
+        border-color: $success-color;
         color: #fff;
 
         &:hover {
-          background-color: darken($success-color, 10%);
+          background-color: $success-hover;
+          border-color: $success-hover;
         }
       }
 
       .btn-danger {
         background-color: $danger-color;
+        border-color: $danger-color;
         color: #fff;
 
         &:hover {
-          background-color: darken($danger-color, 10%);
+          background-color: $danger-hover;
+          border-color: $danger-hover;
         }
       }
     }

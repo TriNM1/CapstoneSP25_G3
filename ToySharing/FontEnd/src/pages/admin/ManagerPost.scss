@@ -46,6 +46,26 @@
     .product-card {
       text-align: center;
     }
+
+    .image-frame {
+      width: 100%;
+      height: 200px; /* Fixed height for product list images */
+      overflow: hidden;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 10px;
+      background-color: #f8f8f8; /* Background for placeholder or empty images */
+    }
+
+    .product-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover; /* Scale image to cover the frame, cropping if necessary */
+      display: block;
+    }
   }
 
   .pagination-container {
@@ -61,6 +81,26 @@
   .modal-body {
     .form-group {
       margin-bottom: 15px;
+    }
+
+    .modal-image-frame {
+      width: 100%;
+      height: 300px; /* Larger height for modal images */
+      overflow: hidden;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 15px;
+      background-color: #f8f8f8;
+    }
+
+    .product-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain; /* Show entire image in modal, with padding if needed */
+      display: block;
     }
   }
 

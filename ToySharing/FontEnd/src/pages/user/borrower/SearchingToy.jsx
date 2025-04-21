@@ -12,16 +12,16 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import Header from "../../../components/Header";
 import SideMenu from "../../../components/SideMenu";
-import "./SearchingToy.scss";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import "./SearchingToy.scss";
 
 const FilterPanel = ({ showFilter, onToggle, filterValues, onChange, categories }) => {
   return (
     <div className={`filter-panel ${showFilter ? "show" : ""}`}>
-      <Button variant="outline-primary" onClick={onToggle}>
+      <Button variant="outline-primary" onClick={onToggle} className="action-btn">
         {showFilter ? "Ẩn bộ lọc" : "Hiện bộ lọc"}
       </Button>
       {showFilter && (
@@ -126,6 +126,14 @@ const SearchingToy = () => {
     priceSort: "",
   });
   const [categories, setCategories] = useState([]);
+  const [showUpdateLocationModal, setShowUpdateLocationModal] = useState(false);
+  const [locationForm, setLocationForm] = useState({
+    houseNumber: "",
+    street: "",
+    ward: "",
+    district: "",
+    city: "",
+  });
 
   const API_BASE_URL = "https://localhost:7128/api";
 
@@ -290,21 +298,36 @@ const SearchingToy = () => {
     );
   };
 
-  const handleUpdateLocation = async () => {
-    const newAddress = prompt("Nhập địa chỉ mới:");
-    if (!newAddress) return;
+  const handleUpdateLocation = () => {
+    setShowUpdateLocationModal(true);
+  };
+
+  const handleLocationFormChange = (e) => {
+    const { name, value } = e.target;
+    setLocationForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmitLocation = async () => {
+    const { houseNumber, street, ward, district, city } = locationForm;
+    if (!ward || !district || !city) {
+      toast.error("Vui lòng nhập ít nhất Phường, Quận và Thành phố!");
+      return;
+    }
+
+    const fullAddress = `${houseNumber ? houseNumber + ", " : ""}${street ? street + ", " : ""}${ward}, ${district}, ${city}`;
 
     try {
       const token = getAuthToken();
       if (!token) {
         toast.error("Vui lòng đăng nhập để cập nhật vị trí!");
+        setShowUpdateLocationModal(false);
         return;
       }
 
       let latitude = null;
       let longitude = null;
 
-      const coordinates = await getCoordinatesFromAddress(newAddress);
+      const coordinates = await getCoordinatesFromAddress(fullAddress);
       if (coordinates) {
         latitude = coordinates.latitude;
         longitude = coordinates.longitude;
@@ -312,11 +335,21 @@ const SearchingToy = () => {
 
       await axios.put(
         `${API_BASE_URL}/User/current/location`,
-        { address: newAddress, latitude, longitude },
+        { address: fullAddress, latitude, longitude },
         { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
       );
 
       toast.success("Cập nhật vị trí thành công!");
+      setUserAddress(fullAddress);
+      setUserLocation(coordinates || null);
+      setShowUpdateLocationModal(false);
+      setLocationForm({
+        houseNumber: "",
+        street: "",
+        ward: "",
+        district: "",
+        city: "",
+      });
       fetchUserLocation();
     } catch (error) {
       console.error("Lỗi khi cập nhật vị trí:", error);
@@ -447,8 +480,8 @@ const SearchingToy = () => {
   const handleOpenBorrowModal = (toyId) => {
     setSelectedToyId(toyId);
     const today = new Date();
-    setBorrowStart(today); // Đặt ngày mượn là hôm nay
-    setBorrowEnd(today); // Đặt ngày trả là hôm nay
+    setBorrowStart(today);
+    setBorrowEnd(today);
     setShowBorrowModal(true);
   };
 
@@ -676,31 +709,33 @@ const SearchingToy = () => {
             <SideMenu menuItems={sideMenuItems} activeItem={1} />
           </Col>
           <Col xs={12} md={10} className="main-content">
-            <div className="d-flex align-items-center mb-3">
-              <div className="filter-panel-wrapper flex-grow-1">
-                <FilterPanel
-                  showFilter={showFilter}
-                  onToggle={() => setShowFilter(!showFilter)}
-                  filterValues={filterValues}
-                  onChange={(e) => setFilterValues({ ...filterValues, [e.target.name]: e.target.value })}
-                  categories={categories}
-                />
-              </div>
+          <div className="filter-and-actions d-flex align-items-center mb-3">
+            <div className="filter-panel-wrapper">
+              <FilterPanel
+                showFilter={showFilter}
+                onToggle={() => setShowFilter(!showFilter)}
+                filterValues={filterValues}
+                onChange={(e) => setFilterValues({ ...filterValues, [e.target.name]: e.target.value })}
+                categories={categories}
+              />
+            </div>
+            <div className="action-buttons d-flex align-items-center ms-3">
               <Button
                 variant="outline-primary"
-                className="ms-3"
+                className="action-btn me-2"
                 onClick={handleGetCurrentLocation}
               >
                 Lấy vị trí hiện tại
               </Button>
               <Button
                 variant="outline-primary"
-                className="ms-3"
+                className="action-btn"
                 onClick={handleUpdateLocation}
               >
                 Cập nhật vị trí
               </Button>
             </div>
+          </div>
             <Row className="request-items-section">
               {filteredToys.length === 0 ? (
                 <Col className="text-center">
@@ -721,12 +756,14 @@ const SearchingToy = () => {
                         onClick={() => handleViewDetail(toy.productId)}
                         style={{ cursor: "pointer" }}
                       >
-                        <Card.Img
-                          variant="top"
-                          src={toy.image}
-                          className="toy-image"
-                          onError={(e) => (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")}
-                        />
+                        <div className="image-frame">
+                          <Card.Img
+                            variant="top"
+                            src={toy.image}
+                            className="toy-image"
+                            onError={(e) => (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")}
+                          />
+                        </div>
                         <Card.Body>
                           <Card.Title className="toy-name">{toy.name}</Card.Title>
                           <Card.Text className="send-date">
@@ -767,6 +804,7 @@ const SearchingToy = () => {
                           <div className="request-actions text-center">
                             <Button
                               variant="primary"
+                              className="action-btn"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleOpenBorrowModal(toy.productId);
@@ -787,7 +825,7 @@ const SearchingToy = () => {
               <div className="text-center">
                 <Button
                   variant="outline-primary"
-                  className="view-more-btn"
+                  className="view-more-btn action-btn"
                   onClick={handleLoadMore}
                 >
                   Xem thêm
@@ -804,12 +842,14 @@ const SearchingToy = () => {
         <Modal.Body>
           {selectedToy && (
             <>
-              <img
-                src={selectedToy.image}
-                alt={selectedToy.name}
-                style={{ width: "100%", height: "auto", maxHeight: "200px", objectFit: "cover" }}
-                onError={(e) => (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")}
-              />
+              <div className="image-frame">
+                <img
+                  src={selectedToy.image}
+                  alt={selectedToy.name}
+                  className="detail-image"
+                  onError={(e) => (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")}
+                />
+              </div>
               <h5 className="mt-3">{selectedToy.name}</h5>
               <p><strong>Danh mục:</strong> {selectedToy.categoryName || "Không có"}</p>
               <p><strong>Tình trạng:</strong> {selectedToy.productStatus || "Không có"}</p>
@@ -824,7 +864,7 @@ const SearchingToy = () => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
+          <Button variant="secondary" className="action-btn" onClick={() => setShowDetailModal(false)}>
             Đóng
           </Button>
         </Modal.Footer>
@@ -870,10 +910,10 @@ const SearchingToy = () => {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseBorrowModal}>
+          <Button variant="secondary" className="action-btn" onClick={handleCloseBorrowModal}>
             Quay lại
           </Button>
-          <Button variant="primary" onClick={handleSendRequest}>
+          <Button variant="primary" className="action-btn" onClick={handleSendRequest}>
             Gửi yêu cầu
           </Button>
         </Modal.Footer>
@@ -902,15 +942,100 @@ const SearchingToy = () => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowProfileModal(false)}>
+          <Button variant="secondary" className="action-btn" onClick={() => setShowProfileModal(false)}>
             Đóng
           </Button>
           <Button
             variant="primary"
+            className="action-btn"
             onClick={() => handleMessage(profileData?.userId)}
             disabled={!profileData || !isLoggedIn || !profileData?.userId || profileData?.userId === mainUserId}
           >
             Nhắn tin
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      <Modal show={showUpdateLocationModal} onHide={() => setShowUpdateLocationModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Cập nhật vị trí</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group controlId="houseNumber" className="mb-3">
+              <Form.Label>Số nhà</Form.Label>
+              <Form.Control
+                type="text"
+                name="houseNumber"
+                value={locationForm.houseNumber}
+                onChange={handleLocationFormChange}
+                placeholder="Ví dụ: 123"
+              />
+            </Form.Group>
+            <Form.Group controlId="street" className="mb-3">
+              <Form.Label>Tên đường</Form.Label>
+              <Form.Control
+                type="text"
+                name="street"
+                value={locationForm.street}
+                onChange={handleLocationFormChange}
+                placeholder="Ví dụ: Lê Lợi"
+              />
+            </Form.Group>
+            <Form.Group controlId="ward" className="mb-3">
+              <Form.Label>
+                Phường <span className="required-asterisk">*</span>
+              </Form.Label>
+              <Form.Control
+                type="text"
+                name="ward"
+                value={locationForm.ward}
+                onChange={handleLocationFormChange}
+                placeholder="Ví dụ: Phường 1"
+                required
+              />
+            </Form.Group>
+            <Form.Group controlId="district" className="mb-3">
+              <Form.Label>
+                Quận <span className="required-asterisk">*</span>
+              </Form.Label>
+              <Form.Control
+                type="text"
+                name="district"
+                value={locationForm.district}
+                onChange={handleLocationFormChange}
+                placeholder="Ví dụ: Quận 1"
+                required
+              />
+            </Form.Group>
+            <Form.Group controlId="city" className="mb-3">
+              <Form.Label>
+                Thành phố <span className="required-asterisk">*</span>
+              </Form.Label>
+              <Form.Control
+                type="text"
+                name="city"
+                value={locationForm.city}
+                onChange={handleLocationFormChange}
+                placeholder="Ví dụ: Hồ Chí Minh"
+                required
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            className="action-btn"
+            onClick={() => setShowUpdateLocationModal(false)}
+          >
+            Hủy
+          </Button>
+          <Button
+            variant="primary"
+            className="action-btn"
+            onClick={handleSubmitLocation}
+          >
+            Cập nhật
           </Button>
         </Modal.Footer>
       </Modal>

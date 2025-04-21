@@ -23,6 +23,7 @@ const SendingRequest = () => {
   const navigate = useNavigate();
   const [activeLink, setActiveLink] = useState("sending-request");
   const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedStatus, setSelectedStatus] = useState(""); // New state for status filter
   const [requests, setRequests] = useState([]);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState(null);
@@ -32,7 +33,8 @@ const SendingRequest = () => {
   const [showPickedUpModal, setShowPickedUpModal] = useState(false);
   const [mainUserId, setMainUserId] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0); // Thêm để làm mới dữ liệu
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [userNames, setUserNames] = useState({}); // Store displayName for owners
 
   const API_BASE_URL = "https://localhost:7128/api";
 
@@ -40,6 +42,14 @@ const SendingRequest = () => {
     { id: 1, label: "Tìm kiếm đồ chơi", link: "/searchtoy" },
     { id: 2, label: "Danh sách mượn", link: "/sendingrequest" },
     { id: 3, label: "Lịch sử trao đổi", link: "/borrowhistory" },
+  ];
+
+  const statusOptions = [
+    { value: "", label: "Tất cả trạng thái" },
+    { value: "0", label: "Đang chờ chấp nhận" },
+    { value: "1", label: "Chấp nhận, chưa thanh toán" },
+    { value: "2", label: "Chấp nhận, đã thanh toán" },
+    { value: "3", label: "Đã lấy" },
   ];
 
   const getAuthToken = () => {
@@ -81,7 +91,6 @@ const SendingRequest = () => {
         productId: req.productId,
         productName: req.productName,
         ownerId: req.ownerId || null,
-        ownerName: req.ownerName || "Không xác định",
         ownerAvatar: req.ownerAvatar,
         borrowDate: req.borrowDate,
         returnDate: req.returnDate,
@@ -91,8 +100,8 @@ const SendingRequest = () => {
         image: req.image,
         depositAmount: req.depositAmount,
         rentalFee: req.rentalFee,
-        displayName: req.name,
-        confirmReturn: req.confirmReturn || 0, // Đảm bảo có confirmReturn
+        displayName: req.displayName, // Use displayName from API if available
+        confirmReturn: req.confirmReturn || 0,
       }));
 
       setRequests(formattedRequests);
@@ -103,11 +112,36 @@ const SendingRequest = () => {
     }
   };
 
+  // Fetch displayName for owners
+  useEffect(() => {
+    const uniqueOwnerIds = Array.from(
+      new Set(requests.map((req) => req.ownerId).filter((id) => id && !userNames[id]))
+    );
+    uniqueOwnerIds.forEach(async (ownerId) => {
+      try {
+        const token = getAuthToken();
+        const response = await axios.get(`${API_BASE_URL}/User/profile/${ownerId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const userInfo = response.data.userInfo || response.data;
+        setUserNames((prev) => ({
+          ...prev,
+          [ownerId]: userInfo.displayName || "Không xác định",
+        }));
+      } catch (error) {
+        console.error(`Lỗi khi lấy displayName cho user ${ownerId}:`, error);
+        setUserNames((prev) => ({
+          ...prev,
+          [ownerId]: "Không xác định",
+        }));
+      }
+    });
+  }, [requests]);
+
   useEffect(() => {
     fetchRequests();
   }, [navigate, refreshTrigger]);
 
-  // Polling để làm mới dữ liệu mỗi 30 giây
   useEffect(() => {
     const interval = setInterval(() => {
       setRefreshTrigger((prev) => prev + 1);
@@ -274,7 +308,7 @@ const SendingRequest = () => {
           req.requestId === selectedRequestId ? { ...req, status: 3 } : req
         )
       );
-      setRefreshTrigger((prev) => prev + 1); // Kích hoạt làm mới
+      setRefreshTrigger((prev) => prev + 1);
       toast.success("Đã đánh dấu yêu cầu là đã lấy!");
       setShowPickedUpModal(false);
       setSelectedRequestId(null);
@@ -322,14 +356,14 @@ const SendingRequest = () => {
         prev.map((req) =>
           req.requestId === requestId
             ? {
-              ...req,
-              confirmReturn: req.confirmReturn | 1,
-              status: (req.confirmReturn | 1) === 3 ? 4 : req.status,
-            }
+                ...req,
+                confirmReturn: req.confirmReturn | 1,
+                status: (req.confirmReturn | 1) === 3 ? 4 : req.status,
+              }
             : req
         )
       );
-      setRefreshTrigger((prev) => prev + 1); // Kích hoạt làm mới
+      setRefreshTrigger((prev) => prev + 1);
       toast.success("Xác nhận trả thành công!");
     } catch (error) {
       console.error("Lỗi khi xác nhận trả:", error);
@@ -385,17 +419,21 @@ const SendingRequest = () => {
     toast.info("Đã hiển thị tất cả yêu cầu!");
   };
 
-  const filteredRequests = selectedDate
-    ? requests.filter((request) => {
-      const requestDate = new Date(request.borrowDate);
-      return (
-        (request.status === 0 || request.status === 1 || request.status === 2 || request.status === 3) &&
-        requestDate.getDate() === selectedDate.getDate() &&
+  const filteredRequests = requests.filter((request) => {
+    const requestDate = new Date(request.borrowDate);
+    const dateMatch = selectedDate
+      ? requestDate.getDate() === selectedDate.getDate() &&
         requestDate.getMonth() === selectedDate.getMonth() &&
         requestDate.getFullYear() === selectedDate.getFullYear()
-      );
-    })
-    : requests.filter((request) => request.status === 0 || request.status === 1 || request.status === 2 || request.status === 3);
+      : true;
+    const statusMatch =
+      selectedStatus === "" || request.status.toString() === selectedStatus;
+    return (
+      (request.status === 0 || request.status === 1 || request.status === 2 || request.status === 3) &&
+      dateMatch &&
+      statusMatch
+    );
+  });
 
   return (
     <div className="sending-request-page home-page">
@@ -412,26 +450,39 @@ const SendingRequest = () => {
             <SideMenu menuItems={sideMenuItems} activeItem={2} />
           </Col>
           <Col xs={12} md={10} className="main-content">
-            <Form.Group controlId="selectDate" className="mb-3">
-              <Form.Label>Chọn ngày mượn</Form.Label>
-              <DatePicker
-                selected={selectedDate}
-                onChange={(date) => setSelectedDate(date)}
-                dateFormat="yyyy-MM-dd"
-                className="date-picker-input"
-                placeholderText="Chọn ngày"
-              />
-            </Form.Group>
+            <Row className="filter-section mb-3">
+              <Col md={3}>
+                
+              </Col>
+              <Col md={6}>
+                <Form.Group controlId="selectStatus">
+                  <Form.Label>Trạng thái</Form.Label>
+                  <Form.Control
+                    as="select"
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                  >
+                    {statusOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Form.Control>
+                </Form.Group>
+              </Col>
+            </Row>
             <Row className="request-items-section">
               {filteredRequests.map((request) => (
                 <Col key={request.requestId} xs={12} md={6} className="mb-4">
                   <Card className="request-card">
-                    <Card.Img
-                      variant="top"
-                      src={request.image || "https://via.placeholder.com/300x200?text=No+Image"}
-                      className="toy-image"
-                      onError={(e) => (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")}
-                    />
+                    <div className="image-frame">
+                      <Card.Img
+                        variant="top"
+                        src={request.image || "https://via.placeholder.com/300x200?text=No+Image"}
+                        className="toy-image"
+                        onError={(e) => (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")}
+                      />
+                    </div>
                     <Card.Body>
                       <Card.Title className="toy-name">{request.productName}</Card.Title>
                       <Card.Text className="send-date">
@@ -452,21 +503,34 @@ const SendingRequest = () => {
                         <strong>Trạng thái:</strong>{" "}
                         <span
                           className={
-                            request.status === 0 ? "pending" :
-                              request.status === 1 ? "accepted" :
-                                request.status === 2 ? "paid" :
-                                  request.status === 3 ? "picked-up" :
-                                    request.status === 4 ? "completed" : ""
+                            request.status === 0
+                              ? "pending"
+                              : request.status === 1
+                              ? "accepted"
+                              : request.status === 2
+                              ? "paid"
+                              : request.status === 3
+                              ? "picked-up"
+                              : request.status === 4
+                              ? "completed"
+                              : ""
                           }
                         >
-                          {request.status === 0 ? "Đang chờ chấp nhận" :
-                            request.status === 1 ? "Chấp nhận, chưa thanh toán" :
-                              request.status === 2 ? "Chấp nhận, đã thanh toán" :
-                                request.status === 3 ? (
-                                  (request.confirmReturn & 1) !== 0 ? "Bạn đã xác nhận trả, chờ người cho mượn" :
-                                    (request.confirmReturn & 2) !== 0 ? "Chờ bạn xác nhận trả" : "Đã lấy, chưa xác nhận trả"
-                                ) :
-                                  request.status === 4 ? "Hoàn thành" : "Không xác định"}
+                          {request.status === 0
+                            ? "Đang chờ chấp nhận"
+                            : request.status === 1
+                            ? "Chấp nhận, chưa thanh toán"
+                            : request.status === 2
+                            ? "Chấp nhận, đã thanh toán"
+                            : request.status === 3
+                            ? (request.confirmReturn & 1) !== 0
+                              ? "Bạn đã xác nhận trả, chờ người cho mượn"
+                              : (request.confirmReturn & 2) !== 0
+                              ? "Chờ bạn xác nhận trả"
+                              : "Đã lấy, chưa xác nhận trả"
+                            : request.status === 4
+                            ? "Hoàn thành"
+                            : "Không xác định"}
                         </span>
                       </Card.Text>
                       <div className="lender-info d-flex align-items-center mb-2">
@@ -481,7 +545,7 @@ const SendingRequest = () => {
                           className="lender-link p-0 text-decoration-none"
                           onClick={() => handleViewProfile(request.ownerId)}
                         >
-                          {request.ownerName}
+                          {userNames[request.ownerId] || "Đang tải..."}
                         </Button>
                       </div>
                       <div className="request-actions text-center">
@@ -489,6 +553,7 @@ const SendingRequest = () => {
                           <Button
                             variant="danger"
                             onClick={() => handleCancelClick(request.requestId)}
+                            className="action-btn"
                           >
                             Hủy yêu cầu
                           </Button>
@@ -498,13 +563,14 @@ const SendingRequest = () => {
                             <Button
                               variant="primary"
                               onClick={() => handlePaymentClick(request.requestId)}
-                              className="me-2"
+                              className="action-btn"
                             >
                               Thanh Toán
                             </Button>
                             <Button
                               variant="danger"
                               onClick={() => handleCancelClick(request.requestId)}
+                              className="action-btn"
                             >
                               Hủy
                             </Button>
@@ -515,23 +581,25 @@ const SendingRequest = () => {
                             <Button
                               variant="primary"
                               onClick={() => handlePickedUpClick(request.requestId)}
-                              className="me-2"
+                              className="action-btn"
                               disabled={request.status === 3}
                             >
-                              Đã lấy"
+                              Đã lấy
                             </Button>
                             <Button
                               variant="danger"
                               onClick={() => handleCancelClick(request.requestId)}
+                              className="action-btn"
                             >
                               Hủy
                             </Button>
-                            </>
+                          </>
                         )}
                         {request.status === 3 && (
                           <Button
                             variant="success"
                             onClick={() => handleConfirmReturn(request.requestId)}
+                            className="action-btn"
                             disabled={(request.confirmReturn & 1) !== 0}
                           >
                             {(request.confirmReturn & 1) !== 0 ? "Đã xác nhận trả" : "Xác nhận trả"}

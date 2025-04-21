@@ -1,65 +1,11 @@
-@use '../../../styles/ToyCard' as toyCard;
-@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto&display=swap');
-@import './../../../styles/CommonStyle.scss';
+@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
 
 $primary-color: #ff6f61;
+$primary-hover: #e65b50;
 $success-color: #28a745;
+$success-hover: #218838;
 $danger-color: #dc3545;
-
-.filter-panel {
-  transition: all 0.3s ease;
-  overflow: hidden;
-
-  &.show {
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    width: 100%;
-  }
-
-  &:not(.show) {
-    height: auto;
-    padding: 0;
-    background: none;
-  }
-
-  .filter-form {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    width: 100%;
-
-    .form-group {
-      flex: 1;
-      min-width: 200px;
-      width: 100%;
-    }
-
-    .form-control,
-    .form-select {
-      width: 100%;
-      font-size: 1rem;
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-    }
-
-    label {
-      font-weight: bold;
-      font-size: 1.1rem;
-      margin-bottom: 5px;
-      display: block;
-      text-align: left;
-    }
-  }
-
-  .btn-outline-primary {
-    margin-bottom: 0;
-    font-size: 1rem;
-    padding: 8px 16px;
-  }
-}
+$danger-hover: #c82333;
 
 .searching-toy-page {
   background-color: #f7f9fc;
@@ -81,7 +27,7 @@ $danger-color: #dc3545;
     background: #fff;
     padding: 1rem;
     border-right: 1px solid #ddd;
-    height: 100vh;
+    height: 100%;
     margin-top: 1rem;
 
     ul {
@@ -137,81 +83,247 @@ $danger-color: #dc3545;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
-  .search-section {
-    margin-bottom: 20px;
+  .filter-panel-wrapper {
+    display: flex; /* Enables flexbox for the wrapper */
+    justify-content: center; /* Center aligns the content */
+    align-items: center; /* Vertically centers the content */
+    flex: 1; /* Bộ lọc chiếm phần lớn không gian */
+    min-width: 0; /* Ngăn bộ lọc bị tràn */
+    max-width: 800px; /* Giới hạn chiều rộng tối đa của bộ lọc */
 
-    .search-input {
-      width: 100%;
-      padding: 0.5rem;
-      font-size: 1rem;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      color: #333;
-      background: #fff;
+    .filter-panel {
+      display: flex; /* Use flexbox for the filter panel */
+      flex-wrap: wrap; /* Allows wrapping to the next line if needed */
+      justify-content: center; /* Center aligns the filter panel items */
+      align-items: center; /* Vertically centers items */
+      width: 100%; // Vertically centers items
+  
+      .action-btn {
+        min-width: 120px;
+        padding: 8px 16px;
+        font-size: 1rem;
+        border-radius: 5px;
+  
+        &.btn-outline-primary {
+          border-color: $primary-color;
+          color: $primary-color;
+  
+          &:hover {
+            background-color: $primary-color;
+            color: #fff;
+          }
+        }
+      }
+  
+      &.show {
+        .filter-form {
+          display: flex; // Use flexbox for the filter form
+          flex-wrap: wrap; // Allows form elements to wrap if necessary
+          justify-content: center; // Center aligns the form elements
+          width: 100%; // Ensures full width
+        }
+      }
+  
+      .filter-form {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+    }
+  }
+
+  .action-btn {
+    min-width: 120px;
+    padding: 8px 16px;
+    font-size: 1rem;
+    border-radius: 5px;
+
+    &.btn-outline-primary {
+      border-color: $primary-color;
+      color: $primary-color;
+
+      &:hover {
+        background-color: $primary-color;
+        color: #fff;
+      }
+    }
+
+    &.btn-primary {
+      background-color: $primary-color;
+      border-color: $primary-color;
+
+      &:hover {
+        background-color: $primary-hover;
+        border-color: $primary-hover;
+      }
+    }
+
+    &.btn-secondary {
+      background-color: #6c757d;
+      border-color: #6c757d;
+
+      &:hover {
+        background-color: #5a6268;
+        border-color: #5a6268;
+      }
     }
   }
 
   .request-items-section {
-    .toy-name {
-      font-family: 'Noto Sans', cursive;
-      font-size: 1.5rem;
-      color: $primary-color;
-      margin-bottom: 10px;
-    }
+    .request-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      transition: box-shadow 0.3s;
 
-    .price,
-    .status,
-    .distance,
-    .send-date {
-      font-size: 1rem;
-      margin-bottom: 5px;
-      color: #333; /* Đảm bảo phí cho mượn không đỏ */
-    }
-
-    .status {
-      strong {
-        font-weight: bold;
+      &:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       }
 
-      .available {
-        color: $success-color;
+      .image-frame {
+        width: 100%;
+        height: 200px;
+        overflow: hidden;
+        border-radius: 8px 8px 0 0;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #f8f8f8;
       }
 
-      .unavailable {
-        color: $danger-color;
+      .toy-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .card-body {
+        padding: 15px;
+
+        .toy-name {
+          font-size: 1.5rem;
+          color: $primary-color;
+          margin-bottom: 10px;
+        }
+
+        .send-date,
+        .price,
+        .status,
+        .distance {
+          font-size: 1rem;
+          margin-bottom: 5px;
+          color: #333;
+        }
+
+        .status {
+          .available {
+            color: $success-color;
+          }
+          .unavailable {
+            color: $danger-color;
+          }
+        }
+
+        .lender-info {
+          .lender-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 10px;
+          }
+
+          .lender-link {
+            color: $primary-color;
+            font-size: 1rem;
+
+            &:hover {
+              color: $primary-hover;
+            }
+          }
+        }
+
+        .request-actions {
+          margin-top: 10px;
+
+          .action-btn {
+            min-width: 120px;
+            padding: 8px 16px;
+            font-size: 1rem;
+            border-radius: 5px;
+
+            &.btn-primary {
+              background-color: $primary-color;
+              border-color: $primary-color;
+
+              &:hover {
+                background-color: $primary-hover;
+                border-color: $primary-hover;
+              }
+            }
+          }
+        }
       }
     }
+  }
 
-    .request-actions {
-      margin-top: 15px;
+  .view-more-btn {
+    margin-top: 1rem;
+    font-size: 1rem;
+    padding: 10px 20px;
+    border-radius: 8px;
+  }
+
+  .modal {
+    .image-frame {
+      width: 100%;
+      height: 200px;
+      overflow: hidden;
+      border-radius: 8px;
       display: flex;
       justify-content: center;
-      gap: 10px;
-
-      .btn-borrow {
-        background-color: $primary-color;
-        color: #fff;
-
-        &:hover {
-          background-color: #e65b50;
-        }
-      }
-
-      .btn-message {
-        background-color: #17a2b8;
-        color: #fff;
-
-        &:hover {
-          background-color: #138496;
-        }
-      }
+      align-items: center;
+      background-color: #f8f8f8;
     }
 
-    .view-more-btn {
-      margin-top: 1rem;
-      font-size: 1rem;
-      padding: 10px 20px;
-      border-radius: 8px;
+    .detail-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .form-group {
+      .form-label {
+        font-weight: bold;
+        font-size: 1rem;
+        margin-bottom: 5px;
+
+        .required-asterisk {
+          color: $danger-color;
+        }
+      }
+
+      .form-control,
+      .form-select,
+      .date-picker-input {
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        transition: border-color 0.3s;
+
+        &:focus {
+          border-color: $primary-color;
+          box-shadow: 0 0 5px rgba(255, 107, 97, 0.5);
+        }
+
+        &::placeholder {
+          color: #999;
+          opacity: 1;
+        }
+      }
     }
   }
 }

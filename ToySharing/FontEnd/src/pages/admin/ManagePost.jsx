@@ -24,7 +24,7 @@ const ManagePost = () => {
   // State cho sản phẩm, phân trang ...
   const [products, setProducts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 9;
 
   // Mapping userId -> displayName
   const [userNames, setUserNames] = useState({});
@@ -360,11 +360,13 @@ const ManagePost = () => {
                         left: "10px",
                       }}
                     />
-                    <Image
-                      src={product.imagePaths?.[0] || userPlaceholder}
-                      thumbnail
-                      alt={product.name}
-                    />
+                    <div className="image-frame">
+                      <Image
+                        src={product.imagePaths?.[0] || userPlaceholder}
+                        alt={product.name}
+                        className="product-image"
+                      />
+                    </div>
                     <h5
                       className="mt-2"
                       onClick={() => handleDetailClick(product)}
@@ -443,11 +445,13 @@ const ManagePost = () => {
         <Modal.Body>
           {selectedProduct && (
             <>
-              <Image
-                src={selectedProduct.imagePaths?.[0] || userPlaceholder}
-                fluid
-                alt={selectedProduct.name}
-              />
+              <div className="image-frame modal-image-frame">
+                <Image
+                  src={selectedProduct.imagePaths?.[0] || userPlaceholder}
+                  alt={selectedProduct.name}
+                  className="product-image"
+                />
+              </div>
               <h4 className="mt-3">{selectedProduct.name}</h4>
               <p>
                 Người đăng:{" "}

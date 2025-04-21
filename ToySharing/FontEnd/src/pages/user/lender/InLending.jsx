@@ -8,42 +8,48 @@ import {
   Form,
   Modal,
 } from "react-bootstrap";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import { useNavigate } from "react-router-dom";
 import Header from "../../../components/Header";
 import SideMenu from "../../../components/SideMenu";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
-import toy1 from "../../../assets/toy1.jpg";
-import user from "../../../assets/user.png";
 import "./InLending.scss";
 
 const InLending = () => {
   const navigate = useNavigate();
   const [activeLink, setActiveLink] = useState("lending");
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedStatus, setSelectedStatus] = useState("");
   const [lendings, setLendings] = useState([]);
   const [visibleItems, setVisibleItems] = useState(4);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [userNames, setUserNames] = useState({}); // Store displayName for borrowers
 
   const sideMenuItems = [
     { id: 2, label: "Danh sách đồ chơi của tôi", link: "/mytoy" },
-    { id: 3, label: "Đang cho mượn", link: "/lending" },
+    { id: 3, label: "Đang cho mượn", link: "/inlending" },
     { id: 4, label: "Danh sách yêu cầu mượn", link: "/listborrowrequests" },
     { id: 5, label: "Lịch sử trao đổi", link: "/transferhistory" },
   ];
 
+  const statusOptions = [
+    { value: "", label: "Tất cả trạng thái" },
+    { value: "1", label: "Đã chấp nhận" },
+    { value: "2", label: "Người dùng đã thanh toán" },
+    { value: "3", label: "Chờ xác nhận trả" },
+  ];
+
   const API_BASE_URL = "https://localhost:7128/api";
+
+  const getAuthToken = () => {
+    return sessionStorage.getItem("token") || localStorage.getItem("token");
+  };
 
   const fetchLendings = async () => {
     try {
-      const localToken = localStorage.getItem("token");
-      const sessionToken = sessionStorage.getItem("token");
-      const token = sessionToken || localToken;
+      const token = getAuthToken();
       if (!token) {
         toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
         navigate("/login");
@@ -55,19 +61,18 @@ const InLending = () => {
         },
       });
       const filteredLendings = response.data
-        .filter((req) => [1, 2, 3, 4, 7].includes(req.status))
+        .filter((req) => [1, 2, 3].includes(req.status))
         .map((req) => ({
           id: req.requestId,
-          image: req.image || toy1,
+          image: req.image || "https://via.placeholder.com/300x200?text=No+Image",
           name: req.productName,
           borrowDate: new Date(req.rentDate).toISOString().split("T")[0],
           returnDate: new Date(req.returnDate).toISOString().split("T")[0],
           lenderId: req.userId,
-          lenderAvatar: req.borrowerAvatar || user,
+          lenderAvatar: req.borrowerAvatar || "https://via.placeholder.com/50?text=Avatar",
           status: req.status,
           confirmReturn: req.confirmReturn || 0,
         }))
-        // Sắp xếp theo borrowDate từ mới nhất đến cũ nhất
         .sort((a, b) => new Date(b.borrowDate) - new Date(a.borrowDate));
       setLendings(filteredLendings);
     } catch (error) {
@@ -76,7 +81,10 @@ const InLending = () => {
         toast.error("Token không hợp lệ hoặc đã hết hạn! Vui lòng đăng nhập lại.");
         navigate("/login");
       } else {
-        toast.error("Không thể tải dữ liệu từ API! " + (error.response?.data?.message || error.message));
+        toast.error(
+          "Không thể tải dữ liệu từ API! " +
+            (error.response?.data?.message || error.message)
+        );
       }
       setLendings([]);
     }
@@ -93,11 +101,35 @@ const InLending = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Fetch displayName for borrowers
+  useEffect(() => {
+    const uniqueLenderIds = Array.from(
+      new Set(lendings.map((l) => l.lenderId).filter((id) => id && !userNames[id]))
+    );
+    uniqueLenderIds.forEach(async (lenderId) => {
+      try {
+        const token = getAuthToken();
+        const response = await axios.get(`${API_BASE_URL}/User/profile/${lenderId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const userInfo = response.data.userInfo || response.data;
+        setUserNames((prev) => ({
+          ...prev,
+          [lenderId]: userInfo.displayName || "Không xác định",
+        }));
+      } catch (error) {
+        console.error(`Lỗi khi lấy displayName cho user ${lenderId}:`, error);
+        setUserNames((prev) => ({
+          ...prev,
+          [lenderId]: "Không xác định",
+        }));
+      }
+    });
+  }, [lendings]);
+
   const handleMessage = async (lenderId) => {
     try {
-      const localToken = localStorage.getItem("token");
-      const sessionToken = sessionStorage.getItem("token");
-      const token = sessionToken || localToken;
+      const token = getAuthToken();
       if (!token) {
         toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
         navigate("/login");
@@ -109,10 +141,13 @@ const InLending = () => {
       });
 
       const conversations = response.data;
+      const userId = parseInt(
+        localStorage.getItem("userId") || sessionStorage.getItem("userId")
+      );
       const existingConversation = conversations.find(
         (convo) =>
-          (convo.user1Id === lenderId && convo.user2Id === parseInt(localStorage.getItem("userId") || sessionStorage.getItem("userId"))) ||
-          (convo.user2Id === lenderId && convo.user1Id === parseInt(localStorage.getItem("userId") || sessionStorage.getItem("userId")))
+          (convo.user1Id === lenderId && convo.user2Id === userId) ||
+          (convo.user2Id === lenderId && convo.user1Id === userId)
       );
 
       let conversationId;
@@ -141,16 +176,16 @@ const InLending = () => {
         toast.error("Token không hợp lệ hoặc đã hết hạn! Vui lòng đăng nhập lại.");
         navigate("/login");
       } else {
-        toast.error(error.response?.data?.message || "Không thể bắt đầu cuộc trò chuyện!");
+        toast.error(
+          error.response?.data?.message || "Không thể bắt đầu cuộc trò chuyện!"
+        );
       }
     }
   };
 
   const handleViewProfile = async (lenderId) => {
     try {
-      const localToken = localStorage.getItem("token");
-      const sessionToken = sessionStorage.getItem("token");
-      const token = sessionToken || localToken;
+      const token = getAuthToken();
       if (!token) {
         toast.error("Không tìm thấy token! Vui lòng đăng nhập lại.");
         return;
@@ -160,7 +195,8 @@ const InLending = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      setProfileData(response.data.userInfo);
+      const userInfo = response.data.userInfo || response.data;
+      setProfileData({ ...userInfo, userId: lenderId });
       setShowProfileModal(true);
     } catch (error) {
       console.error("Lỗi khi lấy thông tin người mượn:", error);
@@ -170,7 +206,7 @@ const InLending = () => {
 
   const handleConfirmReturn = async (requestId) => {
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = getAuthToken();
       if (!token) {
         toast.error("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!");
         navigate("/login");
@@ -192,10 +228,10 @@ const InLending = () => {
         const newLendings = prev.map((item) =>
           item.id === requestId
             ? {
-              ...item,
-              confirmReturn: item.confirmReturn | 2,
-              status: (item.confirmReturn | 2) === 3 ? 4 : item.status,
-            }
+                ...item,
+                confirmReturn: item.confirmReturn | 2,
+                status: (item.confirmReturn | 2) === 3 ? 4 : item.status,
+              }
             : item
         );
         return newLendings;
@@ -211,14 +247,17 @@ const InLending = () => {
       let errorMessage = "Không thể xác nhận trả!";
       if (error.response) {
         errorMessage = error.response.data.message || errorMessage;
-        if (error.response.status === 400 && errorMessage.includes("Bạn đã xác nhận trả trước đó")) {
+        if (
+          error.response.status === 400 &&
+          errorMessage.includes("Bạn đã xác nhận trả trước đó")
+        ) {
           setLendings((prev) =>
             prev.map((item) =>
               item.id === requestId
                 ? {
-                  ...item,
-                  confirmReturn: item.confirmReturn | 2,
-                }
+                    ...item,
+                    confirmReturn: item.confirmReturn | 2,
+                  }
                 : item
             )
           );
@@ -238,7 +277,7 @@ const InLending = () => {
 
   const handleMarkNotReturned = async (requestId) => {
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = getAuthToken();
       if (!token) {
         toast.error("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!");
         navigate("/login");
@@ -260,10 +299,10 @@ const InLending = () => {
         prev.map((item) =>
           item.id === requestId
             ? {
-              ...item,
-              status: 7,
-              confirmReturn: item.confirmReturn,
-            }
+                ...item,
+                status: 7,
+                confirmReturn: item.confirmReturn,
+              }
             : item
         )
       );
@@ -300,12 +339,24 @@ const InLending = () => {
     return daysOverdue > 3 && (confirmReturn & 1) === 0;
   };
 
-  const formattedFilterDate = selectedDate
-    ? selectedDate.toISOString().split("T")[0]
-    : "";
-  const filteredLendings = formattedFilterDate
-    ? lendings.filter((item) => item.borrowDate === formattedFilterDate)
-    : lendings;
+  const getStatusLabel = (item) => {
+    if (item.status === 1) return "Đã chấp nhận";
+    if (item.status === 2) return "Người dùng đã thanh toán";
+    if (item.status === 3) {
+      if ((item.confirmReturn & 2) !== 0)
+        return "Bạn đã xác nhận trả, chờ người mượn";
+      if ((item.confirmReturn & 1) !== 0) return "Chờ bạn xác nhận trả";
+      return isOverdue(item.returnDate, item.confirmReturn)
+        ? "Quá hạn, chưa trả"
+        : "Đã lấy, chưa xác nhận trả";
+    }
+    return "Không xác định";
+  };
+
+  const filteredLendings = lendings.filter(
+    (item) =>
+      selectedStatus === "" || item.status.toString() === selectedStatus
+  );
   const visibleLendings = filteredLendings.slice(0, visibleItems);
 
   return (
@@ -322,32 +373,31 @@ const InLending = () => {
           <Col xs={12} md={2}>
             <SideMenu menuItems={sideMenuItems} activeItem={3} />
           </Col>
-          <Col xs={12} md={10} className={`main-content ${visibleLendings.length === 0 ? 'empty' : ''}`}>
-            <Form.Group controlId="selectDate" className="mb-3">
-              <Form.Label>Chọn ngày mượn</Form.Label>
-              <DatePicker
-                selected={selectedDate}
-                onChange={(date) => setSelectedDate(date)}
-                dateFormat="yyyy-MM-dd"
-                className="date-picker-input"
-                placeholderText="Tìm kiếm theo ngày"
-              />
-            </Form.Group>
-            {visibleLendings.length === 0 ? (
-              <div className="empty-message">
-                <div className="empty-content text-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="64"
-                    height="64"
-                    fill="#ccc"
-                    viewBox="0 0 24 24"
-                    className="mb-3"
+          <Col xs={12} md={10} className="main-content">
+            <Row className="filter-section mb-3">
+              <Col md={3}></Col>
+              <Col md={6}>
+                <Form.Group controlId="selectStatus">
+                  <Form.Label>Trạng thái</Form.Label>
+                  <Form.Control
+                    as="select"
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
                   >
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
-                  </svg>
-                  <h5>Không có đồ chơi nào trong trạng thái đang cho mượn</h5>
-                </div>
+                    {statusOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Form.Control>
+                </Form.Group>
+              </Col>
+            </Row>
+            {filteredLendings.length === 0 ? (
+              <div className="text-center mt-5">
+                <p className="no-results">
+                  Không có đồ chơi nào trong trạng thái đang cho mượn.
+                </p>
               </div>
             ) : (
               <>
@@ -355,7 +405,16 @@ const InLending = () => {
                   {visibleLendings.map((item) => (
                     <Col key={item.id} xs={12} md={6} className="mb-4">
                       <Card className="toy-card">
-                        <Card.Img variant="top" src={item.image} className="toy-image" />
+                        <div className="image-frame">
+                          <Card.Img
+                            variant="top"
+                            src={item.image}
+                            className="toy-image"
+                            onError={(e) =>
+                              (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")
+                            }
+                          />
+                        </div>
                         <Card.Body className="card-body">
                           <Card.Title className="toy-name">{item.name}</Card.Title>
                           <Card.Text className="borrow-date">
@@ -366,49 +425,65 @@ const InLending = () => {
                           </Card.Text>
                           <Card.Text className="lending-status">
                             <strong>Trạng thái:</strong>{" "}
-                            <span className={`in-progress ${item.status === 7 ? "not-returned" : ""}`}>
-                              {item.status === 1 ? "Đã chấp nhận" :
-                                item.status === 2 ? "Người dùng đã thanh toán" :
-                                  item.status === 3 ? (
-                                    (item.confirmReturn & 2) !== 0 ? "Bạn đã xác nhận trả, chờ người mượn" :
-                                      (item.confirmReturn & 1) !== 0 ? "Chờ bạn xác nhận trả" :
-                                        isOverdue(item.returnDate, item.confirmReturn) ? "Quá hạn, chưa trả" : "Đã lấy, chưa xác nhận trả"
-                                  ) : "Hoàn thành"}
+                            <span
+                              className={
+                                item.status === 7
+                                  ? "not-returned"
+                                  : item.status === 4
+                                  ? "completed"
+                                  : "in-progress"
+                              }
+                            >
+                              {getStatusLabel(item)}
                             </span>
                           </Card.Text>
-                          <div className="lender-info">
-                            <img src={item.lenderAvatar} alt="Ảnh đại diện người mượn" className="lender-avatar" />
-                            <span>
-                              <Button
-                                variant="link"
-                                className="p-0 text-decoration-none"
-                                onClick={() => handleViewProfile(item.lenderId)}
-                              >
-                                Thông tin người mượn
-                              </Button>
-                            </span>
+                          <div className="lender-info d-flex align-items-center mb-2">
+                            <img
+                              src={item.lenderAvatar}
+                              alt="Ảnh đại diện người mượn"
+                              className="lender-avatar"
+                              onError={(e) =>
+                                (e.target.src = "https://via.placeholder.com/50?text=Avatar")
+                              }
+                            />
+                            <Button
+                              variant="link"
+                              className="lender-link p-0 text-decoration-none"
+                              onClick={() => handleViewProfile(item.lenderId)}
+                            >
+                              {userNames[item.lenderId] || "Đang tải..."}
+                            </Button>
                           </div>
                           <div className="card-actions">
-                            <Button className="btn-message" onClick={() => handleMessage(item.lenderId)}>
+                            <Button
+                              variant="primary"
+                              className="action-btn btn-message"
+                              onClick={() => handleMessage(item.lenderId)}
+                            >
                               Nhắn tin
                             </Button>
                             {item.status === 3 && (
                               <>
                                 <Button
                                   variant="success"
+                                  className="action-btn"
                                   onClick={() => handleConfirmReturn(item.id)}
                                   disabled={(item.confirmReturn & 2) !== 0}
-                                  className="me-2"
                                 >
-                                  {(item.confirmReturn & 2) !== 0 ? "Đã xác nhận trả" : "Xác nhận trả"}
+                                  {(item.confirmReturn & 2) !== 0
+                                    ? "Đã xác nhận trả"
+                                    : "Xác nhận trả"}
                                 </Button>
                                 {isOverdue(item.returnDate, item.confirmReturn) && (
                                   <Button
                                     variant="danger"
+                                    className="action-btn"
                                     onClick={() => handleMarkNotReturned(item.id)}
                                     disabled={item.status === 7}
                                   >
-                                    {item.status === 7 ? "Đã đánh dấu chưa trả" : "Đánh dấu chưa trả"}
+                                    {item.status === 7
+                                      ? "Đã đánh dấu chưa trả"
+                                      : "Đánh dấu chưa trả"}
                                   </Button>
                                 )}
                               </>
@@ -421,7 +496,11 @@ const InLending = () => {
                 </Row>
                 {visibleLendings.length < filteredLendings.length && (
                   <div className="text-center">
-                    <Button variant="outline-primary" className="view-more-btn" onClick={handleLoadMore}>
+                    <Button
+                      variant="outline-primary"
+                      className="view-more-btn"
+                      onClick={handleLoadMore}
+                    >
                       Xem thêm
                     </Button>
                   </div>
@@ -432,7 +511,11 @@ const InLending = () => {
         </Row>
       </Container>
 
-      <Modal show={showProfileModal} onHide={() => setShowProfileModal(false)} centered>
+      <Modal
+        show={showProfileModal}
+        onHide={() => setShowProfileModal(false)}
+        centered
+      >
         <Modal.Header closeButton>
           <Modal.Title>Thông tin người mượn</Modal.Title>
         </Modal.Header>
@@ -440,22 +523,44 @@ const InLending = () => {
           {profileData ? (
             <div>
               <img
-                src={profileData.avatar || user}
+                src={
+                  profileData.avatar ||
+                  "https://via.placeholder.com/100?text=Avatar"
+                }
                 alt="Ảnh đại diện"
                 className="rounded-circle mb-3"
-                style={{ width: "100px", height: "100px" }}
+                style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                onError={(e) =>
+                  (e.target.src = "https://via.placeholder.com/100?text=Avatar")
+                }
               />
-              <p><strong>Tên hiển thị:</strong> {profileData.displayName}</p>
-              <p><strong>Tuổi:</strong> {profileData.age}</p>
-              <p><strong>Địa chỉ:</strong> {profileData.address}</p>
-              <p><strong>Đánh giá:</strong> {profileData.rating ? profileData.rating.toFixed(2) : "Chưa có đánh giá"}</p>
+              <p>
+                <strong>Tên hiển thị:</strong>{" "}
+                {profileData.displayName || "Không có tên"}
+              </p>
+              <p>
+                <strong>Tuổi:</strong> {profileData.age || "Không có thông tin"}
+              </p>
+              <p>
+                <strong>Địa chỉ:</strong>{" "}
+                {profileData.address || "Không có thông tin"}
+              </p>
+              <p>
+                <strong>Đánh giá:</strong>{" "}
+                {profileData.rating
+                  ? profileData.rating.toFixed(2)
+                  : "Chưa có đánh giá"}
+              </p>
             </div>
           ) : (
             <p>Đang tải thông tin...</p>
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowProfileModal(false)}>
+          <Button
+            variant="secondary"
+            onClick={() => setShowProfileModal(false)}
+          >
             Đóng
           </Button>
         </Modal.Footer>
