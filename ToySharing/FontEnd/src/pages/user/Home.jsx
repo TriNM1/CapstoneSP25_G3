@@ -275,7 +275,6 @@ const Home = () => {
       }
       setUserLocation(null);
       setUserAddress(null);
-      toast.warn("Vị trí chưa được xác định trong hồ sơ.");
     } catch (error) {
       console.error("Lỗi khi lấy vị trí:", error);
       setUserLocation(null);

@@ -254,7 +254,7 @@ const SearchingToy = () => {
       }
       setUserLocation(null);
       setUserAddress(null);
-      toast.warn("Vị trí của bạn chưa được xác định trong hồ sơ.");
+      toast.warn("Bạn cần cập nhật địa chỉ của mình để biết khoảng cách.");
     } catch (error) {
       console.error("Lỗi khi lấy vị trí từ database:", error);
       setUserLocation(null);

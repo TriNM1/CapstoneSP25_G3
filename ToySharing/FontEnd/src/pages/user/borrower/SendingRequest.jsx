@@ -356,10 +356,10 @@ const SendingRequest = () => {
         prev.map((req) =>
           req.requestId === requestId
             ? {
-                ...req,
-                confirmReturn: req.confirmReturn | 1,
-                status: (req.confirmReturn | 1) === 3 ? 4 : req.status,
-              }
+              ...req,
+              confirmReturn: req.confirmReturn | 1,
+              status: (req.confirmReturn | 1) === 3 ? 4 : req.status,
+            }
             : req
         )
       );
@@ -423,8 +423,8 @@ const SendingRequest = () => {
     const requestDate = new Date(request.borrowDate);
     const dateMatch = selectedDate
       ? requestDate.getDate() === selectedDate.getDate() &&
-        requestDate.getMonth() === selectedDate.getMonth() &&
-        requestDate.getFullYear() === selectedDate.getFullYear()
+      requestDate.getMonth() === selectedDate.getMonth() &&
+      requestDate.getFullYear() === selectedDate.getFullYear()
       : true;
     const statusMatch =
       selectedStatus === "" || request.status.toString() === selectedStatus;
@@ -452,7 +452,7 @@ const SendingRequest = () => {
           <Col xs={12} md={10} className="main-content">
             <Row className="filter-section mb-3">
               <Col md={3}>
-                
+
               </Col>
               <Col md={6}>
                 <Form.Group controlId="selectStatus">
@@ -472,144 +472,150 @@ const SendingRequest = () => {
               </Col>
             </Row>
             <Row className="request-items-section">
-              {filteredRequests.map((request) => (
-                <Col key={request.requestId} xs={12} md={6} className="mb-4">
-                  <Card className="request-card">
-                    <div className="image-frame">
-                      <Card.Img
-                        variant="top"
-                        src={request.image || "https://via.placeholder.com/300x200?text=No+Image"}
-                        className="toy-image"
-                        onError={(e) => (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")}
-                      />
-                    </div>
-                    <Card.Body>
-                      <Card.Title className="toy-name">{request.productName}</Card.Title>
-                      <Card.Text className="send-date">
-                        <strong>Ngày gửi:</strong>{" "}
-                        {request.requestDate
-                          ? new Date(request.requestDate).toLocaleDateString()
-                          : "Không xác định"}
-                      </Card.Text>
-                      <Card.Text className="borrow-date">
-                        <strong>Ngày mượn:</strong>{" "}
-                        {new Date(request.borrowDate).toLocaleDateString()}
-                      </Card.Text>
-                      <Card.Text className="return-date">
-                        <strong>Ngày trả:</strong>{" "}
-                        {new Date(request.returnDate).toLocaleDateString()}
-                      </Card.Text>
-                      <Card.Text className="status">
-                        <strong>Trạng thái:</strong>{" "}
-                        <span
-                          className={
-                            request.status === 0
-                              ? "pending"
-                              : request.status === 1
-                              ? "accepted"
-                              : request.status === 2
-                              ? "paid"
-                              : request.status === 3
-                              ? "picked-up"
-                              : request.status === 4
-                              ? "completed"
-                              : ""
-                          }
-                        >
-                          {request.status === 0
-                            ? "Đang chờ chấp nhận"
-                            : request.status === 1
-                            ? "Chấp nhận, chưa thanh toán"
-                            : request.status === 2
-                            ? "Chấp nhận, đã thanh toán"
-                            : request.status === 3
-                            ? (request.confirmReturn & 1) !== 0
-                              ? "Bạn đã xác nhận trả, chờ người cho mượn"
-                              : (request.confirmReturn & 2) !== 0
-                              ? "Chờ bạn xác nhận trả"
-                              : "Đã lấy, chưa xác nhận trả"
-                            : request.status === 4
-                            ? "Hoàn thành"
-                            : "Không xác định"}
-                        </span>
-                      </Card.Text>
-                      <div className="lender-info d-flex align-items-center mb-2">
-                        <img
-                          src={request.ownerAvatar || "https://via.placeholder.com/50?text=Avatar"}
-                          alt="Ảnh đại diện người cho mượn"
-                          className="lender-avatar"
-                          onError={(e) => (e.target.src = "https://via.placeholder.com/50?text=Avatar")}
-                        />
-                        <Button
-                          variant="link"
-                          className="lender-link p-0 text-decoration-none"
-                          onClick={() => handleViewProfile(request.ownerId)}
-                        >
-                          {userNames[request.ownerId] || "Đang tải..."}
-                        </Button>
-                      </div>
-                      <div className="request-actions text-center">
-                        {request.status === 0 && (
-                          <Button
-                            variant="danger"
-                            onClick={() => handleCancelClick(request.requestId)}
-                            className="action-btn"
-                          >
-                            Hủy yêu cầu
-                          </Button>
-                        )}
-                        {request.status === 1 && (
-                          <>
-                            <Button
-                              variant="primary"
-                              onClick={() => handlePaymentClick(request.requestId)}
-                              className="action-btn"
-                            >
-                              Thanh Toán
-                            </Button>
-                            <Button
-                              variant="danger"
-                              onClick={() => handleCancelClick(request.requestId)}
-                              className="action-btn"
-                            >
-                              Hủy
-                            </Button>
-                          </>
-                        )}
-                        {request.status === 2 && (
-                          <>
-                            <Button
-                              variant="primary"
-                              onClick={() => handlePickedUpClick(request.requestId)}
-                              className="action-btn"
-                              disabled={request.status === 3}
-                            >
-                              Đã lấy
-                            </Button>
-                            <Button
-                              variant="danger"
-                              onClick={() => handleCancelClick(request.requestId)}
-                              className="action-btn"
-                            >
-                              Hủy
-                            </Button>
-                          </>
-                        )}
-                        {request.status === 3 && (
-                          <Button
-                            variant="success"
-                            onClick={() => handleConfirmReturn(request.requestId)}
-                            className="action-btn"
-                            disabled={(request.confirmReturn & 1) !== 0}
-                          >
-                            {(request.confirmReturn & 1) !== 0 ? "Đã xác nhận trả" : "Xác nhận trả"}
-                          </Button>
-                        )}
-                      </div>
-                    </Card.Body>
-                  </Card>
+              {filteredRequests.length === 0 ? (
+                <Col xs={12} className="text-center">
+                  <p>Không có yêu cầu mượn nào.</p>
                 </Col>
-              ))}
+              ) : (
+                filteredRequests.map((request) => (
+                  <Col key={request.requestId} xs={12} md={6} className="mb-4">
+                    <Card className="request-card">
+                      <div className="image-frame">
+                        <Card.Img
+                          variant="top"
+                          src={request.image || "https://via.placeholder.com/300x200?text=No+Image"}
+                          className="toy-image"
+                          onError={(e) => (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")}
+                        />
+                      </div>
+                      <Card.Body>
+                        <Card.Title className="toy-name">{request.productName}</Card.Title>
+                        <Card.Text className="send-date">
+                          <strong>Ngày gửi:</strong>{" "}
+                          {request.requestDate
+                            ? new Date(request.requestDate).toLocaleDateString()
+                            : "Không xác định"}
+                        </Card.Text>
+                        <Card.Text className="borrow-date">
+                          <strong>Ngày mượn:</strong>{" "}
+                          {new Date(request.borrowDate).toLocaleDateString()}
+                        </Card.Text>
+                        <Card.Text className="return-date">
+                          <strong>Ngày trả:</strong>{" "}
+                          {new Date(request.returnDate).toLocaleDateString()}
+                        </Card.Text>
+                        <Card.Text className="status">
+                          <strong>Trạng thái:</strong>{" "}
+                          <span
+                            className={
+                              request.status === 0
+                                ? "pending"
+                                : request.status === 1
+                                  ? "accepted"
+                                  : request.status === 2
+                                    ? "paid"
+                                    : request.status === 3
+                                      ? "picked-up"
+                                      : request.status === 4
+                                        ? "completed"
+                                        : ""
+                            }
+                          >
+                            {request.status === 0
+                              ? "Đang chờ chấp nhận"
+                              : request.status === 1
+                                ? "Chấp nhận, chưa thanh toán"
+                                : request.status === 2
+                                  ? "Chấp nhận, đã thanh toán"
+                                  : request.status === 3
+                                    ? (request.confirmReturn & 1) !== 0
+                                      ? "Bạn đã xác nhận trả, chờ người cho mượn"
+                                      : (request.confirmReturn & 2) !== 0
+                                        ? "Chờ bạn xác nhận trả"
+                                        : "Đã lấy, chưa xác nhận trả"
+                                    : request.status === 4
+                                      ? "Hoàn thành"
+                                      : "Không xác định"}
+                          </span>
+                        </Card.Text>
+                        <div className="lender-info d-flex align-items-center mb-2">
+                          <img
+                            src={request.ownerAvatar || "https://via.placeholder.com/50?text=Avatar"}
+                            alt="Ảnh đại diện người cho mượn"
+                            className="lender-avatar"
+                            onError={(e) => (e.target.src = "https://via.placeholder.com/50?text=Avatar")}
+                          />
+                          <Button
+                            variant="link"
+                            className="lender-link p-0 text-decoration-none"
+                            onClick={() => handleViewProfile(request.ownerId)}
+                          >
+                            {userNames[request.ownerId] || "Đang tải..."}
+                          </Button>
+                        </div>
+                        <div className="request-actions text-center">
+                          {request.status === 0 && (
+                            <Button
+                              variant="danger"
+                              onClick={() => handleCancelClick(request.requestId)}
+                              className="action-btn"
+                            >
+                              Hủy yêu cầu
+                            </Button>
+                          )}
+                          {request.status === 1 && (
+                            <>
+                              <Button
+                                variant="primary"
+                                onClick={() => handlePaymentClick(request.requestId)}
+                                className="action-btn"
+                              >
+                                Thanh Toán
+                              </Button>
+                              <Button
+                                variant="danger"
+                                onClick={() => handleCancelClick(request.requestId)}
+                                className="action-btn"
+                              >
+                                Hủy
+                              </Button>
+                            </>
+                          )}
+                          {request.status === 2 && (
+                            <>
+                              <Button
+                                variant="primary"
+                                onClick={() => handlePickedUpClick(request.requestId)}
+                                className="action-btn"
+                                disabled={request.status === 3}
+                              >
+                                Đã lấy
+                              </Button>
+                              <Button
+                                variant="danger"
+                                onClick={() => handleCancelClick(request.requestId)}
+                                className="action-btn"
+                              >
+                                Hủy
+                              </Button>
+                            </>
+                          )}
+                          {request.status === 3 && (
+                            <Button
+                              variant="success"
+                              onClick={() => handleConfirmReturn(request.requestId)}
+                              className="action-btn"
+                              disabled={(request.confirmReturn & 1) !== 0}
+                            >
+                              {(request.confirmReturn & 1) !== 0 ? "Đã xác nhận trả" : "Xác nhận trả"}
+                            </Button>
+                          )}
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                ))
+              )}
             </Row>
             {filteredRequests.length > 0 && (
               <div className="text-center">

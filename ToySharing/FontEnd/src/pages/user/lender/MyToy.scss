@@ -95,7 +95,7 @@ $danger-hover: #c82333;
   
       .action-btn {
         min-width: 120px;
-        padding: 8px 16px;
+        padding: 5px 16px;
         font-size: 1rem;
         border-radius: 5px;
   
@@ -198,7 +198,8 @@ $danger-hover: #c82333;
       .card-body {
         padding: 15px;
 
-        .toy-name {
+        .toy-name {      
+          font-family: 'Roboto', sans-serif;
           font-size: 1.5rem;
           color: $primary-color;
           margin-bottom: 10px;

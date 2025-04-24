@@ -109,6 +109,11 @@ $danger-hover: #c82333; // Replaced darken($danger-color, 10%)
   }
 
   .request-items-section {
+    .no-requests-message {
+      font-size: 1.2rem;
+      color: #6c757d;
+      margin-top: 2rem;
+    }
     .request-card {
       border: 1px solid #ddd;
       border-radius: 8px;
