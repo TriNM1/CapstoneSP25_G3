@@ -23,37 +23,27 @@ const parseAddress = (address) => {
   if (!address || typeof address !== "string") {
     return { ward: "", district: "", city: "" };
   }
-
-  // Tách chuỗi địa chỉ thành mảng dựa trên dấu phẩy
   const parts = address
     .split(",")
     .map((part) => part.trim())
     .filter((part) => part);
-
-  // Mặc định các giá trị
   let ward = "";
   let district = "";
   let city = "";
-
-  // Xử lý dựa trên số lượng thành phần
   if (parts.length >= 3) {
-    // Ví dụ: "Văn Quán, Hà Đông, Hà Nội"
-    ward = parts[0];
-    district = parts[1];
+    ward = parts[parts.length - 3];
+    district = parts[parts.length - 2];
     city = parts[parts.length - 1];
   } else if (parts.length === 2) {
-    // Ví dụ: "Hà Đông, Hà Nội"
     district = parts[0];
     city = parts[1];
   } else if (parts.length === 1) {
-    // Ví dụ: "Hà Nội"
     city = parts[0];
   }
-
   return { ward, district, city };
 };
 
-// Component FilterPanel (giữ nguyên)
+// FilterPanel (giữ nguyên)
 const FilterPanel = ({ showFilter, onToggle, filterValues, onChange, categories }) => {
   return (
     <div className={`filter-panel ${showFilter ? "show" : ""}`}>
@@ -197,7 +187,6 @@ const SearchingToy = () => {
     if (token) fetchUserLocation();
   }, [navigate]);
 
-  // Cập nhật locationForm khi userAddress thay đổi
   useEffect(() => {
     if (userAddress) {
       const parsed = parseAddress(userAddress);
@@ -242,45 +231,16 @@ const SearchingToy = () => {
       if (latitude && longitude && !isNaN(latitude) && !isNaN(longitude)) {
         setUserLocation({ latitude, longitude });
         setUserAddress(address || "Địa chỉ không được cung cấp");
-        return;
+      } else {
+        setUserLocation(null);
+        setUserAddress(address || null);
+        toast.warn("Bạn cần cập nhật địa chỉ của mình để biết khoảng cách.");
       }
-      if (address) {
-        setUserAddress(address);
-        const coordinates = await getCoordinatesFromAddress(address);
-        if (coordinates) {
-          setUserLocation(coordinates);
-          return;
-        }
-      }
-      setUserLocation(null);
-      setUserAddress(null);
-      toast.warn("Bạn cần cập nhật địa chỉ của mình để biết khoảng cách.");
     } catch (error) {
       console.error("Lỗi khi lấy vị trí từ database:", error);
       setUserLocation(null);
       setUserAddress(null);
       toast.warn("Vui lòng cung cấp vị trí để tính khoảng cách.");
-    }
-  };
-
-  const getCoordinatesFromAddress = async (address) => {
-    if (!address) return null;
-    try {
-      const encodedAddress = encodeURIComponent(address);
-      const response = await axios.get(
-        `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=jsonv2`,
-        { headers: { "User-Agent": "ToySharingApp" } }
-      );
-      if (response.data && response.data.length > 0) {
-        const { lat, lon } = response.data[0];
-        if (lat && lon && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lon))) {
-          return { latitude: parseFloat(lat), longitude: parseFloat(lon) };
-        }
-      }
-      return null;
-    } catch (error) {
-      console.error(`Lỗi khi lấy tọa độ cho địa chỉ ${address}:`, error);
-      return null;
     }
   };
 
@@ -292,18 +252,31 @@ const SearchingToy = () => {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        let address = "Địa chỉ từ định vị";
+        console.log("Tọa độ hiện tại:", { latitude, longitude }); // Log tọa độ để kiểm tra
+
+        let address = "";
         try {
           const response = await axios.get(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=jsonv2`,
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=jsonv2&addressdetails=1`,
             { headers: { "User-Agent": "ToySharingApp" } }
           );
-          if (response.data && response.data.display_name) {
-            address = response.data.display_name;
+          console.log("Phản hồi từ Nominatim:", response.data); // Log phản hồi để kiểm tra
+          if (response.data && response.data.address) {
+            const addr = response.data.address;
+            const ward = addr.suburb || addr.village || "";
+            const district = addr.county || addr.district || "";
+            const city = addr.city || addr.state || "";
+            address = `${ward ? ward + ", " : ""}${district ? district + ", " : ""}${city}`.replace(/, $/, "");
+            if (!address) address = response.data.display_name; // Fallback
+          } else {
+            address = response.data.display_name || "Không xác định";
           }
         } catch (error) {
-          console.error("Lỗi khi lấy địa chỉ từ tọa độ:", error);
+          console.error("Lỗi khi lấy địa chỉ từ Nominatim:", error);
+          toast.error("Không thể lấy địa chỉ từ tọa độ!");
+          return;
         }
+
         try {
           const token = getAuthToken();
           if (!token) {
@@ -311,9 +284,14 @@ const SearchingToy = () => {
             return;
           }
           await axios.put(
-            `${API_BASE_URL}/User/current/location`,
-            { address, latitude, longitude },
-            { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
+            `${API_BASE_URL}/User/${mainUserId}/location`, // Sửa endpoint
+            { address },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
           );
           setUserLocation({ latitude, longitude });
           setUserAddress(address);
@@ -327,7 +305,8 @@ const SearchingToy = () => {
       (error) => {
         console.error("Lỗi khi lấy vị trí hiện tại:", error);
         toast.error("Không thể lấy vị trí hiện tại. Vui lòng thử lại!");
-      }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 } // Tùy chọn để tăng độ chính xác
     );
   };
 
@@ -354,27 +333,21 @@ const SearchingToy = () => {
         setShowUpdateLocationModal(false);
         return;
       }
-      let latitude = null;
-      let longitude = null;
-      const coordinates = await getCoordinatesFromAddress(fullAddress);
-      if (coordinates) {
-        latitude = coordinates.latitude;
-        longitude = coordinates.longitude;
-      }
       await axios.put(
-        `${API_BASE_URL}/User/current/location`,
-        { address: fullAddress, latitude, longitude },
-        { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
+        `${API_BASE_URL}/User/${mainUserId}/location`, // Sửa endpoint
+        { address: fullAddress },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
       );
       toast.success("Cập nhật vị trí thành công!");
       setUserAddress(fullAddress);
-      setUserLocation(coordinates || null);
+      setUserLocation(null); // Backend sẽ cập nhật tọa độ
       setShowUpdateLocationModal(false);
-      setLocationForm({
-        ward: "",
-        district: "",
-        city: "",
-      });
+      setLocationForm({ ward: "", district: "", city: "" });
       fetchUserLocation();
     } catch (error) {
       console.error("Lỗi khi cập nhật vị trí:", error);
@@ -399,13 +372,12 @@ const SearchingToy = () => {
           response.data.map(async (toy) => {
             let distance = isLoggedIn ? null : "Vui lòng đăng nhập để biết khoảng cách";
             if (isLoggedIn) {
-              let ownerAddress, ownerLatitude, ownerLongitude;
+              let ownerLatitude, ownerLongitude;
               try {
                 const ownerLocationResponse = await axios.get(
                   `${API_BASE_URL}/User/${toy.userId}/location`,
                   { headers: { Authorization: `Bearer ${token}` } }
                 );
-                ownerAddress = ownerLocationResponse.data.address;
                 ownerLatitude = ownerLocationResponse.data.latitude;
                 ownerLongitude = ownerLocationResponse.data.longitude;
               } catch (error) {
@@ -413,19 +385,8 @@ const SearchingToy = () => {
                 return { ...toy, distance };
               }
               if (!ownerLatitude || !ownerLongitude) {
-                if (ownerAddress) {
-                  const ownerCoords = await getCoordinatesFromAddress(ownerAddress);
-                  if (ownerCoords) {
-                    ownerLatitude = ownerCoords.latitude;
-                    ownerLongitude = ownerCoords.longitude;
-                  } else {
-                    distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
-                    return { ...toy, distance };
-                  }
-                } else {
-                  distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
-                  return { ...toy, distance };
-                }
+                distance = "Chưa xác định vị trí của người sở hữu đồ chơi";
+                return { ...toy, distance };
               }
               if (userLocation && userLocation.latitude && userLocation.longitude) {
                 try {
@@ -435,10 +396,7 @@ const SearchingToy = () => {
                   );
                   distance = distResponse.data.distanceKilometers ?? "Không thể tính khoảng cách";
                 } catch (error) {
-                  distance =
-                    error.response?.status === 400
-                      ? "Chưa xác định vị trí của người sở hữu đồ chơi"
-                      : "Không thể tính khoảng cách";
+                  distance = "Không thể tính khoảng cách";
                 }
               } else {
                 distance = "Chưa xác định vị trí của bạn";
@@ -505,8 +463,9 @@ const SearchingToy = () => {
   const handleOpenBorrowModal = (toyId) => {
     setSelectedToyId(toyId);
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     setBorrowStart(today);
-    setBorrowEnd(today);
+    setBorrowEnd(today.getDate() + 1);
     setShowBorrowModal(true);
   };
 
@@ -518,31 +477,71 @@ const SearchingToy = () => {
     setSelectedToyId(null);
   };
 
+  const handleBorrowStartChange = (date) => {
+    setBorrowStart(date);
+    if (date) {
+      const nextDay = new Date(date);
+      nextDay.setDate(date.getDate() + 1);
+      if (!borrowEnd || borrowEnd <= date) {
+        setBorrowEnd(nextDay);
+      }
+    } else {
+      setBorrowEnd(null);
+    }
+  };
+
   const handleSendRequest = async () => {
     if (!selectedToyId || !borrowStart || !borrowEnd) {
       toast.error("Vui lòng điền đầy đủ thông tin mượn.");
       return;
     }
+
+    const startDate = new Date(borrowStart);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(borrowEnd);
+    endDate.setHours(0, 0, 0, 0);
+    const minEndDate = new Date(startDate);
+    minEndDate.setDate(startDate.getDate() + 1);
+
+    if (endDate < minEndDate) {
+      toast.error("Ngày trả phải sau ngày mượn ít nhất 1 ngày!");
+      return;
+    }
+
     try {
       const token = getAuthToken();
+      if (!token) {
+        toast.error("Vui lòng đăng nhập để gửi yêu cầu!");
+        navigate("/login");
+        return;
+      }
+
+      const requestDate = new Date().toISOString();
+      const rentDate = new Date(borrowStart);
+      rentDate.setHours(0, 0, 0, 0);
+      const returnDate = new Date(borrowEnd);
+      returnDate.setHours(0, 0, 0, 0);
+
       const formData = new FormData();
       formData.append("ProductId", selectedToyId);
-      formData.append("RequestDate", new Date().toISOString());
-      formData.append("RentDate", borrowStart.toISOString());
-      formData.append("ReturnDate", borrowEnd.toISOString());
+      formData.append("RequestDate", requestDate);
+      formData.append("RentDate", rentDate.toISOString());
+      formData.append("ReturnDate", returnDate.toISOString());
       formData.append("Message", note || "");
+
       const response = await axios.post(`${API_BASE_URL}/Requests`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
       });
+
       setUserRequests([...userRequests, response.data]);
       toast.success("Gửi yêu cầu mượn thành công!");
       handleCloseBorrowModal();
     } catch (err) {
       console.error("Lỗi khi gửi yêu cầu mượn:", err);
-      toast.error("Lỗi khi gửi yêu cầu mượn!");
+      toast.error(err.response?.data?.message || "Lỗi khi gửi yêu cầu mượn!");
     }
   };
 
@@ -941,7 +940,7 @@ const SearchingToy = () => {
               <Form.Label>Ngày bắt đầu mượn</Form.Label>
               <DatePicker
                 selected={borrowStart}
-                onChange={(date) => setBorrowStart(date)}
+                onChange={handleBorrowStartChange}
                 dateFormat="yyyy-MM-dd"
                 className="form-control date-picker-input"
                 placeholderText="Chọn ngày bắt đầu"
@@ -956,7 +955,11 @@ const SearchingToy = () => {
                 dateFormat="yyyy-MM-dd"
                 className="form-control date-picker-input"
                 placeholderText="Chọn ngày kết thúc"
-                minDate={borrowStart || new Date()}
+                minDate={
+                  borrowStart
+                    ? new Date(borrowStart).setDate(borrowStart.getDate() + 1)
+                    : new Date(new Date().setDate(new Date().getDate() + 1))
+                }
               />
             </Form.Group>
             <Form.Group controlId="borrowNote">

@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Container, Form, Button, Row, Col, Card } from "react-bootstrap";
+import { Container, Form, Button, Row, Col, Card, Modal } from "react-bootstrap";
 import Header from "../../../components/Header";
 import axios from "axios";
 import Footer from "../../../components/footer";
 import { useNavigate, useParams } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import "./UserDetail.scss";
 
 const UserDetail = ({ isLoggedIn, setActiveLink }) => {
   const { id } = useParams();
@@ -13,6 +16,12 @@ const UserDetail = ({ isLoggedIn, setActiveLink }) => {
   );
   const [editMode, setEditMode] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [showUpdateLocationModal, setShowUpdateLocationModal] = useState(false);
+  const [locationForm, setLocationForm] = useState({
+    ward: "",
+    district: "",
+    city: "",
+  });
   const [user, setUser] = useState({
     name: "",
     displayName: "",
@@ -22,12 +31,16 @@ const UserDetail = ({ isLoggedIn, setActiveLink }) => {
     status: 0,
     rating: 0,
     gender: true,
+    age: 0,
+    bankName: "",
+    bankAccount: "",
+    bankAccountName: "",
   });
 
   // Kiểm tra quyền truy cập
   useEffect(() => {
     if (id !== currentUserId) {
-      alert("Bạn không có quyền truy cập!");
+      toast.error("Bạn không có quyền truy cập!");
       navigate("/home");
     }
   }, [id, currentUserId, navigate]);
@@ -61,13 +74,34 @@ const UserDetail = ({ isLoggedIn, setActiveLink }) => {
           status: apiData.status || 0,
           rating: apiData.rating || 0,
           gender: apiData.gender !== undefined ? apiData.gender : true,
-          age : apiData.age || 0,
-          bank_name : apiData.bank_name || "",
-          bank_account : apiData.bank_account || 0,
-          bank_account_name : apiData.bank_account_name || "",
+          age: apiData.age || 0,
+          bankName: apiData.bankName || "",
+          bankAccount: apiData.bankAccount || "",
+          bankAccountName: apiData.bankAccountName || "",
         });
+        if (apiData.address) {
+          const parts = apiData.address
+            .split(",")
+            .map((part) => part.trim())
+            .filter((part) => part);
+          let ward = "";
+          let district = "";
+          let city = "";
+          if (parts.length >= 3) {
+            ward = parts[parts.length - 3];
+            district = parts[parts.length - 2];
+            city = parts[parts.length - 1];
+          } else if (parts.length === 2) {
+            district = parts[0];
+            city = parts[1];
+          } else if (parts.length === 1) {
+            city = parts[0];
+          }
+          setLocationForm({ ward, district, city });
+        }
       } catch (error) {
         console.error("Lỗi khi lấy dữ liệu:", error);
+        toast.error("Lỗi khi lấy thông tin người dùng!");
       }
     };
 
@@ -79,15 +113,174 @@ const UserDetail = ({ isLoggedIn, setActiveLink }) => {
     setUser({ ...user, [e.target.name]: e.target.value });
   };
 
+  // Xử lý lấy vị trí hiện tại
+  const handleGetCurrentLocation = async () => {
+    if (!navigator.geolocation) {
+      toast.error("Trình duyệt của bạn không hỗ trợ định vị!");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        console.log("Tọa độ hiện tại:", { latitude, longitude }); // Log tọa độ để kiểm tra
+
+        let address = "";
+        try {
+          const response = await axios.get(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=jsonv2&addressdetails=1`,
+            { headers: { "User-Agent": "ToySharingApp" } }
+          );
+          console.log("Phản hồi từ Nominatim:", response.data); // Log phản hồi để kiểm tra
+          if (response.data && response.data.address) {
+            const addr = response.data.address;
+            // Xử lý địa chỉ theo định dạng Việt Nam
+            const ward = addr.suburb || addr.village || "";
+            const district = addr.county || addr.district || "";
+            const city = addr.city || addr.state || "";
+            address = `${ward ? ward + ", " : ""}${district ? district + ", " : ""}${city}`.replace(/, $/, "");
+            if (!address) address = response.data.display_name; // Fallback nếu không trích xuất được
+          } else {
+            address = response.data.display_name || "Không xác định";
+          }
+        } catch (error) {
+          console.error("Lỗi khi lấy địa chỉ từ Nominatim:", error);
+          toast.error("Không thể lấy địa chỉ từ tọa độ!");
+          return;
+        }
+
+        try {
+          const token =
+            localStorage.getItem("token") || sessionStorage.getItem("token");
+          if (!token) {
+            toast.error("Vui lòng đăng nhập để cập nhật vị trí!");
+            return;
+          }
+          await axios.put(
+            `https://localhost:7128/api/User/${currentUserId}/location`,
+            { address },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          setUser((prev) => ({ ...prev, address }));
+
+          // Cập nhật form vị trí
+          const parts = address
+            .split(",")
+            .map((part) => part.trim())
+            .filter((part) => part);
+          let ward = "";
+          let district = "";
+          let city = "";
+          if (parts.length >= 3) {
+            ward = parts[parts.length - 3];
+            district = parts[parts.length - 2];
+            city = parts[parts.length - 1];
+          } else if (parts.length === 2) {
+            district = parts[0];
+            city = parts[1];
+          } else if (parts.length === 1) {
+            city = parts[0];
+          }
+          setLocationForm({ ward, district, city });
+          toast.success("Lấy vị trí hiện tại thành công!");
+        } catch (error) {
+          console.error("Lỗi khi cập nhật vị trí:", error);
+          toast.error(error.response?.data.message || "Không thể cập nhật vị trí!");
+        }
+      },
+      (error) => {
+        console.error("Lỗi khi lấy vị trí hiện tại:", error);
+        toast.error("Không thể lấy vị trí hiện tại. Vui lòng thử lại!");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 } // Tùy chọn để tăng độ chính xác
+    );
+  };
+
+  // Xử lý cập nhật vị trí qua form
+  const handleUpdateLocation = () => {
+    setShowUpdateLocationModal(true);
+  };
+
+  const handleLocationFormChange = (e) => {
+    const { name, value } = e.target;
+    setLocationForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmitLocation = async () => {
+    const { ward, district, city } = locationForm;
+    if (!ward || !district || !city) {
+      toast.error("Vui lòng nhập đầy đủ Phường, Quận và Thành phố!");
+      return;
+    }
+    const fullAddress = `${ward}, ${district}, ${city}`;
+    try {
+      const token =
+        localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) {
+        toast.error("Vui lòng đăng nhập để cập nhật vị trí!");
+        setShowUpdateLocationModal(false);
+        return;
+      }
+      await axios.put(
+        `https://localhost:7128/api/User/${currentUserId}/location`,
+        { address: fullAddress },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      setUser((prev) => ({ ...prev, address: fullAddress }));
+      setShowUpdateLocationModal(false);
+      toast.success("Cập nhật vị trí thành công!");
+    } catch (error) {
+      console.error("Lỗi khi cập nhật vị trí:", error);
+      toast.error(error.response?.data.message || "Không thể cập nhật vị trí!");
+    }
+  };
+
   // Xử lý lưu thay đổi thông tin người dùng
   const handleSave = async () => {
+    if (!user.displayName.trim()) {
+      toast.error("Vui lòng nhập tên hiển thị!");
+      return;
+    }
+    if (!user.address.trim()) {
+      toast.error("Vui lòng nhập địa chỉ!");
+      return;
+    }
+    if (user.bankAccount && !/^\d+$/.test(user.bankAccount)) {
+      toast.error("Số tài khoản ngân hàng chỉ được chứa số!");
+      return;
+    }
+
     try {
-      await axios.put("https://localhost:7128/api/User", user);
+      await axios.put("https://localhost:7128/api/User", {
+        name: user.name,
+        displayName: user.displayName,
+        phone: user.phone || null,
+        address: user.address,
+        avatar: user.avatar || null,
+        status: user.status,
+        rating: user.rating,
+        gender: user.gender,
+        age: user.age,
+        bankName: user.bankName || null,
+        bankAccount: user.bankAccount || null,
+        bankAccountName: user.bankAccountName || null,
+        createdAt: user.createdAt || null,
+      });
       setEditMode(false);
-      alert("Cập nhật thành công!");
+      toast.success("Cập nhật thành công!");
     } catch (error) {
       console.error("Lỗi khi cập nhật:", error);
-      alert("Cập nhật thất bại!");
+      toast.error("Cập nhật thất bại!");
     }
   };
 
@@ -99,12 +292,12 @@ const UserDetail = ({ isLoggedIn, setActiveLink }) => {
   // Xử lý upload ảnh đại diện
   const handleUpload = async () => {
     if (!selectedFile) {
-      alert("Vui lòng chọn một file trước khi tải lên!");
+      toast.error("Vui lòng chọn một file trước khi tải lên!");
       return;
     }
 
     const formData = new FormData();
-    formData.append("file", selectedFile); // Tên "file" phải khớp với tham số trong backend
+    formData.append("file", selectedFile);
 
     try {
       const response = await axios.post(
@@ -117,24 +310,22 @@ const UserDetail = ({ isLoggedIn, setActiveLink }) => {
         }
       );
 
-      // Cập nhật avatar trong state sau khi upload thành công
       setUser((prev) => ({ ...prev, avatar: response.data.avatarUrl }));
-      setSelectedFile(null); // Reset file sau khi upload
-      alert("Tải lên ảnh đại diện thành công!");
+      setSelectedFile(null);
+      toast.success("Tải lên ảnh đại diện thành công!");
     } catch (error) {
       console.error("Lỗi khi tải lên ảnh:", error);
-      alert("Tải lên thất bại!");
+      toast.error("Tải lên thất bại!");
     }
   };
 
   return (
     <>
       <Header isLoggedIn={true} setActiveLink={setActiveLink} />
-      <Container className="mt-4">
+      <Container className="mt-4 user-detail">
         <Card className="p-4 shadow">
           <Row className="justify-content-center">
             <Col md={4} className="text-center">
-              {/* Hiển thị ảnh đại diện hiện tại */}
               {user.avatar ? (
                 <img
                   src={user.avatar}
@@ -150,7 +341,6 @@ const UserDetail = ({ isLoggedIn, setActiveLink }) => {
                   Chưa có ảnh
                 </div>
               )}
-              {/* Input chọn file và nút upload */}
               <Form.Group className="mt-3">
                 <Form.Label>Chọn ảnh đại diện mới</Form.Label>
                 <Form.Control type="file" onChange={handleFileChange} />
@@ -186,7 +376,7 @@ const UserDetail = ({ isLoggedIn, setActiveLink }) => {
                 <Form.Group className="mb-3">
                   <Form.Label>Tuổi</Form.Label>
                   <Form.Control
-                    type="text"
+                    type="number"
                     name="age"
                     value={user.age}
                     onChange={handleChange}
@@ -203,22 +393,42 @@ const UserDetail = ({ isLoggedIn, setActiveLink }) => {
                     disabled={!editMode}
                   />
                 </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Địa chỉ</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="address"
-                    value={user.address}
-                    onChange={handleChange}
-                    disabled={!editMode}
-                  />
+                <Form.Group className="mb-3 d-flex align-items-end gap-2">
+                  <div className="flex-grow-1">
+                    <Form.Label>Địa chỉ</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="address"
+                      value={user.address}
+                      onChange={handleChange}
+                      disabled={!editMode}
+                    />
+                  </div>
+                  {editMode && (
+                    <>
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={handleGetCurrentLocation}
+                      >
+                        Lấy vị trí hiện tại
+                      </Button>
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={handleUpdateLocation}
+                      >
+                        Cập nhật vị trí
+                      </Button>
+                    </>
+                  )}
                 </Form.Group>
                 <Form.Group className="mb-3">
                   <Form.Label>Tên ngân hàng</Form.Label>
                   <Form.Control
                     type="text"
-                    name="bank_name"
-                    value={user.bank_name}
+                    name="bankName"
+                    value={user.bankName}
                     onChange={handleChange}
                     disabled={!editMode}
                   />
@@ -227,8 +437,8 @@ const UserDetail = ({ isLoggedIn, setActiveLink }) => {
                   <Form.Label>Số tài khoản</Form.Label>
                   <Form.Control
                     type="text"
-                    name="bank_account"
-                    value={user.bank_account}
+                    name="bankAccount"
+                    value={user.bankAccount}
                     onChange={handleChange}
                     disabled={!editMode}
                   />
@@ -237,8 +447,8 @@ const UserDetail = ({ isLoggedIn, setActiveLink }) => {
                   <Form.Label>Tên tài khoản</Form.Label>
                   <Form.Control
                     type="text"
-                    name="bank_account_name"
-                    value={user.bank_account_name}
+                    name="bankAccountName"
+                    value={user.bankAccountName}
                     onChange={handleChange}
                     disabled={!editMode}
                   />
@@ -267,6 +477,75 @@ const UserDetail = ({ isLoggedIn, setActiveLink }) => {
         </Card>
         <Footer />
       </Container>
+      <Modal
+        show={showUpdateLocationModal}
+        onHide={() => setShowUpdateLocationModal(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Cập nhật vị trí</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group controlId="ward" className="mb-3">
+              <Form.Label>
+                Phường <span className="required-asterisk">*</span>
+              </Form.Label>
+              <Form.Control
+                type="text"
+                name="ward"
+                value={locationForm.ward}
+                onChange={handleLocationFormChange}
+                placeholder="Ví dụ: Văn Quán"
+                required
+              />
+            </Form.Group>
+            <Form.Group controlId="district" className="mb-3">
+              <Form.Label>
+                Quận <span className="required-asterisk">*</span>
+              </Form.Label>
+              <Form.Control
+                type="text"
+                name="district"
+                value={locationForm.district}
+                onChange={handleLocationFormChange}
+                placeholder="Ví dụ: Hà Đông"
+                required
+              />
+            </Form.Group>
+            <Form.Group controlId="city" className="mb-3">
+              <Form.Label>
+                Thành phố <span className="required-asterisk">*</span>
+              </Form.Label>
+              <Form.Control
+                type="text"
+                name="city"
+                value={locationForm.city}
+                onChange={handleLocationFormChange}
+                placeholder="Ví dụ: Hà Nội"
+                required
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            className="action-btn"
+            onClick={() => setShowUpdateLocationModal(false)}
+          >
+            Hủy
+          </Button>
+          <Button
+            variant="primary"
+            className="action-btn"
+            onClick={handleSubmitLocation}
+          >
+            Cập nhật
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      <ToastContainer position="top-right" autoClose={3000} />
     </>
   );
 };

@@ -10,7 +10,7 @@ namespace ToySharingAPI.DTO
         [StringLength(255, ErrorMessage = "Message cannot exceed 255 characters.")]
         public string? Message { get; set; }
 
-        public DateTime? RequestDate { get; set; }
+        public DateTime RequestDate { get; set; }
 
         [Required(ErrorMessage = "Rent date is required.")]
         public DateTime RentDate { get; set; }

@@ -1,20 +1,19 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using ToySharingAPI.DTO;
 using ToySharingAPI.Models;
-using System.Net.Http;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
-using ToySharingAPI.Service;
 using Amazon.S3;
 using Amazon.Runtime;
 using Amazon;
 using Amazon.S3.Transfer;
 using Microsoft.AspNetCore.Identity;
+using System.Net.Http;
+using ToySharingAPI.Service;
 
 namespace ToySharingAPI.Controllers
 {
@@ -28,7 +27,10 @@ namespace ToySharingAPI.Controllers
         private readonly AwsSettings _awsSettings;
         private readonly IAmazonS3 _s3Client;
 
-        public UserController(ToySharingVer3Context context, IHttpClientFactory httpClientFactory, IOptions<AwsSettings> awsSettings,
+        public UserController(
+            ToySharingVer3Context context,
+            IHttpClientFactory httpClientFactory,
+            IOptions<AwsSettings> awsSettings,
             UserManager<IdentityUser> userManager)
         {
             _context = context;
@@ -37,12 +39,10 @@ namespace ToySharingAPI.Controllers
             _awsSettings = awsSettings.Value;
             var credentials = new BasicAWSCredentials(_awsSettings.AccessKey, _awsSettings.SecretKey);
             _s3Client = new AmazonS3Client(credentials, RegionEndpoint.GetBySystemName(_awsSettings.Region));
-
         }
 
         private async Task<int> GetAuthenticatedUserId()
         {
-            // Kiểm tra xem User có được xác thực không
             if (!User.Identity.IsAuthenticated)
                 throw new UnauthorizedAccessException("Người dùng chưa đăng nhập.");
 
@@ -59,14 +59,12 @@ namespace ToySharingAPI.Controllers
 
             return mainUser.Id;
         }
+
         [HttpGet("current/location")]
         [Authorize]
         public async Task<IActionResult> GetCurrentUserLocation()
         {
             var mainUserId = await GetAuthenticatedUserId();
-            if (mainUserId == -1)
-                return Unauthorized("Không thể xác thực người dùng.");
-
             var user = await _context.Users
                 .Where(u => u.Id == mainUserId)
                 .Select(u => new
@@ -84,7 +82,7 @@ namespace ToySharingAPI.Controllers
 
             return Ok(user);
         }
-        // Get user by ID (không hiển thị Latitude, Longitude)
+
         [HttpGet("{id}")]
         public async Task<ActionResult<UserDTO>> GetUserById(int id)
         {
@@ -100,6 +98,9 @@ namespace ToySharingAPI.Controllers
                     Avatar = u.Avatar,
                     Gender = u.Gender,
                     Age = u.Age,
+                    BankName = u.BankName,
+                    BankAccount = u.BankAccount,
+                    BankAccountName = u.BankAccountName,
                     Rating = _context.Histories
                         .Where(h => h.Product.UserId == u.Id && h.Status == 2)
                         .Average(h => (double?)h.Rating) ?? 0,
@@ -115,13 +116,11 @@ namespace ToySharingAPI.Controllers
             return Ok(user);
         }
 
-        // API riêng để lấy danh sách đồ chơi của user
         [HttpGet("{mainUserId}/products")]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<ProductDTO>>> GetUserProducts()
         {
             var mainUserId = await GetAuthenticatedUserId();
-            if (mainUserId == -1)
-                return Unauthorized("Không thể xác thực người dùng.");
             var products = await _context.Products
                 .Where(p => p.UserId == mainUserId)
                 .Include(p => p.Category)
@@ -145,7 +144,6 @@ namespace ToySharingAPI.Controllers
             return Ok(products);
         }
 
-        // View Other User's Profile (không hiển thị Latitude, Longitude)
         [HttpGet("profile/{userId}")]
         public async Task<ActionResult<UserProfileDTO>> GetOtherUserProfile(int userId)
         {
@@ -156,7 +154,7 @@ namespace ToySharingAPI.Controllers
                     UserInfo = new UserInfo
                     {
                         DisplayName = u.Displayname,
-                        Age = u.Age ?? 0,
+                        Age = u.Age,
                         Address = u.Address,
                         Avatar = u.Avatar,
                         Rating = _context.Histories
@@ -174,71 +172,69 @@ namespace ToySharingAPI.Controllers
             return Ok(userProfile);
         }
 
-        // Edit account (Update user) - Lưu Latitude/Longitude từ Address
         [HttpPut]
-        public async Task<IActionResult> UpdateUser(UserDTO userDto)
+        [Authorize]
+        public async Task<IActionResult> UpdateUser([FromBody] UserDTO userDto)
         {
-            var mainUserId = await GetAuthenticatedUserId();
-            if (mainUserId == -1)
-                return Unauthorized("Không thể xác thực người dùng.");
-            var existingUser = await _context.Users.FindAsync(mainUserId);
-            if (existingUser == null)
+            try
             {
-                return NotFound();
-            }
+                var mainUserId = await GetAuthenticatedUserId();
+                var existingUser = await _context.Users.FindAsync(mainUserId);
+                if (existingUser == null)
+                    return NotFound("Người dùng không tồn tại.");
 
-            existingUser.Name = userDto.Name;
-            existingUser.Displayname = userDto.DisplayName;
-            existingUser.Phone = userDto.Phone;
-            existingUser.Address = userDto.Address;
-            existingUser.Status = userDto.Status;
-            existingUser.Avatar = userDto.Avatar;
-            existingUser.Gender = userDto.Gender;
-            existingUser.Age = userDto.Age;
+                // Validation
+                if (string.IsNullOrWhiteSpace(userDto.DisplayName))
+                    return BadRequest("Tên hiển thị là bắt buộc.");
+                if (string.IsNullOrWhiteSpace(userDto.Address))
+                    return BadRequest("Địa chỉ là bắt buộc.");
+                if (!string.IsNullOrEmpty(userDto.BankAccount) && !System.Text.RegularExpressions.Regex.IsMatch(userDto.BankAccount, @"^\d+$"))
+                    return BadRequest("Số tài khoản ngân hàng chỉ được chứa số.");
 
-            // Nếu có address, tự động cập nhật Latitude và Longitude
-            if (!string.IsNullOrEmpty(userDto.Address))
-            {
-                var coordinates = await GetCoordinatesFromAddressAsync(userDto.Address);
-                if (coordinates != null)
+                // Update user fields
+                existingUser.Name = userDto.Name;
+                existingUser.Displayname = userDto.DisplayName;
+                existingUser.Phone = userDto.Phone;
+                existingUser.Address = userDto.Address;
+                existingUser.Status = userDto.Status;
+                existingUser.Avatar = userDto.Avatar;
+                existingUser.Gender = userDto.Gender;
+                existingUser.Age = userDto.Age;
+                existingUser.BankName = userDto.BankName;
+                existingUser.BankAccount = userDto.BankAccount;
+                existingUser.BankAccountName = userDto.BankAccountName;
+                existingUser.Latitude = userDto.Latitude;
+                existingUser.Longtitude = userDto.Longitude;
+
+                // Update Latitude and Longitude from Address if provided and coordinates are null
+                if (!string.IsNullOrEmpty(userDto.Address) && (userDto.Latitude == null || userDto.Longitude == null))
                 {
-                    existingUser.Latitude = coordinates.Value.Latitude;
-                    existingUser.Longtitude = coordinates.Value.Longitude;
+                    var coordinates = await GetCoordinatesFromAddressAsync(userDto.Address);
+                    if (coordinates != null)
+                    {
+                        existingUser.Latitude = coordinates.Value.Latitude;
+                        existingUser.Longtitude = coordinates.Value.Longitude;
+                    }
+                    else
+                    {
+                        return BadRequest("Không thể lấy tọa độ từ địa chỉ được cung cấp.");
+                    }
                 }
+
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Cập nhật thông tin người dùng thành công." });
             }
-
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "User updated successfully" });
-        }
-
-        [HttpGet("{id}/location")]
-        public async Task<IActionResult> GetUserLocation(int id)
-        {
-            var user = await _context.Users
-                .Where(u => u.Id == id)
-                .Select(u => new
-                {
-                    Address = u.Address,
-                    Latitude = u.Latitude,
-                    Longitude = u.Longtitude
-                })
-                .FirstOrDefaultAsync();
-
-            if (user == null)
+            catch (Exception ex)
             {
-                return NotFound("User not found.");
+                return StatusCode(500, new { message = "Lỗi khi cập nhật thông tin người dùng.", error = ex.Message });
             }
-
-            return Ok(user);
         }
 
-        // Update User Location - Lưu Latitude/Longitude từ Address
         [HttpPut("{mainUserId}/location")]
+        [Authorize]
         public async Task<IActionResult> UpdateUserLocation([FromBody] LocationUpdateDTO locationDto)
         {
             var mainUserId = await GetAuthenticatedUserId();
-            if (mainUserId == -1)
-                return Unauthorized("Không thể xác thực người dùng.");
             var user = await _context.Users.FindAsync(mainUserId);
             if (user == null)
             {
@@ -264,37 +260,26 @@ namespace ToySharingAPI.Controllers
             return Ok(new { message = "User location updated successfully" });
         }
 
-        // Hàm hỗ trợ lấy tọa độ từ địa chỉ bằng Nominatim (đã sửa)
-        private async Task<(decimal Latitude, decimal Longitude)?> GetCoordinatesFromAddressAsync(string address)
-        {
-            try
-            {
-                var client = _httpClientFactory.CreateClient();
-                var encodedAddress = Uri.EscapeDataString(address);
-                var url = $"https://nominatim.openstreetmap.org/search?q={encodedAddress}&format=jsonv2";
-                client.DefaultRequestHeaders.Add("User-Agent", "ToySharingAPI");
-                var response = await client.GetStringAsync(url);
-                var json = JsonSerializer.Deserialize<JsonElement>(response);
 
-                // Kiểm tra nếu JSON là mảng và có ít nhất 1 phần tử
-                if (json.ValueKind == JsonValueKind.Array && json.GetArrayLength() > 0)
+        [HttpGet("{id}/location")]
+        public async Task<IActionResult> GetUserLocation(int id)
+        {
+            var user = await _context.Users
+                .Where(u => u.Id == id)
+                .Select(u => new
                 {
-                    var firstResult = json[0]; // Lấy phần tử đầu tiên trong mảng
-                    if (firstResult.TryGetProperty("lat", out var latProp) && firstResult.TryGetProperty("lon", out var lonProp))
-                    {
-                        // Chuyển đổi chuỗi lat/lon thành decimal
-                        decimal latitude = decimal.Parse(latProp.GetString());
-                        decimal longitude = decimal.Parse(lonProp.GetString());
-                        return (latitude, longitude);
-                    }
-                }
-                return null;
-            }
-            catch (Exception ex)
+                    Address = u.Address,
+                    Latitude = u.Latitude,
+                    Longitude = u.Longtitude
+                })
+                .FirstOrDefaultAsync();
+
+            if (user == null)
             {
-                Console.WriteLine($"Error in GetCoordinatesFromAddressAsync: {ex.Message}");
-                return null;
+                return NotFound("User not found.");
             }
+
+            return Ok(user);
         }
 
         // Calculate Distance to Product Owner (dùng Haversine thay vì Google Maps)
@@ -329,30 +314,14 @@ namespace ToySharingAPI.Controllers
             });
         }
 
-        // Công thức Haversine tính khoảng cách (km)
-        private double CalculateHaversineDistance(decimal lat1, decimal lon1, decimal lat2, decimal lon2)
-        {
-            const double R = 6371; // Bán kính Trái Đất (km)
-            double dLat = ToRadians((double)(lat2 - lat1));
-            double dLon = ToRadians((double)(lon2 - lon1));
-            double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
-                       Math.Cos(ToRadians((double)lat1)) * Math.Cos(ToRadians((double)lat2)) *
-                       Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
-            double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-            return R * c;
-        }
-
-        private double ToRadians(double degrees)
-        {
-            return degrees * Math.PI / 180;
-        }
 
         [HttpPost("ban")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> BanUser([FromBody] BanUnbanRequestDTO request)
         {
             var user = await _context.Users.FindAsync(request.UserId);
-            if (user == null) return NotFound("User not found");
+            if (user == null)
+                return NotFound("User not found");
 
             user.Status = 1;
             await _context.SaveChangesAsync();
@@ -371,11 +340,12 @@ namespace ToySharingAPI.Controllers
         }
 
         [HttpPost("unban")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UnbanUser([FromBody] BanUnbanRequestDTO request)
         {
             var user = await _context.Users.FindAsync(request.UserId);
-            if (user == null) return NotFound("User not found");
+            if (user == null)
+                return NotFound("User not found");
 
             user.Status = 0;
             await _context.SaveChangesAsync();
@@ -392,6 +362,7 @@ namespace ToySharingAPI.Controllers
 
             return Ok("User unbanned successfully");
         }
+
         [HttpGet("ban-history")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllBanHistory()
@@ -408,26 +379,6 @@ namespace ToySharingAPI.Controllers
             return Ok(logs);
         }
 
-        // Hàm upload ảnh lên AWS S3
-        private async Task<string> UploadImageToS3(IFormFile file)
-        {
-            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-            var key = $"avatars/{fileName}";
-            var uploadRequest = new TransferUtilityUploadRequest
-            {
-                InputStream = file.OpenReadStream(),
-                Key = key,
-                BucketName = _awsSettings.BucketName,
-                ContentType = file.ContentType
-            };
-
-            var transferUtility = new TransferUtility(_s3Client);
-            await transferUtility.UploadAsync(uploadRequest);
-
-            return $"https://{_awsSettings.BucketName}.s3.{_awsSettings.Region}.amazonaws.com/{key}";
-        }
-
-        // Endpoint cập nhật avatar
         [HttpPost("upload-avatar")]
         [Authorize]
         public async Task<IActionResult> UploadAvatar(IFormFile file)
@@ -440,7 +391,6 @@ namespace ToySharingAPI.Controllers
             if (file == null || file.Length == 0)
                 return BadRequest("Không có file được tải lên.");
 
-            // Upload ảnh lên S3
             var imageUrl = await UploadImageToS3(file);
             user.Avatar = imageUrl;
             await _context.SaveChangesAsync();
@@ -465,7 +415,7 @@ namespace ToySharingAPI.Controllers
                         var mainUser = await _context.Users
                             .FirstOrDefaultAsync(u => u.AuthUserId == authUserGuid);
 
-                        if (mainUser != null && mainUser.Id != currentUserId) 
+                        if (mainUser != null && mainUser.Id != currentUserId)
                         {
                             var roles = await _userManager.GetRolesAsync(identityUser);
                             var roleStr = roles.FirstOrDefault() ?? string.Empty;
@@ -490,5 +440,94 @@ namespace ToySharingAPI.Controllers
                 return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
             }
         }
+
+        private async Task<(decimal Latitude, decimal Longitude)?> GetCoordinatesFromAddressAsync(string address)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient();
+                var encodedAddress = Uri.EscapeDataString(address);
+                var url = $"https://nominatim.openstreetmap.org/search?q={encodedAddress}&format=jsonv2";
+                client.DefaultRequestHeaders.Add("User-Agent", "ToySharingAPI");
+                var response = await client.GetStringAsync(url);
+                var json = JsonSerializer.Deserialize<JsonElement>(response);
+
+                if (json.ValueKind == JsonValueKind.Array && json.GetArrayLength() > 0)
+                {
+                    var firstResult = json[0];
+                    if (firstResult.TryGetProperty("lat", out var latProp) && firstResult.TryGetProperty("lon", out var lonProp))
+                    {
+                        decimal latitude = decimal.Parse(latProp.GetString());
+                        decimal longitude = decimal.Parse(lonProp.GetString());
+                        return (latitude, longitude);
+                    }
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetCoordinatesFromAddressAsync: {ex.Message}");
+                return null;
+            }
+        }
+
+        private async Task<string> GetAddressFromCoordinatesAsync(decimal latitude, decimal longitude)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient();
+                var url = $"https://nominatim.openstreetmap.org/reverse?lat={latitude}&lon={longitude}&format=jsonv2";
+                client.DefaultRequestHeaders.Add("User-Agent", "ToySharingAPI");
+                var response = await client.GetStringAsync(url);
+                var json = JsonSerializer.Deserialize<JsonElement>(response);
+
+                if (json.TryGetProperty("display_name", out var displayNameProp))
+                {
+                    return displayNameProp.GetString();
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi trong GetAddressFromCoordinatesAsync: {ex.Message}");
+                return null;
+            }
+        }
+
+        private async Task<string> UploadImageToS3(IFormFile file)
+        {
+            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+            var key = $"avatars/{fileName}";
+            var uploadRequest = new TransferUtilityUploadRequest
+            {
+                InputStream = file.OpenReadStream(),
+                Key = key,
+                BucketName = _awsSettings.BucketName,
+                ContentType = file.ContentType
+            };
+
+            var transferUtility = new TransferUtility(_s3Client);
+            await transferUtility.UploadAsync(uploadRequest);
+
+            return $"https://{_awsSettings.BucketName}.s3.{_awsSettings.Region}.amazonaws.com/{key}";
+        }
+        // Công thức Haversine tính khoảng cách (km)
+        private double CalculateHaversineDistance(decimal lat1, decimal lon1, decimal lat2, decimal lon2)
+        {
+            const double R = 6371; // Bán kính Trái Đất (km)
+            double dLat = ToRadians((double)(lat2 - lat1));
+            double dLon = ToRadians((double)(lon2 - lon1));
+            double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                       Math.Cos(ToRadians((double)lat1)) * Math.Cos(ToRadians((double)lat2)) *
+                       Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+            double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            return R * c;
+        }
+
+        private double ToRadians(double degrees)
+        {
+            return degrees * Math.PI / 180;
+        }
+
     }
 }

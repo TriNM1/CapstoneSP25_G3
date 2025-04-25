@@ -173,9 +173,9 @@ namespace ToySharingAPI.Controllers
                     ProductId = formData.ProductId,
                     Message = formData.Message?.Trim(),
                     Status = 0,
-                    RequestDate = formData.RequestDate ?? DateTime.Now,
-                    RentDate = formData.RentDate,
-                    ReturnDate = formData.ReturnDate,
+                    RequestDate = formData.RequestDate.AddHours(7),
+                    RentDate = formData.RentDate.AddHours(7),
+                    ReturnDate = formData.ReturnDate.AddHours(7),
                     DepositAmount = product.ProductValue,
                     RentalFee = product.Price
                 };
