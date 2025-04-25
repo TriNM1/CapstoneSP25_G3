@@ -261,15 +261,8 @@ const SearchingToy = () => {
             { headers: { "User-Agent": "ToySharingApp" } }
           );
           console.log("Phản hồi từ Nominatim:", response.data); // Log phản hồi để kiểm tra
-          if (response.data && response.data.address) {
-            const addr = response.data.address;
-            const ward = addr.suburb || addr.village || "";
-            const district = addr.county || addr.district || "";
-            const city = addr.city || addr.state || "";
-            address = `${ward ? ward + ", " : ""}${district ? district + ", " : ""}${city}`.replace(/, $/, "");
-            if (!address) address = response.data.display_name; // Fallback
-          } else {
-            address = response.data.display_name || "Không xác định";
+          if (response.data && response.data.display_name) {
+            address = response.data.display_name;
           }
         } catch (error) {
           console.error("Lỗi khi lấy địa chỉ từ Nominatim:", error);

@@ -128,20 +128,12 @@ const UserDetail = ({ isLoggedIn, setActiveLink }) => {
         let address = "";
         try {
           const response = await axios.get(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=jsonv2&addressdetails=1`,
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=jsonv2`,
             { headers: { "User-Agent": "ToySharingApp" } }
           );
           console.log("Phản hồi từ Nominatim:", response.data); // Log phản hồi để kiểm tra
-          if (response.data && response.data.address) {
-            const addr = response.data.address;
-            // Xử lý địa chỉ theo định dạng Việt Nam
-            const ward = addr.suburb || addr.village || "";
-            const district = addr.county || addr.district || "";
-            const city = addr.city || addr.state || "";
-            address = `${ward ? ward + ", " : ""}${district ? district + ", " : ""}${city}`.replace(/, $/, "");
-            if (!address) address = response.data.display_name; // Fallback nếu không trích xuất được
-          } else {
-            address = response.data.display_name || "Không xác định";
+          if (response.data && response.data.display_name) {
+            address = response.data.display_name;
           }
         } catch (error) {
           console.error("Lỗi khi lấy địa chỉ từ Nominatim:", error);

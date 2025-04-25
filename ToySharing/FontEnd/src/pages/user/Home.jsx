@@ -879,6 +879,7 @@ const Home = () => {
           <Row className="filter-and-actions mb-3">
             <Col xs={12} md={12}>
               <div className="action-buttons d-flex align-items-center mb-3">
+                <Col md={12}>
                 <Button
                   variant="outline-primary"
                   className="action-btn me-2"
@@ -894,7 +895,7 @@ const Home = () => {
                   disabled={!isLoggedIn}
                 >
                   Cập nhật vị trí
-                </Button>
+                </Button></Col>
               </div>
               <FilterPanel
                 showFilter={showFilter}
