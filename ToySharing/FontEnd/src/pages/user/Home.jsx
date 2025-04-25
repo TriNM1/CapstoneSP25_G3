@@ -18,6 +18,31 @@ import Header from "../../components/Header";
 import Footer from "../../components/footer";
 import "./Home.scss";
 
+// Hàm phân tích địa chỉ
+const parseAddress = (address) => {
+  if (!address || typeof address !== "string") {
+    return { ward: "", district: "", city: "" };
+  }
+  const parts = address
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part);
+  let ward = "";
+  let district = "";
+  let city = "";
+  if (parts.length >= 3) {
+    ward = parts[parts.length - 3];
+    district = parts[parts.length - 2];
+    city = parts[parts.length - 1];
+  } else if (parts.length === 2) {
+    district = parts[0];
+    city = parts[1];
+  } else if (parts.length === 1) {
+    city = parts[0];
+  }
+  return { ward, district, city };
+};
+
 // Component FilterPanel
 const FilterPanel = ({ showFilter, onToggle, filterValues, onChange, categories }) => {
   return (
@@ -142,7 +167,13 @@ const Home = () => {
     priceSort: "",
   });
   const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Initialize loading as false
+  const [showUpdateLocationModal, setShowUpdateLocationModal] = useState(false);
+  const [locationForm, setLocationForm] = useState({
+    ward: "",
+    district: "",
+    city: "",
+  });
 
   const unreadMessages = 3;
   const notificationCount = 2;
@@ -165,8 +196,24 @@ const Home = () => {
       localStorage.getItem("userId") || sessionStorage.getItem("userId") || 0
     );
     setUserId(storedUserId);
-    if (token) fetchUserLocation();
+    if (token) {
+      fetchUserLocation();
+    } else {
+      // Fetch toy list immediately for non-logged-in users
+      fetchToyList();
+    }
   }, []);
+
+  useEffect(() => {
+    if (userAddress) {
+      const parsed = parseAddress(userAddress);
+      setLocationForm({
+        ward: parsed.ward,
+        district: parsed.district,
+        city: parsed.city,
+      });
+    }
+  }, [userAddress]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -187,8 +234,10 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
-    fetchToyList();
-  }, [isLoggedIn, userLocation, userAddress]);
+    if (isLoggedIn) {
+      fetchToyList();
+    }
+  }, [isLoggedIn, userId, userLocation]);
 
   useEffect(() => {
     const fetchUserRequests = async () => {
@@ -251,56 +300,53 @@ const Home = () => {
   const fetchUserLocation = async () => {
     const token = getAuthToken();
     if (!token) {
+      console.log("No token found, skipping fetchUserLocation");
       setUserLocation(null);
       setUserAddress(null);
       return;
     }
     try {
+      console.log("Fetching user location...");
       const response = await axios.get(`${API_BASE_URL}/User/current/location`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const { address, latitude, longitude } = response.data;
-      if (latitude && longitude && !isNaN(latitude) && !isNaN(longitude)) {
+      console.log("User location response:", { address, latitude, longitude });
+
+      if (
+        latitude &&
+        longitude &&
+        !isNaN(latitude) &&
+        !isNaN(longitude) &&
+        latitude !== 0 &&
+        longitude !== 0
+      ) {
         setUserLocation({ latitude, longitude });
         setUserAddress(address || "Địa chỉ không được cung cấp");
-        return;
+        console.log("User location set:", { latitude, longitude, address });
+      } else {
+        console.log("Invalid or missing coordinates, prompting user to update location");
+        setUserLocation(null);
+        setUserAddress(address || null);
+        toast.warn(
+          "Vị trí của bạn chưa được thiết lập. Vui lòng cập nhật vị trí để xem khoảng cách.",
+          {
+            autoClose: 5000,
+            onClick: () => setShowUpdateLocationModal(true),
+          }
+        );
       }
-      if (address) {
-        setUserAddress(address);
-        const coordinates = await getCoordinatesFromAddress(address);
-        if (coordinates) {
-          setUserLocation(coordinates);
-          return;
-        }
-      }
-      setUserLocation(null);
-      setUserAddress(null);
     } catch (error) {
-      console.error("Lỗi khi lấy vị trí:", error);
+      console.error("Lỗi khi lấy vị trí từ database:", error);
       setUserLocation(null);
       setUserAddress(null);
-      toast.warn("Vui lòng cung cấp vị trí để tính khoảng cách.");
-    }
-  };
-
-  const getCoordinatesFromAddress = async (address) => {
-    if (!address) return null;
-    try {
-      const encodedAddress = encodeURIComponent(address);
-      const response = await axios.get(
-        `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=jsonv2`,
-        { headers: { "User-Agent": "ToySharingApp" } }
+      toast.warn(
+        "Không thể lấy vị trí của bạn. Vui lòng cập nhật vị trí để xem khoảng cách.",
+        {
+          autoClose: 5000,
+          onClick: () => setShowUpdateLocationModal(true),
+        }
       );
-      if (response.data && response.data.length > 0) {
-        const { lat, lon } = response.data[0];
-        if (lat && lon && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lon))) {
-          return { latitude: parseFloat(lat), longitude: parseFloat(lon) };
-        }
-      }
-      return null;
-    } catch (error) {
-      console.error(`Lỗi khi lấy tọa độ cho địa chỉ ${address}:`, error);
-      return null;
     }
   };
 
@@ -331,14 +377,15 @@ const Home = () => {
             return;
           }
           await axios.put(
-            `${API_BASE_URL}/User/current/location`,
+            `${API_BASE_URL}/User/${userId}/location`,
             { address, latitude, longitude },
             { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
           );
           setUserLocation({ latitude, longitude });
           setUserAddress(address);
           toast.success("Lấy vị trí thành công!");
-          fetchUserLocation();
+          console.log("Location updated via geolocation:", { latitude, longitude, address });
+          fetchToyList();
         } catch (error) {
           console.error("Lỗi khi cập nhật vị trí:", error);
           toast.error("Không thể cập nhật vị trí!");
@@ -351,20 +398,104 @@ const Home = () => {
     );
   };
 
-  const fetchToyList = async () => {
-    setLoading(true);
+  const handleLocationFormChange = (e) => {
+    const { name, value } = e.target;
+    setLocationForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmitLocation = async () => {
+    const { ward, district, city } = locationForm;
+    if (!ward || !district || !city) {
+      toast.error("Vui lòng nhập đầy đủ Phường, Quận và Thành phố!");
+      return;
+    }
+    const fullAddress = `${ward}, ${district}, ${city}`;
     try {
       const token = getAuthToken();
+      if (!token) {
+        toast.error("Vui lòng đăng nhập để cập nhật vị trí!");
+        setShowUpdateLocationModal(false);
+        return;
+      }
+      let latitude = null;
+      let longitude = null;
+      try {
+        const encodedAddress = encodeURIComponent(fullAddress);
+        const response = await axios.get(
+          `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=jsonv2`,
+          { headers: { "User-Agent": "ToySharingApp" } }
+        );
+        if (response.data && response.data.length > 0) {
+          const { lat, lon } = response.data[0];
+          if (lat && lon && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lon))) {
+            latitude = parseFloat(lat);
+            longitude = parseFloat(lon);
+          }
+        }
+      } catch (error) {
+        console.error(`Lỗi khi lấy tọa độ cho địa chỉ ${fullAddress}:`, error);
+      }
+
+      await axios.put(
+        `${API_BASE_URL}/User/${userId}/location`,
+        { address: fullAddress, latitude, longitude },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      toast.success("Cập nhật vị trí thành công!");
+      setUserAddress(fullAddress);
+      if (latitude && longitude) {
+        setUserLocation({ latitude, longitude });
+      } else {
+        setUserLocation(null);
+        toast.warn(
+          "Không thể lấy tọa độ cho địa chỉ. Vui lòng thử lại hoặc sử dụng vị trí hiện tại.",
+          {
+            autoClose: 5000,
+            onClick: () => setShowUpdateLocationModal(true),
+          }
+        );
+      }
+      setShowUpdateLocationModal(false);
+      setLocationForm({ ward: "", district: "", city: "" });
+      fetchToyList();
+    } catch (error) {
+      console.error("Lỗi khi cập nhật vị trí:", error);
+      toast.error(error.response?.data.message || "Không thể cập nhật vị trí!");
+    }
+  };
+
+  const fetchToyList = async () => {
+    // Only show loading spinner for logged-in users
+    if (isLoggedIn) {
+      setLoading(true);
+    }
+    try {
+      const token = getAuthToken();
+      console.log("Fetching toy list with token:", !!token, "userLocation:", userLocation);
       const response = await axios.get(`${API_BASE_URL}/Products`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
+
+      if (!Array.isArray(response.data)) {
+        console.error("Dữ liệu API không phải mảng:", response.data);
+        setToyList([]);
+        setFilteredToyList([]);
+        return;
+      }
 
       const formattedToys = await Promise.all(
         response.data
           .filter((toy) => toy.available === 0 && toy.userId !== userId)
           .map(async (toy) => {
-            let distance;
+            let distance = isLoggedIn ? null : "Vui lòng đăng nhập để biết khoảng cách";
             let lenderAvatar = toy.user?.avatar || "https://via.placeholder.com/50?text=Avatar";
+
+            // Fetch lender avatar if not provided
             if (!toy.user?.avatar && toy.userId) {
               try {
                 const profileResponse = await axios.get(
@@ -379,50 +510,62 @@ const Home = () => {
               }
             }
 
-            if (!isLoggedIn) {
-              distance = "Vui lòng đăng nhập để biết khoảng cách";
-            } else {
-              let ownerAddress, ownerLatitude, ownerLongitude;
+            // Calculate distance only if logged in
+            if (isLoggedIn) {
+              let ownerLatitude, ownerLongitude;
               try {
                 const ownerLocationResponse = await axios.get(
                   `${API_BASE_URL}/User/${toy.userId}/location`,
                   { headers: { Authorization: `Bearer ${token}` } }
                 );
-                ownerAddress = ownerLocationResponse.data.address;
                 ownerLatitude = ownerLocationResponse.data.latitude;
                 ownerLongitude = ownerLocationResponse.data.longitude;
+                console.log(`Owner location for toy ${toy.productId}:`, {
+                  ownerLatitude,
+                  ownerLongitude,
+                });
               } catch (error) {
+                console.error(`Lỗi khi lấy vị trí của user ${toy.userId}:`, error);
                 distance = "Chưa xác định vị trí của người sở hữu";
-                return { ...toy, distance, lenderAvatar };
+                return {
+                  ...toy,
+                  distance,
+                  lenderAvatar,
+                };
               }
 
               if (!ownerLatitude || !ownerLongitude) {
-                if (ownerAddress) {
-                  const ownerCoords = await getCoordinatesFromAddress(ownerAddress);
-                  if (ownerCoords) {
-                    ownerLatitude = ownerCoords.latitude;
-                    ownerLongitude = ownerCoords.longitude;
-                  } else {
-                    distance = "Chưa xác định vị trí của người sở hữu";
-                    return { ...toy, distance, lenderAvatar };
-                  }
-                } else {
-                  distance = "Chưa xác định vị trí của người sở hữu";
-                  return { ...toy, distance, lenderAvatar };
-                }
+                console.log(`Missing owner coordinates for toy ${toy.productId}`);
+                distance = "Chưa xác định vị trí của người sở hữu";
+                return {
+                  ...toy,
+                  distance,
+                  lenderAvatar,
+                };
               }
 
               if (userLocation && userLocation.latitude && userLocation.longitude) {
                 try {
+                  console.log(
+                    `Calculating distance for toy ${toy.productId} with userLocation:`,
+                    userLocation
+                  );
                   const distResponse = await axios.get(
                     `${API_BASE_URL}/User/distance-to-product/${toy.productId}?myLatitude=${userLocation.latitude}&myLongitude=${userLocation.longitude}`,
                     { headers: { Authorization: `Bearer ${token}` } }
                   );
-                  distance = distResponse.data.distanceKilometers ?? "Không thể tính khoảng cách";
+                  const distanceKilometers = distResponse.data.distanceKilometers;
+                  console.log(`Distance response for toy ${toy.productId}:`, distanceKilometers);
+                  distance =
+                    typeof distanceKilometers === "number" && !isNaN(distanceKilometers)
+                      ? distanceKilometers
+                      : "Không thể tính khoảng cách";
                 } catch (error) {
+                  console.error(`Lỗi khi tính khoảng cách cho sản phẩm ${toy.productId}:`, error);
                   distance = "Không thể tính khoảng cách";
                 }
               } else {
+                console.log("User location not available for distance calculation");
                 distance = "Chưa xác định vị trí của bạn";
               }
             }
@@ -453,6 +596,7 @@ const Home = () => {
           })
       );
 
+      console.log("Formatted toys:", formattedToys);
       setToyList(formattedToys);
       setFilteredToyList(formattedToys);
     } catch (error) {
@@ -461,7 +605,9 @@ const Home = () => {
       setToyList([]);
       setFilteredToyList([]);
     } finally {
-      setLoading(false);
+      if (isLoggedIn) {
+        setLoading(false);
+      }
     }
   };
 
@@ -634,30 +780,12 @@ const Home = () => {
         navigate("/login");
         return;
       }
-      const response = await axios.get(`${API_BASE_URL}/Conversations`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const conversations = response.data;
-      const currentUserId = parseInt(
-        localStorage.getItem("userId") || sessionStorage.getItem("userId")
+      const response = await axios.post(
+        `${API_BASE_URL}/Conversations`,
+        { user2Id: lenderId },
+        { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
       );
-      const existingConversation = conversations.find(
-        (convo) =>
-          (convo.user1Id === lenderId && convo.user2Id === currentUserId) ||
-          (convo.user2Id === lenderId && convo.user1Id === currentUserId)
-      );
-
-      let conversationId;
-      if (existingConversation) {
-        conversationId = existingConversation.conversationId;
-      } else {
-        const createResponse = await axios.post(
-          `${API_BASE_URL}/Conversations`,
-          { user2Id: lenderId },
-          { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
-        );
-        conversationId = createResponse.data.conversationId;
-      }
+      const conversationId = response.data.conversationId;
       navigate("/message", { state: { activeConversationId: conversationId } });
     } catch (error) {
       console.error("Lỗi khi xử lý nhắn tin:", error);
@@ -750,6 +878,24 @@ const Home = () => {
           </Row>
           <Row className="filter-and-actions mb-3">
             <Col xs={12} md={12}>
+              <div className="action-buttons d-flex align-items-center mb-3">
+                <Button
+                  variant="outline-primary"
+                  className="action-btn me-2"
+                  onClick={handleGetCurrentLocation}
+                  disabled={!isLoggedIn}
+                >
+                  Lấy vị trí hiện tại
+                </Button>
+                <Button
+                  variant="outline-primary"
+                  className="action-btn"
+                  onClick={() => setShowUpdateLocationModal(true)}
+                  disabled={!isLoggedIn}
+                >
+                  Cập nhật vị trí
+                </Button>
+              </div>
               <FilterPanel
                 showFilter={showFilter}
                 onToggle={() => setShowFilter(!showFilter)}
@@ -761,7 +907,7 @@ const Home = () => {
               />
             </Col>
           </Row>
-          {loading ? (
+          {loading && isLoggedIn ? (
             <div className="text-center mt-5">
               <Spinner animation="border" variant="primary" />
               <p className="mt-2">Đang tải dữ liệu...</p>
@@ -808,9 +954,9 @@ const Home = () => {
                           </Card.Text>
                           <Card.Text className="toy-distance">
                             <strong>Khoảng cách: </strong>
-                            {typeof toy.distance === "number"
+                            {typeof toy.distance === "number" && !isNaN(toy.distance)
                               ? `${toy.distance.toFixed(2)} km`
-                              : toy.distance}
+                              : toy.distance || "Không xác định"}
                           </Card.Text>
                           <div className="lender-info d-flex align-items-center mb-2">
                             <img
@@ -996,6 +1142,74 @@ const Home = () => {
               onClick={() => setShowProfileModal(false)}
             >
               Đóng
+            </Button>
+          </Modal.Footer>
+        </Modal>
+        <Modal
+          show={showUpdateLocationModal}
+          onHide={() => setShowUpdateLocationModal(false)}
+          centered
+        >
+          <Modal.Header closeButton>
+            <Modal.Title>Cập nhật vị trí</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form>
+              <Form.Group controlId="ward" className="mb-3">
+                <Form.Label>
+                  Phường <span className="required-asterisk">*</span>
+                </Form.Label>
+                <Form.Control
+                  type="text"
+                  name="ward"
+                  value={locationForm.ward}
+                  onChange={handleLocationFormChange}
+                  placeholder="Ví dụ: Văn Quán"
+                  required
+                />
+              </Form.Group>
+              <Form.Group controlId="district" className="mb-3">
+                <Form.Label>
+                  Quận <span className="required-asterisk">*</span>
+                </Form.Label>
+                <Form.Control
+                  type="text"
+                  name="district"
+                  value={locationForm.district}
+                  onChange={handleLocationFormChange}
+                  placeholder="Ví dụ: Hà Đông"
+                  required
+                />
+              </Form.Group>
+              <Form.Group controlId="city" className="mb-3">
+                <Form.Label>
+                  Thành phố <span className="required-asterisk">*</span>
+                </Form.Label>
+                <Form.Control
+                  type="text"
+                  name="city"
+                  value={locationForm.city}
+                  onChange={handleLocationFormChange}
+                  placeholder="Ví dụ: Hà Nội"
+                  required
+                />
+              </Form.Group>
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              variant="secondary"
+              className="action-btn"
+              onClick={() => setShowUpdateLocationModal(false)}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="primary"
+              className="action-btn"
+              onClick={handleSubmitLocation}
+            >
+              Cập nhật
             </Button>
           </Modal.Footer>
         </Modal>
