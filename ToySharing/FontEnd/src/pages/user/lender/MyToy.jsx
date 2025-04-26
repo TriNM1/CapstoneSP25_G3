@@ -354,17 +354,17 @@ const MyToy = () => {
         prevToys.map((toy) =>
           toy.id === editToyData.id
             ? {
-                ...toy,
-                image: response.data.imagePaths[0] || toy.image,
-                name: response.data.name,
-                categoryName: response.data.categoryName,
-                productStatus: response.data.productStatus === 0 ? "Mới" : "Cũ",
-                suitableAge: response.data.suitableAge,
-                price: parseFloat(response.data.price),
-                productValue: `${response.data.productValue} VND`,
-                description: response.data.description,
-                status: response.data.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
-              }
+              ...toy,
+              image: response.data.imagePaths[0] || toy.image,
+              name: response.data.name,
+              categoryName: response.data.categoryName,
+              productStatus: response.data.productStatus === 0 ? "Mới" : "Cũ",
+              suitableAge: response.data.suitableAge,
+              price: parseFloat(response.data.price),
+              productValue: `${response.data.productValue} VND`,
+              description: response.data.description,
+              status: response.data.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
+            }
             : toy
         )
       );
@@ -439,20 +439,20 @@ const MyToy = () => {
         : true;
       const matchesAgeRange = filterValues.ageRange
         ? (() => {
-            const age = parseInt(toy.suitableAge);
-            switch (filterValues.ageRange) {
-              case "0-3":
-                return age >= 0 && age <= 3;
-              case "4-7":
-                return age >= 4 && age <= 7;
-              case "8-12":
-                return age >= 8 && age <= 12;
-              case "12+":
-                return age >= 12;
-              default:
-                return true;
-            }
-          })()
+          const age = parseInt(toy.suitableAge);
+          switch (filterValues.ageRange) {
+            case "0-3":
+              return age >= 0 && age <= 3;
+            case "4-7":
+              return age >= 4 && age <= 7;
+            case "8-12":
+              return age >= 8 && age <= 12;
+            case "12+":
+              return age >= 12;
+            default:
+              return true;
+          }
+        })()
         : true;
 
       return matchesName && matchesCondition && matchesCategory && matchesAgeRange;
@@ -600,126 +600,124 @@ const MyToy = () => {
           <Modal.Title>Chỉnh sửa đồ chơi</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form>
-            <Form.Group controlId="editToyOldImages" className="mb-3">
-              <Form.Label>Ảnh hiện tại</Form.Label>
-              {editToyData.imagePaths.length > 0 ? (
-                editToyData.imagePaths.map((path, index) => (
-                  <img
-                    key={index}
-                    src={path}
-                    alt={`Old image ${index}`}
-                    style={{
-                      width: "100px",
-                      height: "100px",
-                      objectFit: "cover",
-                      marginRight: "10px",
-                    }}
-                  />
-                ))
-              ) : (
-                <p>Chưa có ảnh</p>
-              )}
-            </Form.Group>
-            <Form.Group controlId="editToyImage" className="mb-3">
-              <Form.Label>Upload ảnh mới (nếu muốn thay đổi)</Form.Label>
-              <Form.Control type="file" multiple onChange={handleEditImageChange} />
-            </Form.Group>
-            <Form.Group controlId="editToyName" className="mb-3">
-              <Form.Label>
-                Tên đồ chơi <span className="required-asterisk">*</span>
-              </Form.Label>
-              <Form.Control
-                type="text"
-                name="name"
-                value={editToyData.name}
-                onChange={handleEditChange}
-                required
-              />
-            </Form.Group>
-            <Form.Group controlId="editCategory" className="mb-3">
-              <Form.Label>
-                Danh mục <span className="required-asterisk">*</span>
-              </Form.Label>
-              <Form.Control
-                as="select"
-                name="categoryName"
-                value={editToyData.categoryName}
-                onChange={handleEditChange}
-              >
-                <option value="">Chọn danh mục</option>
-                {categories.map((cat, index) => (
-                  <option key={index} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </Form.Control>
-            </Form.Group>
-            <Form.Group controlId="editCondition" className="mb-3">
-              <Form.Label>
-                Tình trạng <span className="required-asterisk">*</span>
-              </Form.Label>
-              <Form.Control
-                as="select"
-                name="productStatus"
-                value={editToyData.productStatus}
-                onChange={handleEditChange}
-              >
-                <option value="">Chọn tình trạng</option>
-                <option value="Mới">Mới</option>
-                <option value="Cũ">Cũ</option>
-              </Form.Control>
-            </Form.Group>
-            <Form.Group controlId="editAgeGroup" className="mb-3">
-              <Form.Label>
-                Độ tuổi phù hợp <span className="required-asterisk">*</span>
-              </Form.Label>
-              <Form.Control
-                type="number"
-                name="suitableAge"
-                value={editToyData.suitableAge}
-                onChange={handleEditChange}
-                min="0"
-                max="50"
-                required
-              />
-            </Form.Group>
-            <Form.Group controlId="editPrice" className="mb-3">
-              <Form.Label>
-                Phí mượn đồ chơi <span className="required-asterisk">*</span>
-              </Form.Label>
-              <Form.Control
-                type="text"
-                name="price"
-                value={editToyData.price}
-                onChange={handleEditChange}
-                required
-              />
-            </Form.Group>
-            <Form.Group controlId="editProductValue" className="mb-3">
-              <Form.Label>
-                Giá trị đồ chơi <span className="required-asterisk">*</span>
-              </Form.Label>
-              <Form.Control
-                type="text"
-                name="productValue"
-                value={editToyData.productValue}
-                onChange={handleEditChange}
-                required
-              />
-            </Form.Group>
-            <Form.Group controlId="editDescription" className="mb-3">
-              <Form.Label>Mô tả đồ chơi</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                name="description"
-                value={editToyData.description}
-                onChange={handleEditChange}
-                maxLength="500"
-              />
-            </Form.Group>
-          </Form>
+          <Form.Group controlId="editToyOldImages" className="mb-3">
+            <Form.Label>Ảnh hiện tại</Form.Label>
+            {editToyData.imagePaths.length > 0 ? (
+              editToyData.imagePaths.map((path, index) => (
+                <img
+                  key={index}
+                  src={path}
+                  alt={`Old image ${index}`}
+                  style={{
+                    width: "100px",
+                    height: "100px",
+                    objectFit: "cover",
+                    marginRight: "10px",
+                  }}
+                />
+              ))
+            ) : (
+              <p>Chưa có ảnh</p>
+            )}
+          </Form.Group>
+          <Form.Group controlId="editToyImage" className="mb-3">
+            <Form.Label>Upload ảnh mới (nếu muốn thay đổi)</Form.Label>
+            <Form.Control type="file" multiple onChange={handleEditImageChange} />
+          </Form.Group>
+          <Form.Group controlId="editToyName" className="mb-3">
+            <Form.Label>
+              Tên đồ chơi <span className="required-asterisk" style={{ color: "#c82333" }}>*</span>
+            </Form.Label>
+            <Form.Control
+              type="text"
+              name="name"
+              value={editToyData.name}
+              onChange={handleEditChange}
+              required
+            />
+          </Form.Group>
+          <Form.Group controlId="editCategory" className="mb-3">
+            <Form.Label>
+              Danh mục <span className="required-asterisk">*</span>
+            </Form.Label>
+            <Form.Control
+              as="select"
+              name="categoryName"
+              value={editToyData.categoryName}
+              onChange={handleEditChange}
+            >
+              <option value="">Chọn danh mục</option>
+              {categories.map((cat, index) => (
+                <option key={index} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </Form.Control>
+          </Form.Group>
+          <Form.Group controlId="editCondition" className="mb-3">
+            <Form.Label>
+              Tình trạng <span className="required-asterisk">*</span>
+            </Form.Label>
+            <Form.Control
+              as="select"
+              name="productStatus"
+              value={editToyData.productStatus}
+              onChange={handleEditChange}
+            >
+              <option value="">Chọn tình trạng</option>
+              <option value="Mới">Mới</option>
+              <option value="Cũ">Cũ</option>
+            </Form.Control>
+          </Form.Group>
+          <Form.Group controlId="editAgeGroup" className="mb-3">
+            <Form.Label>
+              Độ tuổi phù hợp <span className="required-asterisk">*</span>
+            </Form.Label>
+            <Form.Control
+              type="number"
+              name="suitableAge"
+              value={editToyData.suitableAge}
+              onChange={handleEditChange}
+              min="0"
+              max="50"
+              required
+            />
+          </Form.Group>
+          <Form.Group controlId="editPrice" className="mb-3">
+            <Form.Label>
+              Phí mượn đồ chơi <span className="required-asterisk">*</span>
+            </Form.Label>
+            <Form.Control
+              type="text"
+              name="price"
+              value={editToyData.price}
+              onChange={handleEditChange}
+              required
+            />
+          </Form.Group>
+          <Form.Group controlId="editProductValue" className="mb-3">
+            <Form.Label>
+              Giá trị đồ chơi <span className="required-asterisk">*</span>
+            </Form.Label>
+            <Form.Control
+              type="text"
+              name="productValue"
+              value={editToyData.productValue}
+              onChange={handleEditChange}
+              required
+            />
+          </Form.Group>
+          <Form.Group controlId="editDescription" className="mb-3">
+            <Form.Label>Mô tả đồ chơi</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={3}
+              name="description"
+              value={editToyData.description}
+              onChange={handleEditChange}
+              maxLength="500"
+            />
+          </Form.Group>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" className="action-btn" onClick={() => setShowEditModal(false)}>

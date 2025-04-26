@@ -8,6 +8,8 @@ import {
   Form,
   Modal,
 } from "react-bootstrap";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import Header from "../../../components/Header";
 import SideMenu from "../../../components/SideMenu";
 import { ToastContainer, toast } from "react-toastify";
@@ -24,6 +26,14 @@ const BorrowHistory = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [userNames, setUserNames] = useState({});
+  const [showBorrowModal, setShowBorrowModal] = useState(false);
+  const [borrowStart, setBorrowStart] = useState(null);
+  const [borrowEnd, setBorrowEnd] = useState(null);
+  const [note, setNote] = useState("");
+  const [selectedProductId, setSelectedProductId] = useState(null);
+  const [isSending, setIsSending] = useState(false);
+  const [userRequests, setUserRequests] = useState([]);
+  const [mainUserId, setMainUserId] = useState(null);
 
   const API_BASE_URL = "https://localhost:7128/api";
 
@@ -44,22 +54,61 @@ const BorrowHistory = () => {
   };
 
   useEffect(() => {
+    const token = getAuthToken();
+    if (!token) {
+      toast.error("Vui lòng đăng nhập để xem lịch sử trao đổi!");
+      navigate("/login");
+      return;
+    }
+    const getMainUserId = () => {
+      let userId = sessionStorage.getItem("userId");
+      if (!userId) userId = localStorage.getItem("userId");
+      if (userId) {
+        setMainUserId(parseInt(userId));
+      } else {
+        navigate("/login");
+      }
+    };
+    getMainUserId();
+  }, [navigate]);
+
+  useEffect(() => {
     const fetchHistory = async () => {
       try {
         const token = getAuthToken();
-        if (!token) {
-          toast.error("Vui lòng đăng nhập để xem lịch sử trao đổi!");
-          navigate("/login");
-          return;
-        }
+        if (!token) return;
 
         const response = await axios.get(`${API_BASE_URL}/Requests/history`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
 
-        const sortedHistories = response.data.sort(
+        // Lấy trạng thái available cho từng sản phẩm
+        const historiesWithAvailability = await Promise.all(
+          response.data.map(async (history) => {
+            let available = 0;
+            try {
+              const productResponse = await axios.get(
+                `${API_BASE_URL}/Products/${history.productId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              available = productResponse.data.available ?? 0;
+            } catch (error) {
+              console.error(`Lỗi khi lấy trạng thái sản phẩm ${history.productId}:`, error);
+            }
+            return {
+              ...history,
+              image: history.image || "https://via.placeholder.com/300x200?text=No+Image",
+              ownerAvatar: history.ownerAvatar || "https://via.placeholder.com/50?text=Avatar",
+              productName: history.productName || "Không xác định",
+              returnDate: history.returnDate || new Date().toISOString(),
+              rating: history.rating || null,
+              message: history.message || "",
+              available,
+            };
+          })
+        );
+
+        const sortedHistories = historiesWithAvailability.sort(
           (a, b) => new Date(b.returnDate) - new Date(a.returnDate)
         );
 
@@ -72,7 +121,24 @@ const BorrowHistory = () => {
     };
 
     fetchHistory();
-  }, [navigate]);
+  }, []);
+
+  useEffect(() => {
+    const fetchUserRequests = async () => {
+      try {
+        const token = getAuthToken();
+        if (!token || !mainUserId) return;
+        const response = await axios.get(`${API_BASE_URL}/Requests/my-requests`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUserRequests(response.data);
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách yêu cầu mượn:", error);
+        setUserRequests([]);
+      }
+    };
+    if (mainUserId) fetchUserRequests();
+  }, [mainUserId]);
 
   useEffect(() => {
     const uniqueOwnerIds = Array.from(
@@ -103,9 +169,7 @@ const BorrowHistory = () => {
     try {
       const token = getAuthToken();
       const response = await axios.get(`${API_BASE_URL}/User/profile/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
       const userInfo = response.data.userInfo || response.data;
       setProfileData({ ...userInfo, userId });
@@ -113,6 +177,120 @@ const BorrowHistory = () => {
     } catch (error) {
       console.error("Lỗi khi lấy thông tin người cho mượn:", error);
       toast.error("Không thể tải thông tin người cho mượn!");
+    }
+  };
+
+  const handleOpenBorrowModal = (productId) => {
+    const token = getAuthToken();
+    if (!token) {
+      toast.error("Vui lòng đăng nhập để mượn đồ chơi!");
+      navigate("/login");
+      return;
+    }
+    setSelectedProductId(productId);
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+    setBorrowStart(today);
+    setBorrowEnd(today);
+    setNote("");
+    setShowBorrowModal(true);
+  };
+
+  const handleCloseBorrowModal = () => {
+    setShowBorrowModal(false);
+    setBorrowStart(null);
+    setBorrowEnd(null);
+    setNote("");
+    setSelectedProductId(null);
+  };
+
+  const handleBorrowStartChange = (date) => {
+    setBorrowStart(date);
+    if (date) {
+      const nextDay = new Date(date);
+      nextDay.setDate(date.getDate() + 1);
+      if (!borrowEnd || borrowEnd <= date) {
+        setBorrowEnd(nextDay);
+      }
+    } else {
+      setBorrowEnd(null);
+    }
+  };
+
+  const handleSendRequest = async () => {
+    if (isSending) return;
+    if (!selectedProductId || !borrowStart || !borrowEnd) {
+      toast.error("Vui lòng điền đầy đủ thông tin mượn.");
+      return;
+    }
+
+    const startDate = new Date(borrowStart);
+    startDate.setHours(12, 0, 0, 0);
+    const endDate = new Date(borrowEnd);
+    endDate.setHours(12, 0, 0, 0);
+    const minEndDate = new Date(startDate);
+    minEndDate.setDate(startDate.getDate() + 1);
+
+    if (endDate < minEndDate) {
+      toast.error("Ngày trả phải sau ngày mượn ít nhất 1 ngày!");
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        toast.error("Vui lòng đăng nhập để gửi yêu cầu!");
+        navigate("/login");
+        return;
+      }
+
+      // Kiểm tra trạng thái đồ chơi
+      const productResponse = await axios.get(`${API_BASE_URL}/Products/${selectedProductId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (productResponse.data.available !== 0) {
+        toast.error("Đồ chơi không sẵn sàng để mượn!");
+        handleCloseBorrowModal();
+        return;
+      }
+
+      const requestDate = new Date().toISOString();
+      const rentDate = new Date(borrowStart);
+      rentDate.setHours(12, 0, 0, 0);
+      const returnDate = new Date(borrowEnd);
+      returnDate.setHours(12, 0, 0, 0);
+
+      const formData = new FormData();
+      formData.append("ProductId", selectedProductId);
+      formData.append("RequestDate", requestDate);
+      formData.append("RentDate", rentDate.toISOString());
+      formData.append("ReturnDate", returnDate.toISOString());
+      formData.append("Message", note || "");
+
+      const response = await axios.post(`${API_BASE_URL}/Requests`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      // Cập nhật userRequests
+      const newRequest = {
+        ...response.data,
+        productId: selectedProductId,
+        userId: mainUserId,
+        status: 0,
+      };
+      setUserRequests((prev) => [...prev, newRequest]);
+
+      toast.success("Gửi yêu cầu mượn thành công!");
+      handleCloseBorrowModal();
+    } catch (error) {
+      console.error("Lỗi khi gửi yêu cầu mượn:", error);
+      toast.error(error.response?.data?.message || "Lỗi khi gửi yêu cầu mượn!");
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -142,7 +320,7 @@ const BorrowHistory = () => {
           </Col>
           <Col xs={12} md={10} className="main-content">
             <Row className="filter-section mb-4">
-              <Col xs={12} md={{ span:6, offset: 3 }}>
+              <Col xs={12} md={{ span: 6, offset: 3 }}>
                 <Form.Group controlId="selectStatus" className="mb-0">
                   <Form.Label>Trạng thái</Form.Label>
                   <Form.Control
@@ -162,67 +340,86 @@ const BorrowHistory = () => {
             </Row>
             <Row className="request-items-section">
               {filteredHistories.length > 0 ? (
-                filteredHistories.map((history) => (
-                  <Col key={history.requestId} xs={12} md={6} className="mb-4">
-                    <Card className="request-card">
-                      <div className="image-frame">
-                        <Card.Img
-                          variant="top"
-                          src={history.image || "https://via.placeholder.com/300x200?text=No+Image"}
-                          className="toy-image"
-                          onError={(e) =>
-                            (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")
-                          }
-                        />
-                      </div>
-                      <Card.Body>
-                        <Card.Title className="toy-name">{history.productName}</Card.Title>
-                        <Card.Text className="return-date">
-                          <strong>Ngày trả:</strong>{" "}
-                          {new Date(history.returnDate).toLocaleDateString()}
-                        </Card.Text>
-                        <Card.Text className="transfer-status">
-                          <strong>Trạng thái:</strong>{" "}
-                          <span
-                            className={history.status === 1 ? "completed" : "canceled"}
-                          >
-                            {history.status === 1 ? "Hoàn thành" : "Đã hủy"}
-                          </span>
-                        </Card.Text>
-                        {history.rating && (
-                          <Card.Text className="rating">
-                            <strong>Đánh giá:</strong> {history.rating}/5
-                          </Card.Text>
-                        )}
-                        {history.message && (
-                          <Card.Text className="message">
-                            <strong>Phản hồi:</strong> {history.message}
-                          </Card.Text>
-                        )}
-                        <div className="lender-info d-flex align-items-center mb-2">
-                          <img
-                            src={
-                              history.ownerAvatar ||
-                              "https://via.placeholder.com/50?text=Avatar"
-                            }
-                            alt="Ảnh đại diện người cho mượn"
-                            className="lender-avatar"
+                filteredHistories.map((history) => {
+                  const hasSentRequest = userRequests.some(
+                    (req) =>
+                      req.productId === history.productId &&
+                      req.userId === mainUserId &&
+                      req.status === 0
+                  );
+                  return (
+                    <Col key={history.requestId} xs={12} md={6} className="mb-4">
+                      <Card className="request-card">
+                        <div className="image-frame">
+                          <Card.Img
+                            variant="top"
+                            src={history.image}
+                            className="toy-image"
                             onError={(e) =>
-                              (e.target.src = "https://via.placeholder.com/50?text=Avatar")
+                              (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")
                             }
                           />
-                          <Button
-                            variant="link"
-                            className="lender-link p-0 text-decoration-none"
-                            onClick={() => handleViewProfile(history.userId)}
-                          >
-                            {userNames[history.userId] || "Đang tải..."}
-                          </Button>
                         </div>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                ))
+                        <Card.Body>
+                          <Card.Title className="toy-name">{history.productName}</Card.Title>
+                          <Card.Text className="return-date">
+                            <strong>Ngày trả:</strong>{" "}
+                            {new Date(history.returnDate).toLocaleDateString()}
+                          </Card.Text>
+                          <Card.Text className="transfer-status">
+                            <strong>Trạng thái:</strong>{" "}
+                            <span
+                              className={history.status === 1 ? "completed" : "canceled"}
+                            >
+                              {history.status === 1 ? "Hoàn thành" : "Đã hủy"}
+                            </span>
+                          </Card.Text>
+                          {history.rating && (
+                            <Card.Text className="rating">
+                              <strong>Đánh giá:</strong> {history.rating}/5
+                            </Card.Text>
+                          )}
+                          {history.message && (
+                            <Card.Text className="message">
+                              <strong>Phản hồi:</strong> {history.message}
+                            </Card.Text>
+                          )}
+                          <div className="lender-info d-flex align-items-center mb-2">
+                            <img
+                              src={history.ownerAvatar}
+                              alt="Ảnh đại diện người cho mượn"
+                              className="lender-avatar"
+                              onError={(e) =>
+                                (e.target.src = "https://via.placeholder.com/50?text=Avatar")
+                              }
+                            />
+                            <Button
+                              variant="link"
+                              className="lender-link p-0 text-decoration-none"
+                              onClick={() => handleViewProfile(history.userId)}
+                            >
+                              {userNames[history.userId] || "Đang tải..."}
+                            </Button>
+                          </div>
+                          <div className="request-actions text-center">
+                            <Button
+                              variant="primary"
+                              className="action-btn borrow-btn"
+                              onClick={() => handleOpenBorrowModal(history.productId)}
+                              disabled={
+                                history.available !== 0 ||
+                                history.userId === mainUserId ||
+                                hasSentRequest
+                              }
+                            >
+                              {hasSentRequest ? "Đã gửi yêu cầu" : "Mượn lại"}
+                            </Button>
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  );
+                })
               ) : (
                 <Col xs={12} className="text-center">
                   <p className="no-results">Không có lịch sử trao đổi nào.</p>
@@ -243,6 +440,73 @@ const BorrowHistory = () => {
           </Col>
         </Row>
       </Container>
+
+      <Modal
+        show={showBorrowModal}
+        onHide={handleCloseBorrowModal}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Nhập thông tin mượn</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group controlId="borrowStartDate" className="mb-3">
+              <Form.Label>Ngày bắt đầu mượn</Form.Label>
+              <DatePicker
+                selected={borrowStart}
+                onChange={handleBorrowStartChange}
+                dateFormat="yyyy-MM-dd"
+                className="form-control date-picker-input"
+                placeholderText="Chọn ngày bắt đầu"
+                minDate={new Date()}
+              />
+            </Form.Group>
+            <Form.Group controlId="borrowEndDate" className="mb-3">
+              <Form.Label>Ngày kết thúc mượn</Form.Label>
+              <DatePicker
+                selected={borrowEnd}
+                onChange={(date) => setBorrowEnd(date)}
+                dateFormat="yyyy-MM-dd"
+                className="form-control date-picker-input"
+                placeholderText="Chọn ngày kết thúc"
+                minDate={
+                  borrowStart
+                    ? new Date(borrowStart).setDate(borrowStart.getDate() + 1)
+                    : new Date(new Date().setDate(new Date().getDate() + 1))
+                }
+              />
+            </Form.Group>
+            <Form.Group controlId="borrowNote">
+              <Form.Label>Ghi chú</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Nhập ghi chú"
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            className="action-btn"
+            onClick={handleCloseBorrowModal}
+          >
+            Quay lại
+          </Button>
+          <Button
+            variant="primary"
+            className="action-btn"
+            onClick={handleSendRequest}
+            disabled={isSending}
+          >
+            {isSending ? "Đang gửi..." : "Gửi yêu cầu"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
       <Modal
         show={showProfileModal}

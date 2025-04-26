@@ -82,43 +82,44 @@ $danger-hover: #c82333;
     padding: 30px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
+
   .filter-panel-wrapper {
-    display: flex; // Enables flexbox for the wrapper
-    justify-content: center; // Center aligns the content
-    align-items: center; // Vertically centers the content
-  
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
     .filter-panel {
-      display: flex; // Use flexbox for the filter panel
-      flex-wrap: wrap; // Allows wrapping to the next line if needed
-      justify-content: center; // Center aligns the filter panel items
-      align-items: center; // Vertically centers items
-  
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+
       .action-btn {
         min-width: 120px;
         padding: 5px 16px;
         font-size: 1rem;
         border-radius: 5px;
-  
+
         &.btn-outline-primary {
           border-color: $primary-color;
           color: $primary-color;
-  
+
           &:hover {
             background-color: $primary-color;
             color: #fff;
           }
         }
       }
-  
+
       &.show {
         .filter-form {
-          display: flex; // Use flexbox for the filter form
-          flex-wrap: wrap; // Allows form elements to wrap if necessary
-          justify-content: center; // Center aligns the form elements
-          width: 100%; // Ensures full width
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          width: 100%;
         }
       }
-  
+
       .filter-form {
         background-color: #f8f9fa;
         padding: 15px;
@@ -198,7 +199,7 @@ $danger-hover: #c82333;
       .card-body {
         padding: 15px;
 
-        .toy-name {      
+        .toy-name {
           font-family: 'Roboto', sans-serif;
           font-size: 1.5rem;
           color: $primary-color;
@@ -313,10 +314,10 @@ $danger-hover: #c82333;
         font-weight: bold;
         font-size: 1rem;
         margin-bottom: 5px;
+      }
 
-        .required-asterisk {
-          color: $danger-color;
-        }
+      .required-asterisk {
+        color: #c82333;
       }
 
       .form-control,

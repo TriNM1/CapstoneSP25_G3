@@ -10,6 +10,8 @@ import {
   Modal,
   Spinner,
 } from "react-bootstrap";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -146,7 +148,8 @@ const Home = () => {
   const [toyList, setToyList] = useState([]);
   const [filteredToyList, setFilteredToyList] = useState([]);
   const [showBorrowModal, setShowBorrowModal] = useState(false);
-  const [borrowDuration, setBorrowDuration] = useState("1");
+  const [borrowStart, setBorrowStart] = useState(null);
+  const [borrowEnd, setBorrowEnd] = useState(null);
   const [note, setNote] = useState("");
   const [selectedToyId, setSelectedToyId] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -167,7 +170,7 @@ const Home = () => {
     priceSort: "",
   });
   const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(false); // Initialize loading as false
+  const [loading, setLoading] = useState(false);
   const [showUpdateLocationModal, setShowUpdateLocationModal] = useState(false);
   const [locationForm, setLocationForm] = useState({
     ward: "",
@@ -178,12 +181,6 @@ const Home = () => {
   const unreadMessages = 3;
   const notificationCount = 2;
   const API_BASE_URL = "https://localhost:7128/api";
-
-  const durationOptions = [
-    { value: "1", label: "1 ngày" },
-    { value: "3", label: "3 ngày" },
-    { value: "7", label: "7 ngày" },
-  ];
 
   const getAuthToken = () => {
     return localStorage.getItem("token") || sessionStorage.getItem("token");
@@ -199,7 +196,6 @@ const Home = () => {
     if (token) {
       fetchUserLocation();
     } else {
-      // Fetch toy list immediately for non-logged-in users
       fetchToyList();
     }
   }, []);
@@ -470,7 +466,6 @@ const Home = () => {
   };
 
   const fetchToyList = async () => {
-    // Only show loading spinner for logged-in users
     if (isLoggedIn) {
       setLoading(true);
     }
@@ -495,7 +490,6 @@ const Home = () => {
             let distance = isLoggedIn ? null : "Vui lòng đăng nhập để biết khoảng cách";
             let lenderAvatar = toy.user?.avatar || "https://via.placeholder.com/50?text=Avatar";
 
-            // Fetch lender avatar if not provided
             if (!toy.user?.avatar && toy.userId) {
               try {
                 const profileResponse = await axios.get(
@@ -510,7 +504,6 @@ const Home = () => {
               }
             }
 
-            // Calculate distance only if logged in
             if (isLoggedIn) {
               let ownerLatitude, ownerLongitude;
               try {
@@ -627,22 +620,51 @@ const Home = () => {
       return;
     }
     setSelectedToyId(toyId);
-    setBorrowDuration("1");
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+    setBorrowStart(today);
+    setBorrowEnd(today);
     setNote("");
     setShowBorrowModal(true);
   };
 
   const handleCloseBorrowModal = () => {
     setShowBorrowModal(false);
-    setBorrowDuration("1");
+    setBorrowStart(null);
+    setBorrowEnd(null);
     setNote("");
     setSelectedToyId(null);
   };
 
+  const handleBorrowStartChange = (date) => {
+    setBorrowStart(date);
+    if (date) {
+      const nextDay = new Date(date);
+      nextDay.setDate(date.getDate() + 1);
+      if (!borrowEnd || borrowEnd <= date) {
+        setBorrowEnd(nextDay);
+      }
+    } else {
+      setBorrowEnd(null);
+    }
+  };
+
   const handleSendRequest = async () => {
     if (isSending) return;
-    if (!borrowDuration) {
-      toast.error("Vui lòng chọn thời gian mượn!");
+    if (!selectedToyId || !borrowStart || !borrowEnd) {
+      toast.error("Vui lòng điền đầy đủ thông tin mượn.");
+      return;
+    }
+
+    const startDate = new Date(borrowStart);
+    startDate.setHours(12, 0, 0, 0);
+    const endDate = new Date(borrowEnd);
+    endDate.setHours(12, 0, 0, 0);
+    const minEndDate = new Date(startDate);
+    minEndDate.setDate(startDate.getDate() + 1);
+
+    if (endDate < minEndDate) {
+      toast.error("Ngày trả phải sau ngày mượn ít nhất 1 ngày!");
       return;
     }
 
@@ -666,25 +688,27 @@ const Home = () => {
       return;
     }
 
-    const today = new Date();
-    const rentDate = today;
-    const returnDate = new Date(today);
-    returnDate.setDate(today.getDate() + parseInt(borrowDuration));
-
-    const formData = new FormData();
-    formData.append("ProductId", selectedToyId);
-    formData.append("RequestDate", today.toISOString());
-    formData.append("RentDate", rentDate.toISOString());
-    formData.append("ReturnDate", returnDate.toISOString());
-    formData.append("Message", note || "");
-
     try {
+      const requestDate = new Date().toISOString();
+      const rentDate = new Date(borrowStart);
+      rentDate.setHours(12, 0, 0, 0);
+      const returnDate = new Date(borrowEnd);
+      returnDate.setHours(12, 0, 0, 0);
+
+      const formData = new FormData();
+      formData.append("ProductId", selectedToyId);
+      formData.append("RequestDate", requestDate);
+      formData.append("RentDate", rentDate.toISOString());
+      formData.append("ReturnDate", returnDate.toISOString());
+      formData.append("Message", note || "");
+
       const response = await axios.post(`${API_BASE_URL}/Requests`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
       });
+
       setToyList((prevList) => prevList.filter((toy) => toy.id !== selectedToyId));
       setFilteredToyList((prevList) => prevList.filter((toy) => toy.id !== selectedToyId));
       setUserRequests((prev) => [...prev, response.data]);
@@ -692,7 +716,7 @@ const Home = () => {
       handleCloseBorrowModal();
     } catch (error) {
       console.error("Lỗi khi gửi yêu cầu mượn:", error);
-      toast.error("Có lỗi xảy ra khi gửi yêu cầu mượn!");
+      toast.error(error.response?.data?.message || "Lỗi khi gửi yêu cầu mượn!");
     } finally {
       setIsSending(false);
     }
@@ -741,6 +765,7 @@ const Home = () => {
         description: response.data.description || "Không có mô tả",
         status: response.data.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
         lenderAvatar,
+        lenderId: response.data.userId,
       });
       setShowDetailModal(true);
     } catch (error) {
@@ -878,25 +903,7 @@ const Home = () => {
           </Row>
           <Row className="filter-and-actions mb-3">
             <Col xs={12} md={12}>
-              <div className="action-buttons d-flex align-items-center mb-3">
-                <Col md={12}>
-                <Button
-                  variant="outline-primary"
-                  className="action-btn me-2"
-                  onClick={handleGetCurrentLocation}
-                  disabled={!isLoggedIn}
-                >
-                  Lấy vị trí hiện tại
-                </Button>
-                <Button
-                  variant="outline-primary"
-                  className="action-btn"
-                  onClick={() => setShowUpdateLocationModal(true)}
-                  disabled={!isLoggedIn}
-                >
-                  Cập nhật vị trí
-                </Button></Col>
-              </div>
+              
               <FilterPanel
                 showFilter={showFilter}
                 onToggle={() => setShowFilter(!showFilter)}
@@ -1029,19 +1036,35 @@ const Home = () => {
           </Modal.Header>
           <Modal.Body>
             <Form>
-              <Form.Group controlId="borrowDuration" className="mb-3">
-                <Form.Label>Thời gian mượn</Form.Label>
-                <Form.Control
-                  as="select"
-                  value={borrowDuration}
-                  onChange={(e) => setBorrowDuration(e.target.value)}
-                >
-                  {durationOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </Form.Control>
+              <Form.Group controlId="borrowStartDate" className="mb-3">
+                <Form.Label>
+                  Ngày bắt đầu mượn 
+                </Form.Label>
+                <DatePicker
+                  selected={borrowStart}
+                  onChange={handleBorrowStartChange}
+                  dateFormat="yyyy-MM-dd"
+                  className="form-control date-picker-input"
+                  placeholderText="Chọn ngày bắt đầu"
+                  minDate={new Date()}
+                />
+              </Form.Group>
+              <Form.Group controlId="borrowEndDate" className="mb-3">
+                <Form.Label>
+                  Ngày kết thúc mượn 
+                </Form.Label>
+                <DatePicker
+                  selected={borrowEnd}
+                  onChange={(date) => setBorrowEnd(date)}
+                  dateFormat="yyyy-MM-dd"
+                  className="form-control date-picker-input"
+                  placeholderText="Chọn ngày kết thúc"
+                  minDate={
+                    borrowStart
+                      ? new Date(borrowStart).setDate(borrowStart.getDate() + 1)
+                      : new Date(new Date().setDate(new Date().getDate() + 1))
+                  }
+                />
               </Form.Group>
               <Form.Group controlId="borrowNote">
                 <Form.Label>Ghi chú</Form.Label>
@@ -1056,7 +1079,11 @@ const Home = () => {
             </Form>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" className="action-btn" onClick={handleCloseBorrowModal}>
+            <Button
+              variant="secondary"
+              className="action-btn"
+              onClick={handleCloseBorrowModal}
+            >
               Quay lại
             </Button>
             <Button
@@ -1088,12 +1115,24 @@ const Home = () => {
                   />
                 </div>
                 <h5 className="mt-3">{selectedToy.name}</h5>
-                <p><strong>Danh mục:</strong> {selectedToy.categoryName || "Không có"}</p>
-                <p><strong>Tình trạng:</strong> {selectedToy.productStatus || "Không có"}</p>
-                <p><strong>Độ tuổi phù hợp:</strong> {selectedToy.suitableAge || "Không có"}</p>
-                <p><strong>Giá:</strong> {selectedToy.price}</p>
-                <p><strong>Mô tả:</strong> {selectedToy.description || "Không có"}</p>
-                <p><strong>Trạng thái:</strong> {selectedToy.status}</p>
+                <p>
+                  <strong>Danh mục:</strong> {selectedToy.categoryName || "Không có"}
+                </p>
+                <p>
+                  <strong>Tình trạng:</strong> {selectedToy.productStatus || "Không có"}
+                </p>
+                <p>
+                  <strong>Độ tuổi phù hợp:</strong> {selectedToy.suitableAge || "Không có"}
+                </p>
+                <p>
+                  <strong>Giá:</strong> {selectedToy.price}
+                </p>
+                <p>
+                  <strong>Mô tả:</strong> {selectedToy.description || "Không có"}
+                </p>
+                <p>
+                  <strong>Trạng thái:</strong> {selectedToy.status}
+                </p>
               </>
             )}
           </Modal.Body>
@@ -1105,6 +1144,26 @@ const Home = () => {
             >
               Đóng
             </Button>
+            {selectedToy && (
+              <Button
+                variant="primary"
+                className="action-btn"
+                onClick={() => handleOpenBorrowModal(selectedToy.id)}
+                disabled={
+                  selectedToy.status !== "Sẵn sàng cho mượn" ||
+                  selectedToy.lenderId === userId ||
+                  userRequests.some(
+                    (req) => req.productId === selectedToy.id && req.userId === userId && req.status === 0
+                  )
+                }
+              >
+                {userRequests.some(
+                  (req) => req.productId === selectedToy.id && req.userId === userId && req.status === 0
+                )
+                  ? "Đã gửi yêu cầu"
+                  : "Mượn"}
+              </Button>
+            )}
           </Modal.Footer>
         </Modal>
         <Modal show={showProfileModal} onHide={() => setShowProfileModal(false)} centered>
@@ -1124,9 +1183,15 @@ const Home = () => {
                     (e.target.src = "https://via.placeholder.com/100?text=Avatar")
                   }
                 />
-                <p><strong>Tên hiển thị:</strong> {profileData.displayName || "Không có tên"}</p>
-                <p><strong>Tuổi:</strong> {profileData.age || "Không có thông tin"}</p>
-                <p><strong>Địa chỉ:</strong> {profileData.address || "Không có thông tin"}</p>
+                <p>
+                  <strong>Tên hiển thị:</strong> {profileData.displayName || "Không có tên"}
+                </p>
+                <p>
+                  <strong>Tuổi:</strong> {profileData.age || "Không có thông tin"}
+                </p>
+                <p>
+                  <strong>Địa chỉ:</strong> {profileData.address || "Không có thông tin"}
+                </p>
                 <p>
                   <strong>Đánh giá:</strong>{" "}
                   {profileData.rating ? profileData.rating.toFixed(2) : "Chưa có đánh giá"}
@@ -1158,7 +1223,7 @@ const Home = () => {
             <Form>
               <Form.Group controlId="ward" className="mb-3">
                 <Form.Label>
-                  Phường <span className="required-asterisk">*</span>
+                  Phường 
                 </Form.Label>
                 <Form.Control
                   type="text"
@@ -1171,7 +1236,7 @@ const Home = () => {
               </Form.Group>
               <Form.Group controlId="district" className="mb-3">
                 <Form.Label>
-                  Quận <span className="required-asterisk">*</span>
+                  Quận 
                 </Form.Label>
                 <Form.Control
                   type="text"
@@ -1184,7 +1249,7 @@ const Home = () => {
               </Form.Group>
               <Form.Group controlId="city" className="mb-3">
                 <Form.Label>
-                  Thành phố <span className="required-asterisk">*</span>
+                  Thành phố 
                 </Form.Label>
                 <Form.Control
                   type="text"

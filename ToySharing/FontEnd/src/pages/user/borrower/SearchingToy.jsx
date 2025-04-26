@@ -144,6 +144,7 @@ const SearchingToy = () => {
   const [userAddress, setUserAddress] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [filterValues, setFilterValues] = useState({
     name: "",
     condition: "",
@@ -252,15 +253,12 @@ const SearchingToy = () => {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        console.log("Tọa độ hiện tại:", { latitude, longitude }); // Log tọa độ để kiểm tra
-
         let address = "";
         try {
           const response = await axios.get(
             `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=jsonv2&addressdetails=1`,
             { headers: { "User-Agent": "ToySharingApp" } }
           );
-          console.log("Phản hồi từ Nominatim:", response.data); // Log phản hồi để kiểm tra
           if (response.data && response.data.display_name) {
             address = response.data.display_name;
           }
@@ -277,7 +275,7 @@ const SearchingToy = () => {
             return;
           }
           await axios.put(
-            `${API_BASE_URL}/User/${mainUserId}/location`, // Sửa endpoint
+            `${API_BASE_URL}/User/${mainUserId}/location`,
             { address },
             {
               headers: {
@@ -299,7 +297,7 @@ const SearchingToy = () => {
         console.error("Lỗi khi lấy vị trí hiện tại:", error);
         toast.error("Không thể lấy vị trí hiện tại. Vui lòng thử lại!");
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 } // Tùy chọn để tăng độ chính xác
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 
@@ -327,7 +325,7 @@ const SearchingToy = () => {
         return;
       }
       await axios.put(
-        `${API_BASE_URL}/User/${mainUserId}/location`, // Sửa endpoint
+        `${API_BASE_URL}/User/${mainUserId}/location`,
         { address: fullAddress },
         {
           headers: {
@@ -338,7 +336,7 @@ const SearchingToy = () => {
       );
       toast.success("Cập nhật vị trí thành công!");
       setUserAddress(fullAddress);
-      setUserLocation(null); // Backend sẽ cập nhật tọa độ
+      setUserLocation(null);
       setShowUpdateLocationModal(false);
       setLocationForm({ ward: "", district: "", city: "" });
       fetchUserLocation();
@@ -412,8 +410,8 @@ const SearchingToy = () => {
                 toy.productStatus === 0
                   ? "Mới"
                   : toy.productStatus === 1
-                  ? "Cũ"
-                  : "Không xác định",
+                    ? "Cũ"
+                    : "Không xác định",
               suitableAge: toy.suitableAge || "Không xác định",
               price: parseFloat(toy.price) || 0,
               description: toy.description || "Không có mô tả",
@@ -423,7 +421,7 @@ const SearchingToy = () => {
               distance,
             };
           })
-        );
+        );  
         const sortedToys = formattedToys.sort(
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
         );
@@ -441,6 +439,7 @@ const SearchingToy = () => {
     const fetchUserRequests = async () => {
       try {
         const token = getAuthToken();
+        if (!token || !mainUserId) return;
         const response = await axios.get(`${API_BASE_URL}/Requests/my-requests`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -454,11 +453,17 @@ const SearchingToy = () => {
   }, [mainUserId]);
 
   const handleOpenBorrowModal = (toyId) => {
+    if (!isLoggedIn) {
+      toast.error("Vui lòng đăng nhập để mượn đồ chơi!");
+      navigate("/login");
+      return;
+    }
     setSelectedToyId(toyId);
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setHours(12, 0, 0, 0);
     setBorrowStart(today);
-    setBorrowEnd(today.getDate() + 1);
+    setBorrowEnd(today);
+    setNote("");
     setShowBorrowModal(true);
   };
 
@@ -483,16 +488,17 @@ const SearchingToy = () => {
     }
   };
 
-  const handleSendRequest = async () => {
+const handleSendRequest = async () => {
+    if (isSending) return;
     if (!selectedToyId || !borrowStart || !borrowEnd) {
       toast.error("Vui lòng điền đầy đủ thông tin mượn.");
       return;
     }
 
     const startDate = new Date(borrowStart);
-    startDate.setHours(0, 0, 0, 0);
+    startDate.setHours(12, 0, 0, 0);
     const endDate = new Date(borrowEnd);
-    endDate.setHours(0, 0, 0, 0);
+    endDate.setHours(12, 0, 0, 0);
     const minEndDate = new Date(startDate);
     minEndDate.setDate(startDate.getDate() + 1);
 
@@ -501,6 +507,7 @@ const SearchingToy = () => {
       return;
     }
 
+    setIsSending(true);
     try {
       const token = getAuthToken();
       if (!token) {
@@ -509,11 +516,21 @@ const SearchingToy = () => {
         return;
       }
 
+      // Kiểm tra trạng thái đồ chơi
+      const productResponse = await axios.get(`${API_BASE_URL}/Products/${selectedToyId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (productResponse.data.available !== 0) {
+        toast.error("Đồ chơi không sẵn sàng để mượn!");
+        handleCloseBorrowModal();
+        return;
+      }
+
       const requestDate = new Date().toISOString();
       const rentDate = new Date(borrowStart);
-      rentDate.setHours(0, 0, 0, 0);
+      rentDate.setHours(12, 0, 0, 0);
       const returnDate = new Date(borrowEnd);
-      returnDate.setHours(0, 0, 0, 0);
+      returnDate.setHours(12, 0, 0, 0);
 
       const formData = new FormData();
       formData.append("ProductId", selectedToyId);
@@ -529,12 +546,22 @@ const SearchingToy = () => {
         },
       });
 
-      setUserRequests([...userRequests, response.data]);
+      // Cập nhật userRequests
+      const newRequest = {
+        ...response.data,
+        productId: selectedToyId,
+        userId: mainUserId,
+        status: 0,
+      };
+      setUserRequests((prev) => [...prev, newRequest]);
+
       toast.success("Gửi yêu cầu mượn thành công!");
       handleCloseBorrowModal();
-    } catch (err) {
-      console.error("Lỗi khi gửi yêu cầu mượn:", err);
-      toast.error(err.response?.data?.message || "Lỗi khi gửi yêu cầu mượn!");
+    } catch (error) {
+      console.error("Lỗi khi gửi yêu cầu mượn:", error);
+      toast.error(error.response?.data?.message || "Lỗi khi gửi yêu cầu mượn!");
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -556,12 +583,13 @@ const SearchingToy = () => {
           response.data.productStatus === 0
             ? "Mới"
             : response.data.productStatus === 1
-            ? "Cũ"
-            : "Không xác định",
+              ? "Cũ"
+              : "Không xác định",
         suitableAge: response.data.suitableAge || "Không xác định",
         price: parseFloat(response.data.price) || 0,
         description: response.data.description || "Không có mô tả",
         available: response.data.available || 0,
+        ownerId: response.data.userId,
       });
       setShowDetailModal(true);
     } catch (error) {
@@ -825,12 +853,16 @@ const SearchingToy = () => {
                           <div className="request-actions text-center">
                             <Button
                               variant="primary"
-                              className="action-btn"
+                              className="action-btn borrow-btn"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleOpenBorrowModal(toy.productId);
                               }}
-                              disabled={hasSentRequest}
+                              disabled={
+                                toy.available !== 0 ||
+                                toy.ownerId === mainUserId ||
+                                hasSentRequest
+                              }
                             >
                               {hasSentRequest ? "Đã gửi yêu cầu" : "Mượn"}
                             </Button>
@@ -900,7 +932,10 @@ const SearchingToy = () => {
                 {selectedToy.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn"}
               </p>
               {userRequests.some(
-                (req) => req.productId === selectedToy.productId && req.status === 0
+                (req) =>
+                  req.productId === selectedToy.productId &&
+                  req.userId === mainUserId &&
+                  req.status === 0
               ) && (
                 <p className="text-success">
                   Bạn đã gửi yêu cầu mượn cho đồ chơi này.
@@ -917,6 +952,39 @@ const SearchingToy = () => {
           >
             Đóng
           </Button>
+          {selectedToy && (
+            <Button
+              variant="primary"
+              className="action-btn borrow-btn"
+              onClick={() => {
+                if (!isLoggedIn) {
+                  toast.error("Vui lòng đăng nhập để mượn đồ chơi!");
+                  navigate("/login");
+                  return;
+                }
+                handleOpenBorrowModal(selectedToy.productId);
+              }}
+              disabled={
+                selectedToy.available !== 0 ||
+                selectedToy.ownerId === mainUserId ||
+                userRequests.some(
+                  (req) =>
+                    req.productId === selectedToy.productId &&
+                    req.userId === mainUserId &&
+                    req.status === 0
+                )
+              }
+            >
+              {userRequests.some(
+                (req) =>
+                  req.productId === selectedToy.productId &&
+                  req.userId === mainUserId &&
+                  req.status === 0
+              )
+                ? "Đã gửi yêu cầu"
+                : "Mượn"}
+            </Button>
+          )}
         </Modal.Footer>
       </Modal>
       <Modal
@@ -979,8 +1047,9 @@ const SearchingToy = () => {
             variant="primary"
             className="action-btn"
             onClick={handleSendRequest}
+            disabled={isSending}
           >
-            Gửi yêu cầu
+            {isSending ? "Đang gửi..." : "Gửi yêu cầu"}
           </Button>
         </Modal.Footer>
       </Modal>
