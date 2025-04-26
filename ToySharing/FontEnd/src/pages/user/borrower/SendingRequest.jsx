@@ -555,39 +555,56 @@ const SendingRequest = () => {
                           {new Date(request.returnDate).toLocaleDateString()}
                         </Card.Text>
                         <Card.Text className="status">
-                          <strong>Trạng thái:</strong>{" "}
-                          <span
-                            className={
-                              request.status === 0
-                                ? "pending"
-                                : request.status === 1
-                                ? "accepted"
-                                : request.status === 2
-                                ? "paid"
-                                : request.status === 3
-                                ? "picked-up"
-                                : request.status === 4
-                                ? "completed"
-                                : ""
-                            }
-                          >
-                            {request.status === 0
-                              ? "Đang chờ chấp nhận"
-                              : request.status === 1
-                              ? "Chấp nhận, chưa thanh toán"
-                              : request.status === 2
-                              ? "Chấp nhận, đã thanh toán"
-                              : request.status === 3
-                              ? (request.confirmReturn & 1) !== 0
-                                ? "Bạn đã xác nhận trả, chờ người cho mượn"
-                                : (request.confirmReturn & 2) !== 0
-                                ? "Chờ bạn xác nhận trả"
-                                : "Đã lấy, chưa xác nhận trả"
-                              : request.status === 4
-                              ? "Hoàn thành"
-                              : "Không xác định"}
-                          </span>
-                        </Card.Text>
+  <strong>Trạng thái:</strong>{" "}
+  <span
+    className={
+      request.status === 0
+        ? "pending"
+        : request.status === 1
+        ? "accepted"
+        : request.status === 2
+        ? "paid"
+        : request.status === 3
+        ? "picked-up"
+        : request.status === 4
+        ? "completed"
+        : ""
+    }
+  >
+    {request.status === 0
+      ? "Đang chờ chấp nhận"
+      : request.status === 1
+      ? "Chấp nhận, chưa thanh toán"
+      : request.status === 2
+      ? "Chấp nhận, đã thanh toán"
+      : request.status === 3
+      ? (request.confirmReturn & 1) !== 0
+        ? "Bạn đã xác nhận trả, chờ người cho mượn"
+        : (request.confirmReturn & 2) !== 0
+        ? "Chờ bạn xác nhận trả"
+        : "Đã lấy, chưa xác nhận trả"
+      : request.status === 4
+      ? "Hoàn thành"
+      : "Không xác định"}
+  </span>
+</Card.Text>
+<Card.Text className="status-hint">
+  {request.status === 0
+    ? "Vui lòng chờ người cho mượn xác nhận yêu cầu của bạn."
+    : request.status === 1
+    ? "Vui lòng thanh toán để tiếp tục quá trình mượn."
+    : request.status === 2
+    ? "Hãy đến lấy đồ chơi đúng ngày và bấm 'Đã lấy' để cập nhật trạng thái."
+    : request.status === 3
+    ? (request.confirmReturn & 1) !== 0
+      ? "Đã xác nhận trả, đang chờ người cho mượn xác nhận."
+      : (request.confirmReturn & 2) !== 0
+      ? "Vui lòng xác nhận trả để hoàn tất quá trình mượn."
+      : "Xác nhận trả khi bạn đã hoàn trả đồ chơi."
+    : request.status === 4
+    ? "Yêu cầu đã hoàn tất. Cảm ơn bạn đã sử dụng dịch vụ!"
+    : "Trạng thái không xác định, vui lòng liên hệ hỗ trợ."}
+</Card.Text>
                         <div className="lender-info d-flex align-items-center mb-2">
                           <img
                             src={request.ownerAvatar || "https://via.placeholder.com/50?text=Avatar"}

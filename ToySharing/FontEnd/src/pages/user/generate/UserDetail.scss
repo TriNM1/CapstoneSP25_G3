@@ -1,0 +1,68 @@
+.user-detail {
+    padding: 0 15px;
+  }
+  
+  .compact-form {
+    font-size: 0.9rem;
+  }
+  
+  .compact-form .form-label {
+    margin-bottom: 0.2rem;
+    font-weight: 500;
+  }
+  
+  .compact-form .form-control {
+    padding: 0.3rem 0.5rem;
+    border-radius: 0.25rem;
+  }
+  
+  .compact-form .form-control:disabled {
+    background-color: #f8f9fa;
+    opacity: 0.8;
+  }
+  
+  .card {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1.5rem !important;
+    border-radius: 0.5rem;
+  }
+  
+  .btn-custom {
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease;
+  }
+  
+  .btn-custom:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .btn-custom:active {
+    transform: translateY(0);
+  }
+  
+  .custom-file-input {
+    font-size: 0.85rem;
+    padding: 0.3rem;
+  }
+  
+  .custom-file-input::-webkit-file-upload-button {
+    padding: 0.3rem 0.75rem;
+    font-size: 0.85rem;
+    border-radius: 0.25rem;
+    background-color: #f8f9fa;
+    border: 1px solid #ced4da;
+  }
+  
+  .d-flex.gap-2 {
+    align-items: center;
+  }
+  
+  footer {
+    margin-top: 1rem;
+    padding: 0.5rem 0;
+    font-size: 0.85rem;
+  }

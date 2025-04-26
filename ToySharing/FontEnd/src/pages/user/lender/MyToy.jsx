@@ -169,9 +169,27 @@ const MyToy = () => {
           return;
         }
 
+        // Lấy danh sách đồ chơi
         const response = await axios.get(`${API_BASE_URL}/Products/my-toys`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+
+        // Lấy danh sách yêu cầu mượn đang chờ xử lý
+        let pendingRequests = [];
+        try {
+          const pendingResponse = await axios.get(`${API_BASE_URL}/Requests/pending`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          pendingRequests = pendingResponse.data || [];
+        } catch (error) {
+          console.error("Lỗi khi lấy danh sách yêu cầu mượn:", error);
+        }
+
+        // Đếm số yêu cầu mượn cho mỗi sản phẩm
+        const requestCounts = pendingRequests.reduce((acc, request) => {
+          acc[request.productId] = (acc[request.productId] || 0) + 1;
+          return acc;
+        }, {});
 
         const formattedToys = response.data
           .map((toy) => ({
@@ -185,6 +203,7 @@ const MyToy = () => {
             createdDate: new Date(toy.createdAt), // For sorting
             borrowCount: toy.borrowCount || 0,
             status: toy.available === 0 ? "Sẵn sàng cho mượn" : "Đã cho mượn",
+            pendingBorrowRequests: toy.available === 0 ? (requestCounts[toy.productId] || 0) : 0, // Số yêu cầu mượn
             categoryName: toy.categoryName || "Không có danh mục",
             productStatus: toy.productStatus === 0 ? "Mới" : "Cũ",
             suitableAge: toy.suitableAge || "Không xác định",
@@ -193,6 +212,7 @@ const MyToy = () => {
             description: toy.description || "Không có mô tả",
           }))
           .sort((a, b) => b.createdDate - a.createdDate); // Sort by newest first
+
         setToys(formattedToys);
       } catch (error) {
         console.error("Lỗi khi lấy danh sách đồ chơi:", error);
@@ -461,7 +481,7 @@ const MyToy = () => {
       if (filterValues.priceSort === "asc") {
         return a.price - b.price;
       } else if (filterValues.priceSort === "desc") {
-        return b.price - a.price;
+        return b.price - b.price;
       }
       return b.createdDate - a.createdDate; // Default: newest first
     });
@@ -550,6 +570,9 @@ const MyToy = () => {
                               }
                             >
                               {toy.status}
+                              {toy.status === "Sẵn sàng cho mượn" && toy.pendingBorrowRequests > 0
+                                ? ` (${toy.pendingBorrowRequests} yêu cầu mượn)`
+                                : ""}
                             </span>
                           </Card.Text>
                           <Card.Text className="toy-price">
@@ -764,7 +787,11 @@ const MyToy = () => {
                 <strong>Mô tả:</strong> {selectedToy.description || "Không có"}
               </p>
               <p>
-                <strong>Trạng thái:</strong> {selectedToy.status}
+                <strong>Trạng thái:</strong>{" "}
+                {selectedToy.status}
+                {selectedToy.status === "Sẵn sàng cho mượn" && selectedToy.pendingBorrowRequests > 0
+                  ? ` (${selectedToy.pendingBorrowRequests} yêu cầu mượn)`
+                  : ""}
               </p>
               <p>
                 <strong>Lượt mượn:</strong> {selectedToy.borrowCount}

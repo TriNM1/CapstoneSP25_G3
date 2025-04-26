@@ -554,6 +554,7 @@ namespace ToySharingAPI.Controllers
                     ProductId = r.ProductId,
                     ProductName = r.Product.Name,
                     Price = r.Product.Price,
+                    DepositAmount = r.DepositAmount,
                     OwnerId = r.Product.UserId,
                     OwnerName = r.Product.User.Name,
                     Message = r.Message,

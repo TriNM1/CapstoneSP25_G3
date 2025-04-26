@@ -28,6 +28,7 @@ const ListBorrowRequests = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState("");
   const [selectedRequestId, setSelectedRequestId] = useState(null);
+  const [otherRequestsCount, setOtherRequestsCount] = useState(0); // Số yêu cầu khác cho cùng sản phẩm
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [userNames, setUserNames] = useState({}); // Store displayName for requesters
@@ -68,6 +69,7 @@ const ListBorrowRequests = () => {
       const formattedRequests = response.data
         .map((req) => ({
           id: req.requestId,
+          productId: req.productId, // Thêm productId để lọc yêu cầu
           image: req.image || "https://via.placeholder.com/300x200?text=No+Image",
           name: req.productName,
           price: `${req.price.toLocaleString("vi-VN")} VND`,
@@ -141,35 +143,96 @@ const ListBorrowRequests = () => {
   const handleConfirmAction = (action, id) => {
     setConfirmAction(action);
     setSelectedRequestId(id);
+    // Đếm số yêu cầu khác có cùng productId
+    const selectedRequest = requests.find((req) => req.id === id);
+    if (selectedRequest && action === "accept") {
+      const otherRequests = requests.filter(
+        (req) => req.productId === selectedRequest.productId && req.id !== id
+      );
+      setOtherRequestsCount(otherRequests.length);
+    } else {
+      setOtherRequestsCount(0);
+    }
     setShowConfirmModal(true);
   };
 
   const handleConfirm = async () => {
     try {
       const token = getAuthToken();
-      const actionUrl = `${API_BASE_URL}/Requests/${selectedRequestId}/status`;
-      const newStatus = confirmAction === "accept" ? 1 : 5;
-      await axios.put(
-        actionUrl,
-        { newStatus },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+      if (!token) {
+        toast.error("Vui lòng đăng nhập để xử lý yêu cầu!");
+        return;
+      }
+
+      // Tìm yêu cầu được chọn
+      const selectedRequest = requests.find((req) => req.id === selectedRequestId);
+      if (!selectedRequest) {
+        toast.error("Yêu cầu không tồn tại!");
+        return;
+      }
+
+      if (confirmAction === "accept") {
+        // Chấp nhận yêu cầu được chọn
+        await axios.put(
+          `${API_BASE_URL}/Requests/${selectedRequestId}/status`,
+          { newStatus: 1 },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        // Tìm và từ chối tất cả các yêu cầu khác có cùng productId
+        const otherRequests = requests.filter(
+          (req) => req.productId === selectedRequest.productId && req.id !== selectedRequestId
+        );
+
+        for (const req of otherRequests) {
+          try {
+            await axios.put(
+              `${API_BASE_URL}/Requests/${req.id}/status`,
+              { newStatus: 5 },
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+          } catch (error) {
+            console.error(`Lỗi khi từ chối yêu cầu ${req.id}:`, error);
+            // Tiếp tục với các yêu cầu khác ngay cả khi một yêu cầu thất bại
+          }
         }
-      );
-      setRequests((prev) =>
-        prev.filter((request) => request.id !== selectedRequestId)
-      );
-      toast.success(
-        confirmAction === "accept"
-          ? "Chấp nhận yêu cầu thành công!"
-          : "Từ chối yêu cầu thành công!"
-      );
+
+        // Xóa tất cả các yêu cầu liên quan đến productId khỏi danh sách
+        setRequests((prev) =>
+          prev.filter((req) => req.productId !== selectedRequest.productId)
+        );
+        toast.success("Chấp nhận yêu cầu thành công! Các yêu cầu khác đã bị từ chối.");
+      } else if (confirmAction === "decline") {
+        // Từ chối yêu cầu được chọn
+        await axios.put(
+          `${API_BASE_URL}/Requests/${selectedRequestId}/status`,
+          { newStatus: 5 },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        setRequests((prev) =>
+          prev.filter((request) => request.id !== selectedRequestId)
+        );
+        toast.success("Từ chối yêu cầu thành công!");
+      }
     } catch (error) {
       console.error("Lỗi khi xử lý yêu cầu:", error);
       toast.error("Có lỗi xảy ra khi xử lý yêu cầu!");
+      // Xóa yêu cầu khỏi giao diện để tránh hiển thị yêu cầu không hợp lệ
       setRequests((prev) =>
         prev.filter((request) => request.id !== selectedRequestId)
       );
@@ -177,6 +240,7 @@ const ListBorrowRequests = () => {
       setShowConfirmModal(false);
       setConfirmAction("");
       setSelectedRequestId(null);
+      setOtherRequestsCount(0);
     }
   };
 
@@ -221,7 +285,6 @@ const ListBorrowRequests = () => {
             <SideMenu menuItems={sideMenuItems} activeItem={4} />
           </Col>
           <Col xs={12} md={10} className="main-content">
-
             {filteredRequests.length === 0 ? (
               <div className="text-center mt-5">
                 <p className="no-results">Không có yêu cầu mượn nào.</p>
@@ -356,7 +419,9 @@ const ListBorrowRequests = () => {
         </Modal.Header>
         <Modal.Body>
           {confirmAction === "accept"
-            ? "Bạn có chắc chắn muốn chấp nhận yêu cầu mượn này?"
+            ? otherRequestsCount > 0
+              ? "Bạn có chắc chắn muốn chấp nhận yêu cầu mượn này? Các yêu cầu khác cho sản phẩm này sẽ bị từ chối."
+              : "Bạn có chắc chắn muốn chấp nhận yêu cầu mượn này?"
             : "Bạn có chắc chắn muốn từ chối yêu cầu mượn này?"}
         </Modal.Body>
         <Modal.Footer>

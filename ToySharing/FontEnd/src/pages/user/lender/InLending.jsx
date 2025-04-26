@@ -66,6 +66,8 @@ const InLending = () => {
           id: req.requestId,
           image: req.image || "https://via.placeholder.com/300x200?text=No+Image",
           name: req.productName,
+          price: req.price || 0, // Phí mượn
+          depositAmount: req.depositAmount || 0, // Giá trị đồ chơi (cọc)
           borrowDate: new Date(req.rentDate).toISOString().split("T")[0],
           returnDate: new Date(req.returnDate).toISOString().split("T")[0],
           lenderId: req.userId,
@@ -340,8 +342,15 @@ const InLending = () => {
   };
 
   const getStatusLabel = (item) => {
-    if (item.status === 1) return "Đã chấp nhận";
-    if (item.status === 2) return "Người dùng đã thanh toán";
+    if ((item.status === 1 || item.status === 2) && item.price === 0 && item.depositAmount === 0) {
+      return "Chờ người mượn lấy đồ";
+    }
+    if (item.status === 1) {
+      return "Đã chấp nhận";
+    }
+    if (item.status === 2) {
+      return "Người dùng đã thanh toán";
+    }
     if (item.status === 3) {
       if ((item.confirmReturn & 2) !== 0)
         return "Bạn đã xác nhận trả, chờ người mượn";
@@ -351,6 +360,30 @@ const InLending = () => {
         : "Đã lấy, chưa xác nhận trả";
     }
     return "Không xác định";
+  };
+
+  const getActionHint = (item) => {
+    if ((item.status === 1 || item.status === 2) && item.price === 0 && item.depositAmount === 0) {
+      return "Chờ người mượn lấy đồ chơi";
+    }
+    if (item.status === 1) {
+      return "Chờ người mượn thanh toán";
+    }
+    if (item.status === 2) {
+      return "Chờ người mượn lấy đồ chơi";
+    }
+    if (item.status === 3) {
+      if ((item.confirmReturn & 2) !== 0) {
+        return "Chờ người mượn xác nhận trả";
+      }
+      if ((item.confirmReturn & 1) !== 0) {
+        return "Xác nhận trả đồ chơi";
+      }
+      return isOverdue(item.returnDate, item.confirmReturn)
+        ? "Xác nhận trả hoặc đánh dấu chưa trả"
+        : "Xác nhận trả đồ chơi khi người mượn trả";
+    }
+    return "";
   };
 
   const filteredLendings = lendings.filter(
@@ -436,6 +469,9 @@ const InLending = () => {
                             >
                               {getStatusLabel(item)}
                             </span>
+                          </Card.Text>
+                          <Card.Text className="action-hint">
+                            <strong>Gợi ý:</strong> {getActionHint(item)}
                           </Card.Text>
                           <div className="lender-info d-flex align-items-center mb-2">
                             <img
