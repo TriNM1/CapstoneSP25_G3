@@ -41,7 +41,7 @@ namespace ToySharingAPI.Controllers
 
         // 34. Send Notification
         [HttpPost("send")]
-        public async Task<ActionResult<NotificationDTO>> SendNotification(string content)
+        public async Task<ActionResult<NotificationDTO>> SendNotification(string content, int Type)
         {
             var mainUserId = await GetAuthenticatedUserId();
             if (mainUserId == -1)
@@ -56,7 +56,8 @@ namespace ToySharingAPI.Controllers
                 UserId = mainUserId,
                 Content = content,
                 CreatedDate = DateTime.Now,
-                ReadStatus = false // Mặc định chưa đọc
+                ReadStatus = false,
+                Type = Type,
             };
 
             _context.Notifications.Add(notification);
@@ -69,6 +70,7 @@ namespace ToySharingAPI.Controllers
                 Content = notification.Content,
                 CreatedDate = notification.CreatedDate,
                 //ReadStatus = notification.ReadStatus
+                Type = notification.Type,
             };
 
             return Ok(notificationDto);
@@ -90,7 +92,8 @@ namespace ToySharingAPI.Controllers
                     UserId = n.UserId,
                     Content = n.Content,
                     CreatedDate = n.CreatedDate,
-                    ReadStatus = n.ReadStatus
+                    ReadStatus = n.ReadStatus,
+                    Type = n.Type,
                 })
                 .ToListAsync();
 
@@ -116,7 +119,8 @@ namespace ToySharingAPI.Controllers
                 UserId = notification.UserId,
                 Content = notification.Content,
                 CreatedDate = notification.CreatedDate,
-                ReadStatus = notification.ReadStatus
+                ReadStatus = notification.ReadStatus,
+                Type = notification.Type
             };
 
             return Ok(notificationDto);

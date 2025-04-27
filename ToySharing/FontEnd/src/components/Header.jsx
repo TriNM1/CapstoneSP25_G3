@@ -111,12 +111,12 @@ const Header = ({
                   return prev.map((convo) =>
                     convo.conversationId === conversationId
                       ? {
-                          ...convo,
-                          lastMessageContent: content,
-                          lastMessageAt: sentAt,
-                          isRead: false,
-                          lastSenderId: senderId,
-                        }
+                        ...convo,
+                        lastMessageContent: content,
+                        lastMessageAt: sentAt,
+                        isRead: false,
+                        lastSenderId: senderId,
+                      }
                       : convo
                   );
                 } else {
@@ -304,6 +304,35 @@ const Header = ({
     }
   };
 
+  const handleNotificationClick = (notification) => {
+    console.log("Notification clicked:", notification);
+    if (!notification.readStatus) {
+      handleMarkNotificationAsRead(notification.notificationId);
+    }
+
+    // Chuyển hướng dựa trên type
+    switch (notification.type) {
+      case 1:
+        navigate("/mytoy");
+        break;
+      case 2:
+        navigate("/listborrowrequests");
+        break;
+      case 3:
+        navigate("/transferhistory");
+        break;
+      case 4:
+        navigate("/sendingrequest");
+        break;
+      case 5:
+        navigate("/borrowhistory");
+        break;
+      default:
+        navigate("/notifications");
+        break;
+    }
+  };
+
   return (
     <Navbar bg="light" expand="lg" className="main-navbar">
       <Container>
@@ -414,7 +443,7 @@ const Header = ({
                       notifications.map((notif) => (
                         <Dropdown.Item
                           key={notif.notificationId || `notif-${notif.content}`}
-                          onClick={() => !notif.readStatus && handleMarkNotificationAsRead(notif.notificationId)}
+                          onClick={() => handleNotificationClick(notif)}
                           className={notif.readStatus ? "read" : "unread"}
                         >
                           {notif.content}

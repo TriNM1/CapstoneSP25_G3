@@ -15,5 +15,6 @@ public partial class Notification
 
     public bool? ReadStatus { get; set; }
 
+    public int Type { get; set; }
     public virtual User User { get; set; } = null!;
 }
