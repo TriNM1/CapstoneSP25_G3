@@ -1142,13 +1142,7 @@ const Home = () => {
             )}
           </Modal.Body>
           <Modal.Footer>
-            <Button
-              variant="secondary"
-              className="action-btn"
-              onClick={() => setShowDetailModal(false)}
-            >
-              Đóng
-            </Button>
+
             {selectedToy && (
               <Button
                 variant="primary"
@@ -1169,6 +1163,14 @@ const Home = () => {
                   : "Mượn"}
               </Button>
             )}
+            <Button
+              variant="secondary"
+              className="action-btn"
+              onClick={() => setShowDetailModal(false)}
+            >
+              Đóng
+            </Button>
+
           </Modal.Footer>
         </Modal>
         <Modal show={showProfileModal} onHide={() => setShowProfileModal(false)} centered>
