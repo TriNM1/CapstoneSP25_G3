@@ -167,8 +167,8 @@ const SendingRequest = () => {
           response.data.productStatus === 0
             ? "Mới"
             : response.data.productStatus === 1
-            ? "Cũ"
-            : "Không xác định",
+              ? "Cũ"
+              : "Không xác định",
         suitableAge: response.data.suitableAge || "Không xác định",
         price: parseFloat(response.data.price) || 0,
         description: response.data.description || "Không có mô tả",
@@ -416,10 +416,10 @@ const SendingRequest = () => {
         prev.map((req) =>
           req.requestId === requestId
             ? {
-                ...req,
-                confirmReturn: req.confirmReturn | 1,
-                status: (req.confirmReturn | 1) === 3 ? 4 : req.status,
-              }
+              ...req,
+              confirmReturn: req.confirmReturn | 1,
+              status: (req.confirmReturn | 1) === 3 ? 4 : req.status,
+            }
             : req
         )
       );
@@ -555,62 +555,51 @@ const SendingRequest = () => {
                           {new Date(request.returnDate).toLocaleDateString()}
                         </Card.Text>
                         <Card.Text className="status">
-  <strong>Trạng thái:</strong>{" "}
-  <span
-    className={
-      request.status === 0
-        ? "pending"
-        : request.status === 1
-        ? "accepted"
-        : request.status === 2
-        ? "paid"
-        : request.status === 3
-        ? "picked-up"
-        : request.status === 4
-        ? "completed"
-        : ""
-    }
-  >
-    {request.status === 0
-      ? "Đang chờ chấp nhận"
-      : request.status === 1
-      ? "Chấp nhận, chưa thanh toán"
-      : request.status === 2
-      ? "Chấp nhận, đã thanh toán"
-      : request.status === 3
-      ? (request.confirmReturn & 1) !== 0
-        ? "Bạn đã xác nhận trả, chờ người cho mượn"
-        : (request.confirmReturn & 2) !== 0
-        ? "Chờ bạn xác nhận trả"
-        : "Đã lấy, chưa xác nhận trả"
-      : request.status === 4
-      ? "Hoàn thành"
-      : "Không xác định"}
-  </span>
-</Card.Text>
-<Card.Text className="status-hint">
-  {request.status === 0
-    ? "Vui lòng chờ người cho mượn xác nhận yêu cầu của bạn."
-    : request.status === 1
-    ? "Vui lòng thanh toán để tiếp tục quá trình mượn."
-    : request.status === 2
-    ? "Hãy đến lấy đồ chơi đúng ngày và bấm 'Đã lấy' để cập nhật trạng thái."
-    : request.status === 3
-    ? (request.confirmReturn & 1) !== 0
-      ? "Đã xác nhận trả, đang chờ người cho mượn xác nhận."
-      : (request.confirmReturn & 2) !== 0
-      ? "Vui lòng xác nhận trả để hoàn tất quá trình mượn."
-      : "Xác nhận trả khi bạn đã hoàn trả đồ chơi."
-    : request.status === 4
-    ? "Yêu cầu đã hoàn tất. Cảm ơn bạn đã sử dụng dịch vụ!"
-    : "Trạng thái không xác định, vui lòng liên hệ hỗ trợ."}
-</Card.Text>
+                          <strong>Trạng thái:</strong>{" "}
+                          <span
+                            className={
+                              request.status === 0
+                                ? "pending"
+                                : request.status === 1
+                                  ? "accepted"
+                                  : request.status === 2
+                                    ? "paid"
+                                    : request.status === 3
+                                      ? "picked-up"
+                                      : request.status === 4
+                                        ? "completed"
+                                        : ""
+                            }
+                          >
+                            {request.status === 0
+                              ? "Đang chờ chấp nhận"
+                              : request.status === 1
+                                ? "Chấp nhận, chưa thanh toán"
+                                : request.status === 2
+                                  ? "Chấp nhận, đã thanh toán"
+                                  : request.status === 3
+                                    ? (request.confirmReturn & 1) !== 0
+                                      ? "Bạn đã xác nhận trả, chờ người cho mượn"
+                                      : (request.confirmReturn & 2) !== 0
+                                        ? "Chờ bạn xác nhận trả"
+                                        : "Đã lấy, chưa xác nhận trả"
+                                    : request.status === 4
+                                      ? "Hoàn thành"
+                                      : "Không xác định"}
+                          </span>
+                        </Card.Text>
+
                         <div className="lender-info d-flex align-items-center mb-2">
                           <img
                             src={request.ownerAvatar || "https://via.placeholder.com/50?text=Avatar"}
                             alt="Ảnh đại diện người cho mượn"
                             className="lender-avatar"
                             onError={(e) => (e.target.src = "https://via.placeholder.com/50?text=Avatar")}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewProfile(request.ownerId);
+                            }}
+                            style={{ cursor: "pointer" }}
                           />
                           <Button
                             variant="link"
@@ -620,8 +609,8 @@ const SendingRequest = () => {
                               handleViewProfile(request.ownerId);
                             }}
                           >
-                            {userNames[request.ownerId] || "Đang tải..."}
-                          </Button>
+                              Thông tin người cho mượn
+                              </Button>
                         </div>
                         <div className="request-actions text-center">
                           {request.status === 0 && (
@@ -697,8 +686,26 @@ const SendingRequest = () => {
                             >
                               {(request.confirmReturn & 1) !== 0 ? "Đã xác nhận trả" : "Xác nhận trả"}
                             </Button>
+
                           )}
                         </div>
+                        <Card.Text className="status-hint">
+                          {request.status === 0
+                            ? "Vui lòng chờ người cho mượn xác nhận yêu cầu của bạn."
+                            : request.status === 1
+                              ? "Vui lòng thanh toán để tiếp tục quá trình mượn."
+                              : request.status === 2
+                                ? "Hãy đến lấy đồ chơi đúng ngày và bấm 'Đã lấy' để cập nhật trạng thái."
+                                : request.status === 3
+                                  ? (request.confirmReturn & 1) !== 0
+                                    ? "Đã xác nhận trả, đang chờ người cho mượn xác nhận."
+                                    : (request.confirmReturn & 2) !== 0
+                                      ? "Vui lòng xác nhận trả để hoàn tất quá trình mượn."
+                                      : "Xác nhận trả khi bạn đã hoàn trả đồ chơi."
+                                  : request.status === 4
+                                    ? "Yêu cầu đã hoàn tất. Cảm ơn bạn đã sử dụng dịch vụ!"
+                                    : "Trạng thái không xác định, vui lòng liên hệ hỗ trợ."}
+                        </Card.Text>
                       </Card.Body>
                     </Card>
                   </Col>
@@ -846,31 +853,31 @@ const SendingRequest = () => {
                     selectedToy.requestStatus === 0
                       ? "pending"
                       : selectedToy.requestStatus === 1
-                      ? "accepted"
-                      : selectedToy.requestStatus === 2
-                      ? "paid"
-                      : selectedToy.requestStatus === 3
-                      ? "picked-up"
-                      : selectedToy.requestStatus === 4
-                      ? "completed"
-                      : ""
+                        ? "accepted"
+                        : selectedToy.requestStatus === 2
+                          ? "paid"
+                          : selectedToy.requestStatus === 3
+                            ? "picked-up"
+                            : selectedToy.requestStatus === 4
+                              ? "completed"
+                              : ""
                   }
                 >
                   {selectedToy.requestStatus === 0
                     ? "Đang chờ chấp nhận"
                     : selectedToy.requestStatus === 1
-                    ? "Chấp nhận, chưa thanh toán"
-                    : selectedToy.requestStatus === 2
-                    ? "Chấp nhận, đã thanh toán"
-                    : selectedToy.requestStatus === 3
-                    ? (selectedToy.confirmReturn & 1) !== 0
-                      ? "Bạn đã xác nhận trả, chờ người cho mượn"
-                      : (selectedToy.confirmReturn & 2) !== 0
-                      ? "Chờ bạn xác nhận trả"
-                      : "Đã lấy, chưa xác nhận trả"
-                    : selectedToy.requestStatus === 4
-                    ? "Hoàn thành"
-                    : "Không xác định"}
+                      ? "Chấp nhận, chưa thanh toán"
+                      : selectedToy.requestStatus === 2
+                        ? "Chấp nhận, đã thanh toán"
+                        : selectedToy.requestStatus === 3
+                          ? (selectedToy.confirmReturn & 1) !== 0
+                            ? "Bạn đã xác nhận trả, chờ người cho mượn"
+                            : (selectedToy.confirmReturn & 2) !== 0
+                              ? "Chờ bạn xác nhận trả"
+                              : "Đã lấy, chưa xác nhận trả"
+                          : selectedToy.requestStatus === 4
+                            ? "Hoàn thành"
+                            : "Không xác định"}
                 </span>
               </p>
             </>

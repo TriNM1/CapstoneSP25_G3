@@ -302,13 +302,15 @@ const TransferHistory = () => {
                               onError={(e) =>
                                 (e.target.src = "https://via.placeholder.com/50?text=Avatar")
                               }
+                              onClick={() => handleViewProfile(item.partnerId)}
+                              style={{ cursor: "pointer" }}
                             />
                             <Button
                               variant="link"
                               className="partner-link p-0 text-decoration-none"
                               onClick={() => handleViewProfile(item.partnerId)}
                             >
-                              {userNames[item.partnerId] || "Đang tải..."}
+                              Thông tin người mượn
                             </Button>
                           </div>
                           {item.status === 1 && !item.rating && (

@@ -164,9 +164,11 @@ $danger-hover: #c82333;
       .in-progress {
         color: #ffc107;
       }
+
       .completed {
         color: $success-color;
       }
+
       .not-returned {
         color: $danger-color;
       }
@@ -196,7 +198,35 @@ $danger-hover: #c82333;
         }
       }
     }
+    .action-hint {
+      font-size: 0.85rem; // Smaller font size
+      font-family: 'Roboto', sans-serif; // Clean, readable font
+      color: #6c757d; // Muted color (gray)
+      font-style: italic; // Subtle italic style
+      margin-top: 10px;
+    }
+    // Tooltip styling
+.toy-card {
+  position: relative; // Required for context
 
+  // Tooltip pseudo-element
+  &[data-tooltip]:hover:after {
+    content: attr(data-tooltip);
+    position: fixed; // Use fixed positioning to follow the mouse globally
+    z-index: 1000;
+    background-color: #333;
+    color: #fff;
+    font-size: 0.75rem;
+    font-family: 'Roboto', sans-serif;
+    padding: 5px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    // Position the tooltip relative to mouse coordinates
+    top: calc(var(--mouse-y, 0) + 10px); // Offset below the cursor
+    left: calc(var(--mouse-x, 0) + 10px); // Offset to the right of the cursor
+  }
+}
     .card-actions {
       display: flex;
       justify-content: center;
@@ -210,6 +240,8 @@ $danger-hover: #c82333;
         border-radius: 5px;
         text-align: center;
       }
+
+      
 
       .btn-message {
         background-color: $primary-color;

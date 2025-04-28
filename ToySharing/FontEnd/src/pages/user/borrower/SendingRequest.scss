@@ -77,7 +77,13 @@ $danger-hover: #c82333; // Replaced darken($danger-color, 10%)
       }
     }
   }
-
+  .request-card {
+    .status-hint {
+      font-size: 0.85rem; /* Kích thước chữ nhỏ hơn */
+      color: #6c757d; /* Màu chữ nhạt để trông nhẹ nhàng hơn */
+      margin-top: 10px;
+    }
+  }
   .main-content {
     background-color: #fff;
     border-radius: 12px;

@@ -99,7 +99,7 @@ namespace ToySharingAPI.Controllers
             {
                 AuthUserId = authUserGuid,
                 Name = request.Email,
-                Displayname = request.Email,
+                Displayname = request.Email.Split('@')[0],
                 CreatedAt = DateTime.Now,
                 Address = string.Empty,
                 Latitude = 0,

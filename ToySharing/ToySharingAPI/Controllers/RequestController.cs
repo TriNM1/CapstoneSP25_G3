@@ -937,6 +937,9 @@ namespace ToySharingAPI.Controllers
             if (request == null)
                 return NotFound("Yêu cầu không tồn tại.");
 
+            if (request.Product == null)
+                return BadRequest("Sản phẩm liên quan đến yêu cầu không tồn tại.");
+
             if (request.Product.UserId != mainUserId)
                 return Forbid("Bạn không có quyền đánh dấu yêu cầu này là chưa trả.");
 
@@ -955,10 +958,25 @@ namespace ToySharingAPI.Controllers
 
             try
             {
+                // Ensure History exists
+                if (request.History == null)
+                {
+                    var history = new History
+                    {
+                        RequestId = request.RequestId,
+                        UserId = request.UserId,
+                        ProductId = request.ProductId,
+                        Status = 0, // Pending
+                        ReturnDate = currentDate
+                    };
+                    _context.Histories.Add(history);
+                    request.History = history;
+                }
+
                 request.Status = 7; // Not Returned
-                request.History.Status = 3; // Mark history as Not Returned
+                request.History.Status = 1; // Mark history as Not Returned
                 request.History.ReturnDate = currentDate;
-                request.Product.Available = 0; // Make product available again
+                request.Product.Available = 2; // Make product available again
 
                 await _context.SaveChangesAsync();
 
@@ -977,12 +995,26 @@ namespace ToySharingAPI.Controllers
 
                 return Ok(new { message = "Đã đánh dấu yêu cầu là chưa trả thành công." });
             }
+            catch (DbUpdateException dbEx)
+            {
+                // Log detailed error for debugging
+                Console.WriteLine($"DbUpdateException: {dbEx.InnerException?.Message ?? dbEx.Message}");
+                return StatusCode(500, new
+                {
+                    message = "Lỗi cơ sở dữ liệu khi đánh dấu yêu cầu là chưa trả.",
+                    error = dbEx.InnerException?.Message ?? dbEx.Message,
+                    requestId
+                });
+            }
             catch (Exception ex)
             {
+                // Log detailed error for debugging
+                Console.WriteLine($"Exception: {ex.Message}\nStackTrace: {ex.StackTrace}");
                 return StatusCode(500, new
                 {
                     message = "Lỗi khi đánh dấu yêu cầu là chưa trả.",
                     error = ex.Message,
+                    stackTrace = ex.StackTrace,
                     requestId
                 });
             }

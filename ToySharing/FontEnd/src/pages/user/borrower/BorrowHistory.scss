@@ -110,6 +110,10 @@ $danger-hover: #c82333;
 
   .request-items-section {
     .request-card {
+      display: flex;
+      flex-direction: column;
+      min-height: 400px;
+      /* Đặt chiều cao tối thiểu để các card đồng đều */
       border: 1px solid #ddd;
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -139,6 +143,10 @@ $danger-hover: #c82333;
       }
 
       .card-body {
+        flex: 1;
+        /* Đảm bảo card-body chiếm toàn bộ không gian còn lại */
+        display: flex;
+        flex-direction: column;
         padding: 15px;
 
         .toy-name {
@@ -148,6 +156,11 @@ $danger-hover: #c82333;
           margin-bottom: 10px;
         }
 
+        .request-actions {
+          margin-top: auto;
+          /* Đẩy nút và status-hint xuống dưới cùng */
+        }
+
         .return-date,
         .transfer-status,
         .rating,
@@ -155,12 +168,37 @@ $danger-hover: #c82333;
           font-size: 1rem;
           margin-bottom: 5px;
           color: #333;
+
+          &.muted {
+            color: #999;
+            /* Màu chữ mờ */
+            opacity: 0.7;
+            /* Độ mờ */
+          }
+
+          &.placeholder {
+            visibility: hidden;
+            /* Ẩn nội dung nhưng vẫn chiếm không gian */
+            height: 1.5rem;
+            /* Đảm bảo chiều cao tương đương với dòng rating/message */
+            margin-bottom: 5px;
+          }
+        }
+
+        .status-hint {
+          font-size: 0.85rem;
+          /* Chữ nhỏ hơn */
+          color: #6c757d;
+          /* Màu chữ nhạt */
+          margin-top: 10px;
+          text-align: center;
         }
 
         .transfer-status {
           .completed {
             color: $success-color;
           }
+
           .canceled {
             color: $danger-color;
           }

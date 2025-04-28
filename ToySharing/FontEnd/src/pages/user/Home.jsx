@@ -581,8 +581,8 @@ const Home = () => {
                 toy.productStatus === 0
                   ? "Mới"
                   : toy.productStatus === 1
-                  ? "Cũ"
-                  : "Không xác định",
+                    ? "Cũ"
+                    : "Không xác định",
               suitableAge: toy.suitableAge || "Không xác định",
               description: toy.description || "Không có mô tả",
             };
@@ -756,8 +756,8 @@ const Home = () => {
           response.data.productStatus === 0
             ? "Mới"
             : response.data.productStatus === 1
-            ? "Cũ"
-            : "Không xác định",
+              ? "Cũ"
+              : "Không xác định",
         suitableAge: response.data.suitableAge || "Không xác định",
         price: response.data.price
           ? `${response.data.price.toLocaleString("vi-VN")} VND`
@@ -831,20 +831,20 @@ const Home = () => {
         : true;
       const matchesAgeRange = filterValues.ageRange
         ? (() => {
-            const age = parseInt(toy.suitableAge);
-            switch (filterValues.ageRange) {
-              case "0-3":
-                return age >= 0 && age <= 3;
-              case "4-7":
-                return age >= 4 && age <= 7;
-              case "8-12":
-                return age >= 8 && age <= 12;
-              case "12+":
-                return age >= 12;
-              default:
-                return true;
-            }
-          })()
+          const age = parseInt(toy.suitableAge);
+          switch (filterValues.ageRange) {
+            case "0-3":
+              return age >= 0 && age <= 3;
+            case "4-7":
+              return age >= 4 && age <= 7;
+            case "8-12":
+              return age >= 8 && age <= 12;
+            case "12+":
+              return age >= 12;
+            default:
+              return true;
+          }
+        })()
         : true;
       return matchesName && matchesCondition && matchesCategory && matchesAgeRange;
     });
@@ -903,7 +903,7 @@ const Home = () => {
           </Row>
           <Row className="filter-and-actions mb-3">
             <Col xs={12} md={12}>
-              
+
               <FilterPanel
                 showFilter={showFilter}
                 onToggle={() => setShowFilter(!showFilter)}
@@ -975,6 +975,11 @@ const Home = () => {
                               onError={(e) =>
                                 (e.target.src = "https://via.placeholder.com/50?text=Avatar")
                               }
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewProfile(toy.lenderId);
+                              }}
+                              style={{ cursor: "pointer" }}
                             />
                             <Button
                               variant="link"
@@ -984,7 +989,7 @@ const Home = () => {
                                 handleViewProfile(toy.lenderId);
                               }}
                             >
-                              {userNames[toy.lenderId] || "Đang tải..."}
+                              Thông tin người cho mượn
                             </Button>
                           </div>
                           <div className="toy-actions d-flex justify-content-between">
@@ -1038,7 +1043,7 @@ const Home = () => {
             <Form>
               <Form.Group controlId="borrowStartDate" className="mb-3">
                 <Form.Label>
-                  Ngày bắt đầu mượn 
+                  Ngày bắt đầu mượn
                 </Form.Label>
                 <DatePicker
                   selected={borrowStart}
@@ -1051,7 +1056,7 @@ const Home = () => {
               </Form.Group>
               <Form.Group controlId="borrowEndDate" className="mb-3">
                 <Form.Label>
-                  Ngày kết thúc mượn 
+                  Ngày kết thúc mượn
                 </Form.Label>
                 <DatePicker
                   selected={borrowEnd}
@@ -1223,7 +1228,7 @@ const Home = () => {
             <Form>
               <Form.Group controlId="ward" className="mb-3">
                 <Form.Label>
-                  Phường 
+                  Phường
                 </Form.Label>
                 <Form.Control
                   type="text"
@@ -1236,7 +1241,7 @@ const Home = () => {
               </Form.Group>
               <Form.Group controlId="district" className="mb-3">
                 <Form.Label>
-                  Quận 
+                  Quận
                 </Form.Label>
                 <Form.Control
                   type="text"
@@ -1249,7 +1254,7 @@ const Home = () => {
               </Form.Group>
               <Form.Group controlId="city" className="mb-3">
                 <Form.Label>
-                  Thành phố 
+                  Thành phố
                 </Form.Label>
                 <Form.Control
                   type="text"

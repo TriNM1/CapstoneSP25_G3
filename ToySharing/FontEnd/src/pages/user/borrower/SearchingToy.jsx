@@ -421,7 +421,7 @@ const SearchingToy = () => {
               distance,
             };
           })
-        );  
+        );
         const sortedToys = formattedToys.sort(
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
         );
@@ -488,7 +488,7 @@ const SearchingToy = () => {
     }
   };
 
-const handleSendRequest = async () => {
+  const handleSendRequest = async () => {
     if (isSending) return;
     if (!selectedToyId || !borrowStart || !borrowEnd) {
       toast.error("Vui lòng điền đầy đủ thông tin mượn.");
@@ -683,20 +683,20 @@ const handleSendRequest = async () => {
         : true;
       const matchesAgeRange = filterValues.ageRange
         ? (() => {
-            const age = parseInt(toy.suitableAge);
-            switch (filterValues.ageRange) {
-              case "0-3":
-                return age >= 0 && age <= 3;
-              case "4-7":
-                return age >= 4 && age <= 7;
-              case "8-12":
-                return age >= 8 && age <= 12;
-              case "12+":
-                return age >= 12;
-              default:
-                return true;
-            }
-          })()
+          const age = parseInt(toy.suitableAge);
+          switch (filterValues.ageRange) {
+            case "0-3":
+              return age >= 0 && age <= 3;
+            case "4-7":
+              return age >= 4 && age <= 7;
+            case "8-12":
+              return age >= 8 && age <= 12;
+            case "12+":
+              return age >= 12;
+            default:
+              return true;
+          }
+        })()
         : true;
       return matchesName && matchesCondition && matchesCategory && matchesAgeRange;
     })
@@ -838,6 +838,11 @@ const handleSendRequest = async () => {
                               onError={(e) =>
                                 (e.target.src = "https://via.placeholder.com/50?text=Avatar")
                               }
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewProfile(toy.ownerId);
+                              }}
+                              style={{ cursor: "pointer" }}
                             />
                             <Button
                               variant="link"
@@ -866,6 +871,15 @@ const handleSendRequest = async () => {
                             >
                               {hasSentRequest ? "Đã gửi yêu cầu" : "Mượn"}
                             </Button>
+                            <Card.Text className="status-hint">
+                              {hasSentRequest
+                                ? "Yêu cầu mượn của bạn đang chờ xác nhận."
+                                : toy.available !== 0
+                                  ? "Đồ chơi hiện không sẵn sàng để mượn."
+                                  : toy.ownerId === mainUserId
+                                    ? "Bạn không thể mượn đồ chơi của chính mình."
+                                    : "Nhấn 'Mượn' để gửi yêu cầu mượn."}
+                            </Card.Text>
                           </div>
                         </Card.Body>
                       </Card>
@@ -937,21 +951,15 @@ const handleSendRequest = async () => {
                   req.userId === mainUserId &&
                   req.status === 0
               ) && (
-                <p className="text-success">
-                  Bạn đã gửi yêu cầu mượn cho đồ chơi này.
-                </p>
-              )}
+                  <p className="text-success">
+                    Bạn đã gửi yêu cầu mượn cho đồ chơi này.
+                  </p>
+                )}
             </>
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button
-            variant="secondary"
-            className="action-btn"
-            onClick={() => setShowDetailModal(false)}
-          >
-            Đóng
-          </Button>
+
           {selectedToy && (
             <Button
               variant="primary"
@@ -984,7 +992,14 @@ const handleSendRequest = async () => {
                 ? "Đã gửi yêu cầu"
                 : "Mượn"}
             </Button>
-          )}
+          )}<Button
+            variant="secondary"
+            className="action-btn"
+            onClick={() => setShowDetailModal(false)}
+          >
+            Đóng
+          </Button>
+
         </Modal.Footer>
       </Modal>
       <Modal

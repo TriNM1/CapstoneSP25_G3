@@ -85,7 +85,7 @@ const InLending = () => {
       } else {
         toast.error(
           "Không thể tải dữ liệu từ API! " +
-            (error.response?.data?.message || error.message)
+          (error.response?.data?.message || error.message)
         );
       }
       setLendings([]);
@@ -230,10 +230,10 @@ const InLending = () => {
         const newLendings = prev.map((item) =>
           item.id === requestId
             ? {
-                ...item,
-                confirmReturn: item.confirmReturn | 2,
-                status: (item.confirmReturn | 2) === 3 ? 4 : item.status,
-              }
+              ...item,
+              confirmReturn: item.confirmReturn | 2,
+              status: (item.confirmReturn | 2) === 3 ? 4 : item.status,
+            }
             : item
         );
         return newLendings;
@@ -257,9 +257,9 @@ const InLending = () => {
             prev.map((item) =>
               item.id === requestId
                 ? {
-                    ...item,
-                    confirmReturn: item.confirmReturn | 2,
-                  }
+                  ...item,
+                  confirmReturn: item.confirmReturn | 2,
+                }
                 : item
             )
           );
@@ -301,10 +301,10 @@ const InLending = () => {
         prev.map((item) =>
           item.id === requestId
             ? {
-                ...item,
-                status: 7,
-                confirmReturn: item.confirmReturn,
-              }
+              ...item,
+              status: 7,
+              confirmReturn: item.confirmReturn,
+            }
             : item
         )
       );
@@ -364,13 +364,13 @@ const InLending = () => {
 
   const getActionHint = (item) => {
     if ((item.status === 1 || item.status === 2) && item.price === 0 && item.depositAmount === 0) {
-      return "Chờ người mượn lấy đồ chơi";
+      return "Nhắn tin và chờ người mượn lấy đồ chơi";
     }
     if (item.status === 1) {
-      return "Chờ người mượn thanh toán";
+      return "Nhắn tin và chờ người mượn thanh toán";
     }
     if (item.status === 2) {
-      return "Chờ người mượn lấy đồ chơi";
+      return "Nhắn tin và chờ người mượn lấy đồ chơi";
     }
     if (item.status === 3) {
       if ((item.confirmReturn & 2) !== 0) {
@@ -437,7 +437,7 @@ const InLending = () => {
                 <Row className="lending-items-section">
                   {visibleLendings.map((item) => (
                     <Col key={item.id} xs={12} md={6} className="mb-4">
-                      <Card className="toy-card">
+                      <Card className="toy-card" data-tooltip={getActionHint(item)}>
                         <div className="image-frame">
                           <Card.Img
                             variant="top"
@@ -463,15 +463,12 @@ const InLending = () => {
                                 item.status === 7
                                   ? "not-returned"
                                   : item.status === 4
-                                  ? "completed"
-                                  : "in-progress"
+                                    ? "completed"
+                                    : "in-progress"
                               }
                             >
                               {getStatusLabel(item)}
                             </span>
-                          </Card.Text>
-                          <Card.Text className="action-hint">
-                            <strong>Gợi ý:</strong> {getActionHint(item)}
                           </Card.Text>
                           <div className="lender-info d-flex align-items-center mb-2">
                             <img
@@ -481,13 +478,15 @@ const InLending = () => {
                               onError={(e) =>
                                 (e.target.src = "https://via.placeholder.com/50?text=Avatar")
                               }
+                              onClick={() => handleViewProfile(item.lenderId)}
+                              style={{ cursor: "pointer" }}
                             />
                             <Button
                               variant="link"
                               className="lender-link p-0 text-decoration-none"
                               onClick={() => handleViewProfile(item.lenderId)}
                             >
-                              {userNames[item.lenderId] || "Đang tải..."}
+                              Thông tin người mượn
                             </Button>
                           </div>
                           <div className="card-actions">
@@ -525,6 +524,9 @@ const InLending = () => {
                               </>
                             )}
                           </div>
+                          <Card.Text className="action-hint">
+                            {getActionHint(item)}
+                          </Card.Text>
                         </Card.Body>
                       </Card>
                     </Col>

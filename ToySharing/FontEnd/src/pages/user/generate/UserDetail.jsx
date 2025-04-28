@@ -252,7 +252,7 @@ const UserDetail = ({ isLoggedIn, setActiveLink }) => {
                   />
                 </Form.Group>
                 <Form.Group className="mb-2">
-                  <Form.Label>Tuổi</Form.Label>
+                  <Form.Label>Tuổi của bé</Form.Label>
                   <Form.Control
                     type="number"
                     name="age"

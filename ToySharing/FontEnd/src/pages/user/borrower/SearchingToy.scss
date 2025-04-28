@@ -169,7 +169,13 @@ $danger-hover: #c82333;
       }
     }
   }
-
+  .request-card {
+    .status-hint {
+      font-size: 0.85rem; /* Kích thước chữ nhỏ hơn */
+      color: #6c757d; /* Màu chữ nhạt để trông nhẹ nhàng hơn */
+      margin-top: 10px;
+    }
+  }
   .request-items-section {
     .request-card {
       border: 1px solid #ddd;

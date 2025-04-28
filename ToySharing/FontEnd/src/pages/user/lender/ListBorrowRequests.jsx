@@ -325,13 +325,15 @@ const ListBorrowRequests = () => {
                               onError={(e) =>
                                 (e.target.src = "https://via.placeholder.com/50?text=Avatar")
                               }
+                              onClick={() => handleViewProfile(request.requesterId)}
+                              style={{ cursor: "pointer" }}
                             />
                             <Button
                               variant="link"
                               className="requester-link p-0 text-decoration-none"
                               onClick={() => handleViewProfile(request.requesterId)}
                             >
-                              {userNames[request.requesterId] || "Đang tải..."}
+                              Thông tin người mượn
                             </Button>
                           </div>
                           <div className="card-actions">

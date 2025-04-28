@@ -349,75 +349,84 @@ const BorrowHistory = () => {
                   );
                   return (
                     <Col key={history.requestId} xs={12} md={6} className="mb-4">
-                      <Card className="request-card">
-                        <div className="image-frame">
-                          <Card.Img
-                            variant="top"
-                            src={history.image}
-                            className="toy-image"
-                            onError={(e) =>
-                              (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")
-                            }
-                          />
-                        </div>
-                        <Card.Body>
-                          <Card.Title className="toy-name">{history.productName}</Card.Title>
-                          <Card.Text className="return-date">
-                            <strong>Ngày trả:</strong>{" "}
-                            {new Date(history.returnDate).toLocaleDateString()}
-                          </Card.Text>
-                          <Card.Text className="transfer-status">
-                            <strong>Trạng thái:</strong>{" "}
-                            <span
-                              className={history.status === 1 ? "completed" : "canceled"}
-                            >
-                              {history.status === 1 ? "Hoàn thành" : "Đã hủy"}
-                            </span>
-                          </Card.Text>
-                          {history.rating && (
-                            <Card.Text className="rating">
-                              <strong>Đánh giá:</strong> {history.rating}/5
-                            </Card.Text>
-                          )}
-                          {history.message && (
-                            <Card.Text className="message">
-                              <strong>Phản hồi:</strong> {history.message}
-                            </Card.Text>
-                          )}
-                          <div className="lender-info d-flex align-items-center mb-2">
-                            <img
-                              src={history.ownerAvatar}
-                              alt="Ảnh đại diện người cho mượn"
-                              className="lender-avatar"
-                              onError={(e) =>
-                                (e.target.src = "https://via.placeholder.com/50?text=Avatar")
-                              }
-                            />
-                            <Button
-                              variant="link"
-                              className="lender-link p-0 text-decoration-none"
-                              onClick={() => handleViewProfile(history.userId)}
-                            >
-                              {userNames[history.userId] || "Đang tải..."}
-                            </Button>
-                          </div>
-                          <div className="request-actions text-center">
-                            <Button
-                              variant="primary"
-                              className="action-btn borrow-btn"
-                              onClick={() => handleOpenBorrowModal(history.productId)}
-                              disabled={
-                                history.available !== 0 ||
-                                history.userId === mainUserId ||
-                                hasSentRequest
-                              }
-                            >
-                              {hasSentRequest ? "Đã gửi yêu cầu" : "Mượn lại"}
-                            </Button>
-                          </div>
-                        </Card.Body>
-                      </Card>
-                    </Col>
+  <Card className="request-card">
+    <div className="image-frame">
+      <Card.Img
+        variant="top"
+        src={history.image}
+        className="toy-image"
+        onError={(e) =>
+          (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")
+        }
+      />
+    </div>
+    <Card.Body>
+      <Card.Title className="toy-name">{history.productName}</Card.Title>
+      <Card.Text className="return-date">
+        <strong>Ngày trả:</strong>{" "}
+        {new Date(history.returnDate).toLocaleDateString()}
+      </Card.Text>
+      <Card.Text className="transfer-status">
+        <strong>Trạng thái:</strong>{" "}
+        <span className={history.status === 1 ? "completed" : "canceled"}>
+          {history.status === 1 ? "Hoàn thành" : "Đã hủy"}
+        </span>
+      </Card.Text>
+      <Card.Text className={`rating ${!history.rating ? "muted" : ""}`}>
+        <strong>Đánh giá:</strong>{" "}
+        {history.rating ? `${history.rating}/5` : "Người mượn chưa đánh giá"}
+      </Card.Text>
+      <Card.Text className={`message ${!history.message ? "muted" : ""}`}>
+        <strong>Phản hồi:</strong>{" "}
+        {history.message || "Không có phản hồi"}
+      </Card.Text>
+      <div className="lender-info d-flex align-items-center mb-2">
+        <img
+          src={history.ownerAvatar}
+          alt="Ảnh đại diện người cho mượn"
+          className="lender-avatar"
+          onError={(e) =>
+            (e.target.src = "https://via.placeholder.com/50?text=Avatar")
+          }
+          onClick={() => handleViewProfile(history.userId)}
+          style={{ cursor: "pointer" }}
+        />
+        <Button
+          variant="link"
+          className="lender-link p-0 text-decoration-none"
+          onClick={() => handleViewProfile(history.userId)}
+        >
+          Thông tin người cho mượn
+        </Button>
+      </div>
+      <div className="request-actions text-center">
+        <Button
+          variant="primary"
+          className="action-btn borrow-btn"
+          onClick={() => handleOpenBorrowModal(history.productId)}
+          disabled={
+            history.available !== 0 ||
+            history.userId === mainUserId ||
+            hasSentRequest
+          }
+        >
+          {hasSentRequest ? "Đã gửi yêu cầu" : "Mượn lại"}
+        </Button>
+        <Card.Text className="status-hint">
+          {hasSentRequest
+            ? "Yêu cầu mượn của bạn đang chờ xác nhận."
+            : history.available !== 0
+              ? "Đồ chơi hiện không sẵn sàng để mượn."
+              : history.userId === mainUserId
+                ? "Bạn không thể mượn đồ chơi của chính mình."
+                : history.status === 1
+                  ? "Nhấn 'Mượn lại' để gửi yêu cầu mượn mới."
+                  : "Yêu cầu trước đó đã bị hủy, bạn có thể mượn lại."}
+        </Card.Text>
+      </div>
+    </Card.Body>
+  </Card>
+</Col>
                   );
                 })
               ) : (
