@@ -245,7 +245,7 @@ namespace ToySharingAPI.Controllers
                     var totalAmount = request.DepositAmount + request.RentalFee;
                     if (totalAmount == 0)
                     {
-                        request.Status = 2;
+                        request.Status = 8; // Chấp nhận, không mất phí
                     }
                     else if (totalAmount >= 1000)
                     {
@@ -335,8 +335,8 @@ namespace ToySharingAPI.Controllers
             if (request.UserId != mainUserId)
                 return Forbid("Bạn không có quyền đánh dấu yêu cầu này là đã lấy.");
 
-            if (request.Status != 2)
-                return BadRequest("Chỉ có thể đánh dấu đã lấy từ trạng thái 'đã chấp nhận' (status = 2).");
+            if (request.Status != 2 && request.Status != 8)
+                return BadRequest("Chỉ có thể đánh dấu đã lấy từ trạng thái 'đã chấp nhận' (status = 2 hoặc 8).");
 
             if (request.Product == null)
                 return BadRequest($"Sản phẩm với ProductId {request.ProductId} không tồn tại.");
@@ -386,7 +386,7 @@ namespace ToySharingAPI.Controllers
                 return Unauthorized("Không thể xác thực người dùng.");
 
             var requests = await _context.RentRequests
-                .Where(r => r.UserId == mainUserId && (r.Status == 1 || r.Status == 0 || r.Status == 2 || r.Status == 3))
+                .Where(r => r.UserId == mainUserId && (r.Status == 1 || r.Status == 0 || r.Status == 2 || r.Status == 3 || r.Status == 8))
                 .Include(r => r.User)
                 .Include(r => r.Product)
                 .ThenInclude(p => p.Images)
@@ -532,7 +532,7 @@ namespace ToySharingAPI.Controllers
         [Authorize(Roles = "User")]
         public async Task<ActionResult<IEnumerable<object>>> GetBorrowingRequests()
         {
-            var mainUserId = await GetAuthenticatedUserId();
+            var  mainUserId = await GetAuthenticatedUserId();
             if (mainUserId == -1)
                 return Unauthorized("Không thể xác thực người dùng.");
 
@@ -544,7 +544,7 @@ namespace ToySharingAPI.Controllers
                 .Include(r => r.User)
                 .Include(r => r.History)
                 .Where(r => r.Product.UserId == mainUserId &&
-                            (r.Status == 0 || r.Status == 1 || r.Status == 2 || r.Status == 3))
+                            (r.Status == 0 || r.Status == 1 || r.Status == 2 || r.Status == 3) || r.Status == 8)
                 .Select(r => new RequestDTO
                 {
                     RequestId = r.RequestId,

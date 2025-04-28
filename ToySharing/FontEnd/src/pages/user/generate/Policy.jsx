@@ -7,12 +7,21 @@ import Footer from "../../../components/footer";
 const Policy = () => {
   const [activeLink, setActiveLink] = useState("policy");
 
+  // Hàm kiểm tra token để xác định trạng thái đăng nhập
+  const getAuthToken = () => {
+    return localStorage.getItem("token") || sessionStorage.getItem("token");
+  };
+
+  // Xác định isLoggedIn dựa trên token
+  const token = getAuthToken();
+  const isLoggedIn = !!token; // true nếu có token, false nếu không có
+
   return (
     <div className="policy-page home-page">
       <Header
         activeLink={activeLink}
         setActiveLink={setActiveLink}
-        isLoggedIn={true}
+        isLoggedIn={isLoggedIn} // Truyền trạng thái đăng nhập thực tế
         unreadMessages={0}
         notificationCount={0}
       />

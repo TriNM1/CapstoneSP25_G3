@@ -38,6 +38,7 @@ const InLending = () => {
     { value: "", label: "Tất cả trạng thái" },
     { value: "1", label: "Đã chấp nhận" },
     { value: "2", label: "Người dùng đã thanh toán" },
+    { value: "8", label: "Người dùng mượn đồ chơi không mất phí" },
     { value: "3", label: "Chờ xác nhận trả" },
   ];
 
@@ -61,7 +62,7 @@ const InLending = () => {
         },
       });
       const filteredLendings = response.data
-        .filter((req) => [1, 2, 3].includes(req.status))
+        .filter((req) => [1, 2, 8, 3].includes(req.status))
         .map((req) => ({
           id: req.requestId,
           image: req.image || "https://via.placeholder.com/300x200?text=No+Image",
@@ -351,6 +352,9 @@ const InLending = () => {
     if (item.status === 2) {
       return "Người dùng đã thanh toán";
     }
+    if (item.status === 8) {
+      return "Người dùng mượn đồ chơi không mất phí";
+    }
     if (item.status === 3) {
       if ((item.confirmReturn & 2) !== 0)
         return "Bạn đã xác nhận trả, chờ người mượn";
@@ -371,6 +375,9 @@ const InLending = () => {
     }
     if (item.status === 2) {
       return "Nhắn tin và chờ người mượn lấy đồ chơi";
+    }
+    if (item.status === 8) {
+      return "Chờ người mượn lấy đồ chơi";
     }
     if (item.status === 3) {
       if ((item.confirmReturn & 2) !== 0) {

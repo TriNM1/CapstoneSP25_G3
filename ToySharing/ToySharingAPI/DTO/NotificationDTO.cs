@@ -7,5 +7,6 @@
         public string Content { get; set; }
         public DateTime? CreatedDate { get; set; }
         public bool? ReadStatus { get; set; }
+        public int Type { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from "react"; // Thêm useState
+import React, { useState } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import Header from "../../../components/Header";
 import "./UserGuide.scss";
@@ -7,12 +7,21 @@ import Footer from "../../../components/footer";
 const UserGuide = () => {
   const [activeLink, setActiveLink] = useState("userguide");
 
+  // Hàm kiểm tra token để xác định trạng thái đăng nhập
+  const getAuthToken = () => {
+    return localStorage.getItem("token") || sessionStorage.getItem("token");
+  };
+
+  // Xác định trạng thái đăng nhập dựa trên token
+  const token = getAuthToken();
+  const isLoggedIn = !!token; // true nếu token tồn tại, false nếu không
+
   return (
     <div className="user-guide-page home-page">
       <Header
         activeLink={activeLink}
         setActiveLink={setActiveLink}
-        isLoggedIn={true}
+        isLoggedIn={isLoggedIn} // Truyền trạng thái đăng nhập thực tế
         unreadMessages={0}
         notificationCount={0}
       />
