@@ -211,7 +211,7 @@ const ListBorrowRequests = () => {
         setRequests((prev) =>
           prev.filter((req) => req.productId !== selectedRequest.productId)
         );
-        toast.success("Chấp nhận yêu cầu thành công! Các yêu cầu khác đã bị từ chối.");
+        toast.success("Chấp nhận yêu cầu thành công!");
       } else if (confirmAction === "decline") {
         // Từ chối yêu cầu được chọn
         await axios.put(
