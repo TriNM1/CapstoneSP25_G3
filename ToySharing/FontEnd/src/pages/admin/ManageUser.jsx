@@ -9,9 +9,8 @@ import {
   Pagination,
   Modal,
 } from "react-bootstrap";
-import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { FaLock, FaUnlock } from "react-icons/fa";
+import { FaLock, FaUnlock, FaInfoCircle } from "react-icons/fa";
 import AdminSideMenu from "../../components/AdminSideMenu";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -30,23 +29,22 @@ const ManageUser = () => {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterRole, setFilterRole] = useState("");
-  const [filterDate, setFilterDate] = useState(null);
   const [users, setUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [showModal, setShowModal] = useState(false);
+  const [showAddAdminModal, setShowAddAdminModal] = useState(false);
+  const [showUserInfoModal, setShowUserInfoModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     displayName: "",
     gender: true,
-    role: "User",
   });
   const [formErrors, setFormErrors] = useState({
     email: "",
     password: "",
     displayName: "",
     gender: "",
-    role: "",
   });
   const usersPerPage = 5;
 
@@ -82,6 +80,34 @@ const ManageUser = () => {
       });
   };
 
+  const fetchUserInfo = (id) => {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!token) {
+      toast.error("Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!");
+      return;
+    }
+
+    fetch(`https://localhost:7128/api/User/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Lỗi khi tải thông tin người dùng!");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setSelectedUser(data);
+        setShowUserInfoModal(true);
+      })
+      .catch((error) => {
+        console.error("Error fetching user info:", error);
+        toast.error(error.message || "Lỗi khi tải thông tin người dùng!");
+      });
+  };
+
   const validateEmail = (email) => {
     if (!email.trim()) return "Email là bắt buộc.";
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -107,18 +133,12 @@ const ManageUser = () => {
     return "";
   };
 
-  const validateRole = (role) => {
-    if (role !== "User" && role !== "Admin") return "Vai trò không hợp lệ.";
-    return "";
-  };
-
   const handleSubmit = () => {
     const errors = {
       email: validateEmail(formData.email),
       password: validatePassword(formData.password),
       displayName: validateDisplayName(formData.displayName),
       gender: validateGender(formData.gender),
-      role: validateRole(formData.role),
     };
 
     setFormErrors(errors);
@@ -137,7 +157,7 @@ const ManageUser = () => {
       return;
     }
 
-    console.log("Sending form data:", formData); // Debug payload
+    const payload = { ...formData, role: "Admin" }; // Force role to Admin
 
     fetch("https://localhost:7128/api/admin/users", {
       method: "POST",
@@ -145,7 +165,7 @@ const ManageUser = () => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(formData),
+      body: JSON.stringify(payload),
     })
       .then(async (response) => {
         const contentType = response.headers.get("content-type");
@@ -156,36 +176,31 @@ const ManageUser = () => {
           data = { message: await response.text() };
         }
 
-        console.log("Response data:", data); // Debug response
-
         if (!response.ok) {
-          throw new Error(data.message || "Lỗi khi tạo tài khoản!");
+          throw new Error(data.message || "Lỗi khi tạo tài khoản admin!");
         }
         return data;
       })
       .then((data) => {
-        toast.success(data.message || "Tạo tài khoản thành công!");
-        setShowModal(false);
+        toast.success(data.message || "Tạo tài khoản admin thành công!");
+        setShowAddAdminModal(false);
         setFormErrors({
           email: "",
           password: "",
           displayName: "",
           gender: "",
-          role: "",
         });
         fetchUsers();
       })
       .catch((error) => {
-        console.error("Error creating user:", error);
-        toast.error(error.message || "Lỗi khi tạo tài khoản!");
+        console.error("Error creating admin:", error);
+        toast.error(error.message || "Lỗi khi tạo tài khoản admin!");
       });
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-
-    // Clear error for the field being edited
     setFormErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
@@ -196,12 +211,7 @@ const ManageUser = () => {
     const statusText = user.status === 0 ? "active" : "banned";
     const matchesStatus = filterStatus ? statusText === filterStatus : true;
     const matchesRole = filterRole ? user.role === filterRole : true;
-    const matchesDate = filterDate
-      ? user.createdAt
-        ? new Date(user.createdAt).toDateString() === filterDate.toDateString()
-        : false
-      : true;
-    return matchesKeyword && matchesStatus && matchesRole && matchesDate;
+    return matchesKeyword && matchesStatus && matchesRole;
   });
 
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
@@ -261,22 +271,20 @@ const ManageUser = () => {
       });
   };
 
-  const handleAddUser = () => {
+  const handleAddAdmin = () => {
     setFormData({
       email: "",
       password: "",
       displayName: "",
       gender: true,
-      role: "User",
     });
     setFormErrors({
       email: "",
       password: "",
       displayName: "",
       gender: "",
-      role: "",
     });
-    setShowModal(true);
+    setShowAddAdminModal(true);
   };
 
   return (
@@ -289,8 +297,8 @@ const ManageUser = () => {
           <Col xs={12} md={10} className="main-content">
             <h1>Quản lý Người dùng</h1>
             <div className="d-flex justify-content-between mb-3 align-items-center">
-              <Button variant="primary" onClick={handleAddUser}>
-                Thêm Người dùng
+              <Button variant="primary" onClick={handleAddAdmin}>
+                Thêm Admin
               </Button>
               <div className="d-flex align-items-center">
                 <Form.Select
@@ -324,8 +332,6 @@ const ManageUser = () => {
                 </Form>
               </div>
             </div>
-            <Form className="mb-4" onSubmit={(e) => e.preventDefault()}>
-            </Form>
             <Table striped bordered hover responsive>
               <thead>
                 <tr>
@@ -353,6 +359,7 @@ const ManageUser = () => {
                           variant={user.status === 0 ? "danger" : "success"}
                           size="sm"
                           onClick={() => handleToggleStatus(user.id, user.status)}
+                          className="me-2"
                         >
                           {user.status === 0 ? (
                             <>
@@ -363,6 +370,13 @@ const ManageUser = () => {
                               <FaUnlock className="me-1" /> Mở khóa
                             </>
                           )}
+                        </Button>
+                        <Button
+                          variant="info"
+                          size="sm"
+                          onClick={() => fetchUserInfo(user.id)}
+                        >
+                          <FaInfoCircle className="me-1" /> Thông tin
                         </Button>
                       </td>
                     </tr>
@@ -407,9 +421,10 @@ const ManageUser = () => {
         </Row>
       </Container>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
+      {/* Add Admin Modal */}
+      <Modal show={showAddAdminModal} onHide={() => setShowAddAdminModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Thêm Người dùng</Modal.Title>
+          <Modal.Title>Thêm Admin</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <div>
@@ -421,7 +436,7 @@ const ManageUser = () => {
                 value={formData.email}
                 onChange={handleChange}
                 className={`form-control ${formErrors.email ? "is-invalid" : ""}`}
-                placeholder="Nhập email người dùng"
+                placeholder="Nhập email admin"
                 required
               />
               {formErrors.email && (
@@ -473,27 +488,48 @@ const ManageUser = () => {
                 <div className="invalid-feedback">{formErrors.gender}</div>
               )}
             </div>
-            <div className="mb-3">
-              <label>Vai trò</label>
-              <Form.Select
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                className={formErrors.role ? "is-invalid" : ""}
-              >
-                <option value="User">User</option>
-                <option value="Admin">Admin</option>
-              </Form.Select>
-              {formErrors.role && (
-                <div className="invalid-feedback">{formErrors.role}</div>
-              )}
-            </div>
             <Button variant="primary" onClick={handleSubmit}>
               Thêm
             </Button>
           </div>
         </Modal.Body>
       </Modal>
+
+      {/* User Info Modal */}
+      <Modal show={showUserInfoModal} onHide={() => setShowUserInfoModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Thông tin Người dùng</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedUser ? (
+            <div>
+              <p><strong>Tên hiển thị:</strong> {selectedUser.displayName}</p>
+              <p><strong>Email:</strong> {selectedUser.name || "N/A"}</p>
+              <p><strong>Giới tính:</strong> {selectedUser.gender ? "Nam" : "Nữ"}</p>
+              <p><strong>Tuổi:</strong> {selectedUser.age || "N/A"}</p>
+              <p><strong>Địa chỉ:</strong> {selectedUser.address || "N/A"}</p>
+              <p><strong>Số điện thoại:</strong> {selectedUser.phone || "N/A"}</p>
+              <p><strong>Trạng thái:</strong> {selectedUser.status === 0 ? "Active" : "Banned"}</p>
+              <p><strong>Đánh giá trung bình:</strong> {selectedUser.rating?.toFixed(2) || "0.00"}</p>
+              <p><strong>Ngày tạo:</strong> {new Date(selectedUser.createdAt).toLocaleDateString()}</p>
+              <p><strong>Ngân hàng:</strong> {selectedUser.bankName || "N/A"}</p>
+              <p><strong>Số tài khoản:</strong> {selectedUser.bankAccount || "N/A"}</p>
+              <p><strong>Tên tài khoản:</strong> {selectedUser.bankAccountName || "N/A"}</p>
+              {selectedUser.avatar && (
+                <p><strong>Avatar:</strong> <img src={selectedUser.avatar} alt="Avatar" style={{ maxWidth: "100px" }} /></p>
+              )}
+            </div>
+          ) : (
+            <p>Không có thông tin người dùng.</p>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowUserInfoModal(false)}>
+            Đóng
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
       <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
